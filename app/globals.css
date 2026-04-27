@@ -5,11 +5,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Figma token: colors/background/bg-brand */
+  --brand: #1447e6;
+  --brand-foreground: #ffffff;
+  /* Figma token: colors/text/text-body */
+  --text-body: #4a5565;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-text-body: var(--text-body);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
