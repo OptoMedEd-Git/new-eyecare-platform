@@ -1,20 +1,20 @@
 "use client";
 
-import { TextInput } from "flowbite-react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import type { ComponentProps } from "react";
 import { forwardRef, useState } from "react";
 
 export interface FormPasswordInputProps
   extends Omit<
-    ComponentProps<typeof TextInput>,
-    "color" | "icon" | "rightIcon" | "addon" | "type" | "name" | "id"
+    ComponentProps<"input">,
+    "name" | "id" | "type" | "placeholder"
   > {
   label: string;
   name: string;
   /** When omitted, `name` is used. Pass a unique id if the same name appears twice. */
   id?: string;
   placeholder?: string;
+  defaultValue?: string;
   required?: boolean;
   error?: string;
   helperText?: string;
@@ -32,8 +32,7 @@ export const FormPasswordInput = forwardRef<HTMLInputElement, FormPasswordInputP
       helperText,
       defaultValue,
       className,
-      sizing = "md",
-      ...textInputProps
+      ...inputProps
     },
     ref
   ) {
@@ -58,8 +57,14 @@ export const FormPasswordInput = forwardRef<HTMLInputElement, FormPasswordInputP
             </span>
           ) : null}
         </label>
-        <div className="relative [&_input]:pr-11">
-          <TextInput
+        <div className="relative">
+          <span
+            className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400"
+            aria-hidden
+          >
+            <Lock className="size-4" />
+          </span>
+          <input
             ref={ref}
             id={controlId}
             name={name}
@@ -67,16 +72,19 @@ export const FormPasswordInput = forwardRef<HTMLInputElement, FormPasswordInputP
             placeholder={placeholder}
             required={required}
             defaultValue={defaultValue}
-            sizing={sizing}
-            color={error ? "failure" : "gray"}
             aria-invalid={error ? "true" : undefined}
             aria-required={required || undefined}
             aria-describedby={describedBy ? describedBy : undefined}
-            {...textInputProps}
+            className={
+              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pl-10 pr-10 text-sm placeholder:text-gray-400 outline-none ring-offset-0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 " +
+              (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
+              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
+            }
+            {...inputProps}
           />
           <button
             type="button"
-            className="absolute right-2 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800"
+            className="absolute right-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             onClick={() => setVisible((v) => !v)}
             aria-label={visible ? "Hide password" : "Show password"}
             aria-controls={controlId}

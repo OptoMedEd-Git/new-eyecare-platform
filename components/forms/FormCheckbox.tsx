@@ -1,65 +1,61 @@
-import { Checkbox } from "flowbite-react";
 import type { ComponentProps, ReactNode } from "react";
-import { forwardRef } from "react";
 
-export interface FormCheckboxProps extends Omit<ComponentProps<typeof Checkbox>, "type" | "color"> {
+export interface FormCheckboxProps
+  extends Omit<ComponentProps<"input">, "type" | "name" | "id" | "defaultChecked"> {
   label: ReactNode;
   name: string;
-  /** When omitted, `name` is used for the control id (label `htmlFor`). */
+  /** When omitted, `name` is used. */
   id?: string;
   required?: boolean;
   defaultChecked?: boolean;
   error?: string;
 }
 
-export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
-  function FormCheckbox(
-    {
-      label,
-      name,
-      id,
-      required,
-      defaultChecked,
-      error,
-      className,
-      ...checkboxProps
-    },
-    ref
-  ) {
-    const controlId = id ?? name;
-    const errorId = `${controlId}-error`;
+export function FormCheckbox({
+  label,
+  name,
+  id,
+  required = false,
+  defaultChecked = false,
+  error,
+  className,
+  ...rest
+}: FormCheckboxProps) {
+  const controlId = id ?? name;
 
-    return (
-      <div className={className}>
-        <div className="flex gap-3">
-          <Checkbox
-            ref={ref}
+  return (
+    <div className={["flex flex-col gap-1", className].filter(Boolean).join(" ")}>
+      <label htmlFor={controlId} className="group flex cursor-pointer items-start gap-2">
+        <div className="relative mt-0.5 flex shrink-0 items-center justify-center">
+          <input
             id={controlId}
             name={name}
+            type="checkbox"
             required={required}
             defaultChecked={defaultChecked}
-            color={error ? "failure" : "default"}
-            className="mt-0.5 shrink-0"
-            aria-invalid={error ? "true" : undefined}
-            aria-required={required || undefined}
-            aria-describedby={error ? errorId : undefined}
-            {...checkboxProps}
+            aria-required={required}
+            aria-invalid={!!error}
+            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 bg-white checked:border-blue-600 checked:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-colors"
+            {...rest}
           />
-          <label
-            htmlFor={controlId}
-            className="cursor-pointer text-base leading-6 text-gray-700 select-none dark:text-gray-300"
+          <svg
+            className="pointer-events-none absolute h-3 w-3 text-white opacity-0 transition-opacity peer-checked:opacity-100"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+            aria-hidden
           >
-            {label}
-          </label>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
         </div>
-        {error ? (
-          <p id={errorId} className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
-);
+        <span className="text-sm font-normal text-gray-700 select-none [&_a]:font-medium [&_a]:text-brand [&_a:hover]:underline">
+          {label}
+        </span>
+      </label>
+      {error ? <p className="ml-6 text-sm text-red-600">{error}</p> : null}
+    </div>
+  );
+}
 
-FormCheckbox.displayName = "FormCheckbox";
+export default FormCheckbox;

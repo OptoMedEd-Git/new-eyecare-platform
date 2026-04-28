@@ -1,28 +1,8 @@
-import { TextInput } from "flowbite-react";
-import type { ComponentProps, FC, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { forwardRef } from "react";
 
-/** Adapts optional React icon nodes to Flowbite TextInput's `FC<SVG>` icon slot. */
-function iconNodeToFlowbiteIcon(node: ReactNode): FC<ComponentProps<"svg">> {
-  function IconSlot(props: ComponentProps<"svg">) {
-    return (
-      <span
-        className={`inline-flex size-4.5 shrink-0 items-center justify-center text-gray-500 dark:text-gray-400 [&>svg]:size-4.5 ${props.className ?? ""}`}
-        aria-hidden
-      >
-        {node}
-      </span>
-    );
-  }
-  IconSlot.displayName = "FormInputIconSlot";
-  return IconSlot;
-}
-
 export interface FormInputProps
-  extends Omit<
-    ComponentProps<typeof TextInput>,
-    "color" | "icon" | "rightIcon" | "addon" | "type" | "name" | "id"
-  > {
+  extends Omit<ComponentProps<"input">, "name" | "id" | "type" | "defaultValue"> {
   label: string;
   name: string;
   /** When omitted, `name` is used. Pass a unique id if the same name appears twice. */
@@ -50,8 +30,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       icon,
       defaultValue,
       className,
-      sizing = "md",
-      ...textInputProps
+      ...inputProps
     },
     ref
   ) {
@@ -75,22 +54,35 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             </span>
           ) : null}
         </label>
-        <TextInput
-          ref={ref}
-          id={controlId}
-          name={name}
-          type={type}
-          placeholder={placeholder}
-          required={required}
-          defaultValue={defaultValue}
-          sizing={sizing}
-          color={error ? "failure" : "gray"}
-          icon={icon ? iconNodeToFlowbiteIcon(icon) : undefined}
-          aria-invalid={error ? "true" : undefined}
-          aria-required={required || undefined}
-          aria-describedby={describedBy ? describedBy : undefined}
-          {...textInputProps}
-        />
+        <div className="relative">
+          {icon ? (
+            <span
+              className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 [&>svg]:size-4"
+              aria-hidden
+            >
+              {icon}
+            </span>
+          ) : null}
+          <input
+            ref={ref}
+            id={controlId}
+            name={name}
+            type={type}
+            placeholder={placeholder}
+            required={required}
+            defaultValue={defaultValue}
+            aria-invalid={error ? "true" : undefined}
+            aria-required={required || undefined}
+            aria-describedby={describedBy ? describedBy : undefined}
+            className={
+              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 text-sm placeholder:text-gray-400 outline-none ring-offset-0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 " +
+              (icon ? "pl-10 " : "") +
+              (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
+              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
+            }
+            {...inputProps}
+          />
+        </div>
         {error ? (
           <p id={errorId} className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
             {error}

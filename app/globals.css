@@ -10,6 +10,8 @@
   --brand-foreground: #ffffff;
   /* Figma token: colors/text/text-body */
   --text-body: #4a5565;
+  /* Figma token: colors/background/bg-secondary */
+  --secondary: #f9fafb;
 }
 
 @theme inline {
@@ -18,6 +20,7 @@
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-text-body: var(--text-body);
+  --color-secondary: var(--secondary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
