@@ -8,7 +8,7 @@ const ALLOWED_PROFESSIONS = new Set<string>(
   PROFESSION_OPTIONS.map((o) => o.value)
 );
 
-export type SignupResult = { success: true } | { error: string };
+export type SignupResult = { success: true; email: string } | { error: string };
 
 function getSiteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
@@ -114,5 +114,5 @@ export async function signup(formData: FormData): Promise<SignupResult> {
     return { error: "Something went wrong. Please try again." };
   }
 
-  return { success: true };
+  return { success: true, email };
 }

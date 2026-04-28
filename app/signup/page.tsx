@@ -69,7 +69,7 @@ export default function SignupPage() {
         setFormError(result.error);
         return;
       }
-      router.push("/signup/check-email");
+      router.push(`/signup/check-email?email=${encodeURIComponent(result.email)}`);
     } finally {
       setIsSubmitting(false);
     }
