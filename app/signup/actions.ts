@@ -1,6 +1,5 @@
 "use server";
 
-import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { PROFESSION_OPTIONS } from "./professions";
@@ -28,18 +27,6 @@ async function resolveSiteUrl(): Promise<string> {
   if (host) return `${proto}://${host}`;
 
   return "http://localhost:3000";
-}
-
-function createServiceRoleClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  return createSupabaseJsClient(url, key, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
 }
 
 function isValidEmail(email: string): boolean {
@@ -88,7 +75,7 @@ export async function signup(formData: FormData): Promise<SignupResult> {
 
   const supabase = await createClient();
 
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -127,38 +114,5 @@ export async function signup(formData: FormData): Promise<SignupResult> {
     return { error: "Something went wrong. Please try again." };
   }
 
-  const userId = signUpData.user?.id;
-  if (!userId) {
-    return { error: "Something went wrong. Please try again." };
-  }
-
-  const admin = createServiceRoleClient();
-
-  const profileRow = {
-    id: userId,
-    first_name: firstName,
-    last_name: lastName,
-    profession,
-    phone,
-    marketing_opt_in: marketingOptIn,
-    terms_accepted_at: new Date().toISOString(),
-  };
-
-  const insertClient = admin ?? supabase;
-  const { error: profileError } = await insertClient.from("profiles").insert(profileRow);
-
-  if (!profileError) {
-    return { success: true };
-  }
-
-  if (admin) {
-    await admin.auth.admin.deleteUser(userId);
-  }
-
-  console.error("Profile insert failed after signup:", profileError);
-
-  return {
-    error:
-      "We could not finish creating your profile. Please try again, or contact support if this continues.",
-  };
+  return { success: true };
 }
