@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Confirm your email</title>
+  </head>
+  <body style="margin:0;padding:0;background-color:#F9FAFB;">
+    <!-- Full-width background table -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#F9FAFB;margin:0;padding:0;width:100%;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <!-- Card container (max 600px) -->
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="450" style="width:600px;max-width:600px;background-color:#FFFFFF;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;">
+            <tr>
+              <td style="padding:40px;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                <!-- Wordmark -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+                      <span style="display:inline-block;width:10px;height:10px;background-color:#155DFC;border-radius:9999px;vertical-align:middle;margin-right:10px;"></span>
+                      <span style="font-weight:700;font-size:24px;line-height:28px;color:#1A2B5F;vertical-align:middle;">OptoMedEd</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 24px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="24" style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Heading -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;font-size:24px;line-height:32px;color:#1A2B5F;">
+                      Welcome to OptoMedEd!
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 16px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="16" style="height:16px;line-height:16px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Body copy -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:400;font-size:16px;line-height:24px;color:#4B5563;">
+                      Thanks for signing up. Please confirm your email address to activate your account and start exploring our eye care education platform.
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 32px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="32" style="height:32px;line-height:32px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Button (table-based) -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;">
+                        <tr>
+                          <td align="center" bgcolor="#155DFC" style="background-color:#155DFC;border-radius:8px;">
+                            <a href="{{ .ConfirmationURL }}"
+                               style="display:inline-block;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:600;font-size:16px;line-height:20px;color:#FFFFFF;text-decoration:none;padding:12px 24px;border-radius:8px;">
+                              Confirm email
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 24px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="24" style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Helper text + URL -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:400;font-size:14px;line-height:20px;color:#6B7280;">
+                      If the button doesn't work, copy and paste this link into your browser:
+                    </td>
+                  </tr>
+                  <tr>
+                    <td height="8" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:400;font-size:14px;line-height:20px;color:#155DFC;word-break:break-all;">
+                      <a href="{{ .ConfirmationURL }}" style="color:#155DFC;text-decoration:underline;word-break:break-all;">
+                        {{ .ConfirmationURL }}
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 40px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="40" style="height:40px;line-height:40px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Divider -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td style="border-top:1px solid #E5E7EB;font-size:0;line-height:0;">&nbsp;</td>
+                  </tr>
+                </table>
+
+                <!-- Spacer 24px -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr><td height="24" style="height:24px;line-height:24px;font-size:0;">&nbsp;</td></tr>
+                </table>
+
+                <!-- Footer -->
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:400;font-size:14px;line-height:20px;color:#6B7280;">
+                      If you didn't create an account, you can safely ignore this email.
+                    </td>
+                  </tr>
+                  <tr><td height="16" style="height:16px;line-height:16px;font-size:0;">&nbsp;</td></tr>
+                  <tr>
+                    <td align="left" style="font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-weight:400;font-size:12px;line-height:18px;color:#9CA3AF;">
+                      © 2026 OptoMedEd. All rights reserved.
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+          </table>
+          <!-- /Card container -->
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
