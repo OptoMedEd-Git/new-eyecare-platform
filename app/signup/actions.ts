@@ -71,7 +71,7 @@ export async function signup(formData: FormData): Promise<SignupResult> {
   }
 
   const siteUrl = await resolveSiteUrl();
-  const emailRedirectTo = `${siteUrl.replace(/\/$/, "")}/`;
+  const emailRedirectTo = `${siteUrl.replace(/\/$/, "")}/auth/callback`;
 
   const supabase = await createClient();
 
