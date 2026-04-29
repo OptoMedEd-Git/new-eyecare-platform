@@ -14,10 +14,10 @@ const NAV_LINKS = [
 ] as const;
 
 const navLinkClassName =
-  "rounded-md px-1 py-1 text-base font-medium leading-normal text-gray-500 transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:text-white";
+  "rounded-md px-1 py-1 text-sm font-medium leading-[1.5] text-text-body transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:text-white";
 
 const loginButtonClassName =
-  "border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-[var(--text-body)] shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] hover:bg-gray-50 focus:ring-brand dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700";
+  "border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium text-text-body shadow-xs hover:bg-gray-50 focus:ring-brand dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700";
 
 const signupButtonClassName =
   "border-0 bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] hover:bg-brand/90 focus:ring-brand";
@@ -63,11 +63,11 @@ function SearchButton({ className }: { className?: string }) {
       aria-label="Search"
       onClick={() => console.log("search clicked")}
       className={
-        "inline-flex size-6 shrink-0 items-center justify-center rounded-xl text-gray-600 transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800" +
+        "inline-flex size-6 shrink-0 items-center justify-center rounded-xl text-text-body transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800" +
         (className ? ` ${className}` : "")
       }
     >
-      <SearchIcon className="size-5" />
+      <SearchIcon className="size-4" />
     </button>
   );
 }
@@ -85,10 +85,10 @@ export function MarketingNav() {
       aria-label="Marketing"
     >
       <div className="mx-auto w-full max-w-7xl">
-        <div className="flex h-[65px] items-center gap-3 px-[22px] md:gap-[17px]">
+        <div className="flex h-[65px] items-center gap-6 px-5">
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-1.5 no-underline hover:no-underline"
+            className="flex shrink-0 items-center gap-1 pl-[2px] pr-[6px] py-[2px] no-underline hover:no-underline"
           >
             <Image
               src="/logos/logo.svg"
@@ -98,13 +98,13 @@ export function MarketingNav() {
               className="size-[30px] shrink-0"
               unoptimized
             />
-            <span className="text-2xl font-bold tracking-[0.48px] text-slate-700 dark:text-slate-200">
+            <span className="text-2xl font-semibold text-[#101828] dark:text-slate-200">
               OptoMedEd
             </span>
           </Link>
 
-          <div className="hidden min-w-0 flex-1 items-center justify-center gap-5 md:flex">
-            <nav className="flex items-center gap-5" aria-label="Main">
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-6 md:flex">
+            <nav className="flex items-center gap-6" aria-label="Main">
               {NAV_LINKS.map(({ href, label }) => (
                 <Link key={href} href={href} className={navLinkClassName}>
                   {label}
@@ -121,7 +121,7 @@ export function MarketingNav() {
               color="light"
               className={loginButtonClassName}
             >
-              Log In
+              Login
             </Button>
             <Button as={Link} href="/signup" className={signupButtonClassName}>
               Sign Up
@@ -149,7 +149,7 @@ export function MarketingNav() {
             mobileOpen ? "block" : "hidden"
           }`}
         >
-          <nav className="flex flex-col px-[22px] pt-3 pb-1" aria-label="Mobile">
+          <nav className="flex flex-col px-5 pt-3 pb-1" aria-label="Mobile">
             {NAV_LINKS.map(({ href, label }) => (
               <Link
                 key={href}
@@ -164,7 +164,7 @@ export function MarketingNav() {
               <SearchButton />
             </div>
           </nav>
-          <div className="flex flex-col gap-2.5 px-[22px] pb-4 pt-2">
+          <div className="flex flex-col gap-2.5 px-5 pb-4 pt-2">
             <Button
               as={Link}
               href="/login"
@@ -172,7 +172,7 @@ export function MarketingNav() {
               className={loginButtonClassName + " w-full justify-center"}
               onClick={() => setMobileOpen(false)}
             >
-              Log In
+              Login
             </Button>
             <Button
               as={Link}
