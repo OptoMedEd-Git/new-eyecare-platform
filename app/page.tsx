@@ -1,4 +1,5 @@
 import { Hero } from "@/components/landing/Hero";
+import { ToolsGrid } from "@/components/landing/ToolsGrid";
 import Link from "next/link";
 
 const featuredPosts = [
@@ -42,10 +43,9 @@ export default function Home() {
     <>
       <Hero />
 
-      <section
-        id="tools"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8"
-      >
+      <ToolsGrid />
+
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-10 flex items-end justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
