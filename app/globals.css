@@ -2,6 +2,12 @@
 @import "flowbite-react/plugin/tailwindcss";
 @source "../.flowbite-react/class-list.json";
 
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

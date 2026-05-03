@@ -99,9 +99,9 @@ const SOCIAL_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="bg-white font-sans dark:bg-gray-900">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-12 pt-16 pb-8">
+    <footer className="w-full overflow-hidden bg-white font-sans dark:bg-gray-900">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16 lg:px-8">
+        <div className="flex flex-col gap-12">
           <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:gap-24">
             <div className="flex max-w-md flex-col gap-6 lg:h-[220px] lg:w-96 lg:max-w-none lg:shrink-0">
               <Link
