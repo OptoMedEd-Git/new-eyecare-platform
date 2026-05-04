@@ -150,12 +150,12 @@ function LoginPageInner() {
                   value="true"
                   label={<span className="text-sm font-normal text-text-body">Remember me</span>}
                 />
-                <a
+                <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-brand hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                  className="text-sm font-medium text-brand transition-colors duration-200 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
 
               <button
