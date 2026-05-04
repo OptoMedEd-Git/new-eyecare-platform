@@ -17,7 +17,7 @@ import { FaXTwitter } from "react-icons/fa6";
 import { getProfessionAudiencePlural, getProfessionProfileLabel } from "@/lib/professionDisplay";
 import { createClient } from "@/lib/supabase/server";
 
-import { logout } from "./actions";
+import { logout } from "@/app/auth-actions";
 
 const cardClassName =
   "rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600";

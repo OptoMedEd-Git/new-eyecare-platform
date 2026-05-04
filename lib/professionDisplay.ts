@@ -1,4 +1,4 @@
-import { PROFESSION_OPTIONS } from "@/app/signup/professions";
+import { PROFESSION_OPTIONS } from "@/app/(auth)/signup/professions";
 
 /** Maps stored `profession` values to plural audience copy for marketing-style sentences. */
 const PROFESSION_TO_AUDIENCE_PLURAL: Record<string, string> = {

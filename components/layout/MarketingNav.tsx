@@ -1,9 +1,14 @@
 "use client";
 
+import { AppsGridButton } from "@/components/layout/AppsGridButton";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { UserDropdown } from "@/components/layout/UserDropdown";
+import { createClient } from "@/lib/supabase/client";
+import type { NavUser } from "@/lib/auth/nav-user";
 import { Button, Navbar } from "flowbite-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useId, useState, type ComponentProps } from "react";
+import { useEffect, useId, useState, type ComponentProps } from "react";
 
 const NAV_LINKS = [
   { href: "/about", label: "About" },
@@ -48,6 +53,7 @@ function MenuIcon(props: ComponentProps<"svg">) {
       stroke="currentColor"
       strokeWidth="2"
       strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
       {...props}
     >
@@ -63,7 +69,7 @@ function SearchButton({ className }: { className?: string }) {
       aria-label="Search"
       onClick={() => console.log("search clicked")}
       className={
-        "inline-flex size-6 shrink-0 items-center justify-center rounded-xl text-text-body transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white" +
+        "inline-flex size-9 shrink-0 items-center justify-center rounded-xl text-text-body transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white" +
         (className ? ` ${className}` : "")
       }
     >
@@ -72,9 +78,58 @@ function SearchButton({ className }: { className?: string }) {
   );
 }
 
-export function MarketingNav() {
+async function fetchNavUserFromSession(): Promise<NavUser | null> {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.email) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name, profession")
+    .eq("id", user.id)
+    .maybeSingle();
+  const metaFirst = (user.user_metadata?.first_name as string | undefined)?.trim() ?? "";
+  const metaLast = (user.user_metadata?.last_name as string | undefined)?.trim() ?? "";
+  return {
+    email: user.email,
+    firstName: profile?.first_name?.trim() ?? metaFirst,
+    lastName: profile?.last_name?.trim() ?? metaLast,
+    profession: profile?.profession ?? null,
+  };
+}
+
+export type MarketingNavProps = {
+  initialUser: NavUser | null;
+};
+
+export function MarketingNav({ initialUser }: MarketingNavProps) {
+  const [user, setUser] = useState<NavUser | null>(initialUser);
   const [mobileOpen, setMobileOpen] = useState(false);
   const mobilePanelId = useId();
+
+  useEffect(() => {
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user?.email) {
+        setUser(null);
+        return;
+      }
+      const next = await fetchNavUserFromSession();
+      setUser(next);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loggedInActions = user ? (
+    <>
+      <AppsGridButton />
+      <NotificationBell />
+      <UserDropdown user={user} />
+    </>
+  ) : null;
 
   return (
     <Navbar
@@ -85,7 +140,7 @@ export function MarketingNav() {
       aria-label="Marketing"
     >
       <div className="mx-auto w-full max-w-7xl">
-        <div className="flex h-[65px] items-center gap-6 px-5">
+        <div className="flex h-[65px] items-center gap-4 px-5">
           <Link
             href="/"
             className="flex shrink-0 items-center gap-1 pl-[2px] pr-[6px] py-[2px] no-underline hover:no-underline"
@@ -114,25 +169,34 @@ export function MarketingNav() {
             <SearchButton />
           </div>
 
-          <div className="hidden shrink-0 items-center gap-2.5 md:flex">
-            <Button
-              as={Link}
-              href="/login"
-              color="light"
-              className={loginButtonClassName}
-            >
-              Login
-            </Button>
-            <Button as={Link} href="/signup" className={signupButtonClassName}>
-              Sign Up
-            </Button>
+          <div className="hidden shrink-0 items-center gap-2 md:flex">
+            {user ? (
+              loggedInActions
+            ) : (
+              <>
+                <Button
+                  as={Link}
+                  href="/login"
+                  color="light"
+                  className={loginButtonClassName}
+                >
+                  Login
+                </Button>
+                <Button as={Link} href="/signup" className={signupButtonClassName}>
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
-          <div className="ml-auto flex items-center gap-1 md:hidden">
+          <div className="ml-auto flex items-center gap-0.5 md:hidden">
             <SearchButton />
+            {user ? (
+              <div className="flex items-center gap-0.5">{loggedInActions}</div>
+            ) : null}
             <button
               type="button"
-              className="inline-flex items-center rounded-lg p-2 text-sm text-gray-500 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-gray-700"
+              className="inline-flex items-center rounded-lg p-2 text-sm text-gray-500 transition-colors duration-200 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:bg-gray-700"
               aria-label={mobileOpen ? "Close main menu" : "Open main menu"}
               aria-expanded={mobileOpen}
               aria-controls={mobilePanelId}
@@ -164,25 +228,27 @@ export function MarketingNav() {
               <SearchButton />
             </div>
           </nav>
-          <div className="flex flex-col gap-2.5 px-5 pb-4 pt-2">
-            <Button
-              as={Link}
-              href="/login"
-              color="light"
-              className={loginButtonClassName + " w-full justify-center"}
-              onClick={() => setMobileOpen(false)}
-            >
-              Login
-            </Button>
-            <Button
-              as={Link}
-              href="/signup"
-              className={signupButtonClassName + " w-full justify-center"}
-              onClick={() => setMobileOpen(false)}
-            >
-              Sign Up
-            </Button>
-          </div>
+          {!user ? (
+            <div className="flex flex-col gap-2.5 px-5 pb-4 pt-2">
+              <Button
+                as={Link}
+                href="/login"
+                color="light"
+                className={loginButtonClassName + " w-full justify-center"}
+                onClick={() => setMobileOpen(false)}
+              >
+                Login
+              </Button>
+              <Button
+                as={Link}
+                href="/signup"
+                className={signupButtonClassName + " w-full justify-center"}
+                onClick={() => setMobileOpen(false)}
+              >
+                Sign Up
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
     </Navbar>
