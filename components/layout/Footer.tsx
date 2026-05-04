@@ -42,12 +42,12 @@ function FooterColumn({ title, links }: { title: string; links: readonly FooterL
 }
 
 const PLATFORM_LINKS: readonly FooterLink[] = [
-  { label: "Pathways" },
-  { label: "Courses" },
-  { label: "Quiz Bank" },
-  { label: "Flashcards" },
-  { label: "Encyclopedia" },
-  { label: "Cases" },
+  { label: "Pathways", href: "/pathways" },
+  { label: "Courses", href: "/courses" },
+  { label: "Quiz Bank", href: "/quiz-bank" },
+  { label: "Flashcards", href: "/flashcards" },
+  { label: "Encyclopedia", href: "/encyclopedia" },
+  { label: "Cases", href: "/cases" },
 ];
 
 const RESOURCES_LINKS: readonly FooterLink[] = [
