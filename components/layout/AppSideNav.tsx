@@ -10,6 +10,7 @@ import {
   Lightbulb,
   Route,
 } from "lucide-react";
+import { APP_NAV_HEIGHT_PX } from "@/lib/layout/app-shell";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { forwardRef } from "react";
@@ -55,13 +56,24 @@ export const AppSideNav = forwardRef<HTMLElement, AppSideNavProps>(
           : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/80",
       ].join(" ");
 
+    const navTopPx = APP_NAV_HEIGHT_PX;
+    const shellTopStyle = { top: `${navTopPx}px` } as const;
+    const shellHeightStyle = { height: `calc(100vh - ${navTopPx}px)` } as const;
+
+    const backdropClass =
+      "fixed inset-x-0 bottom-0 z-[32] transition-opacity duration-200 ease-out " +
+      (!isOpen
+        ? "pointer-events-none opacity-0"
+        : isLocked
+          ? "bg-black/40 opacity-100 max-md:pointer-events-auto md:pointer-events-none md:bg-transparent md:opacity-0"
+          : "pointer-events-none bg-black/20 opacity-100");
+
     return (
       <>
-        {/* Backdrop: interactive only when locked; lighter tint for hover preview */}
+        {/* Hover preview: subtle overlay. Locked on md+: hidden so main margin shows clean layout; locked on mobile: dim + tap to close. */}
         <div
-          className={`fixed inset-x-0 bottom-0 top-[65px] z-30 transition-opacity duration-200 ease-out ${
-            isOpen ? "opacity-100" : "pointer-events-none opacity-0"
-          } ${isLocked ? "pointer-events-auto bg-black/40" : "pointer-events-none bg-black/20"}`}
+          className={backdropClass}
+          style={shellTopStyle}
           aria-hidden
           onClick={isLocked ? onBackdropClick : undefined}
         />
@@ -73,7 +85,8 @@ export const AppSideNav = forwardRef<HTMLElement, AppSideNavProps>(
           aria-label="Main navigation"
           onMouseEnter={onSidebarPointerEnter}
           onMouseLeave={onSidebarPointerLeave}
-          className={`fixed left-0 top-[65px] z-40 flex h-[calc(100vh-65px)] w-[min(280px,100%-1rem)] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-out dark:border-gray-700 dark:bg-gray-900 sm:max-w-none sm:w-[280px] ${
+          style={{ ...shellTopStyle, ...shellHeightStyle }}
+          className={`fixed left-0 z-[42] flex w-[min(280px,100%-1rem)] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-out dark:border-gray-700 dark:bg-gray-900 sm:max-w-none sm:w-[280px] ${
             isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
           }`}
         >

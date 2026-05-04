@@ -2,6 +2,8 @@
 
 import type { NavUser } from "@/lib/auth/nav-user";
 import { AppSideNav } from "@/components/layout/AppSideNav";
+import { useSideNav } from "@/lib/contexts/SideNavContext";
+import { APP_NAV_HEIGHT_PX } from "@/lib/layout/app-shell";
 import { AppsGridButton } from "@/components/layout/AppsGridButton";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { UserDropdown } from "@/components/layout/UserDropdown";
@@ -17,7 +19,7 @@ type AppNavProps = {
 };
 
 export function AppNav({ user }: AppNavProps) {
-  const [locked, setLocked] = useState(false);
+  const { isLocked: locked, setLocked } = useSideNav();
   const [hoverActive, setHoverActive] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lockedRef = useRef(false);
@@ -74,12 +76,12 @@ export function AppNav({ user }: AppNavProps) {
       clearCloseTimer();
       return next;
     });
-  }, [clearCloseTimer]);
+  }, [clearCloseTimer, setLocked]);
 
   const closeLocked = useCallback(() => {
     setLocked(false);
     clearCloseTimer();
-  }, [clearCloseTimer]);
+  }, [clearCloseTimer, setLocked]);
 
   const onBackdropClick = useCallback(() => {
     if (locked) {
@@ -91,7 +93,7 @@ export function AppNav({ user }: AppNavProps) {
     setLocked(false);
     setHoverActive(false);
     clearCloseTimer();
-  }, [clearCloseTimer]);
+  }, [clearCloseTimer, setLocked]);
 
   // Click outside (locked): close when target is not hamburger or sidebar
   useEffect(() => {
@@ -107,7 +109,7 @@ export function AppNav({ user }: AppNavProps) {
 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [locked, clearCloseTimer]);
+  }, [locked, clearCloseTimer, setLocked]);
 
   // Escape closes drawer in both hover preview and locked states
   useEffect(() => {
@@ -124,12 +126,15 @@ export function AppNav({ user }: AppNavProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, clearCloseTimer]);
+  }, [isOpen, clearCloseTimer, setLocked]);
 
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white font-sans dark:border-gray-800 dark:bg-gray-900">
-        <div className="mx-auto flex h-[65px] max-w-7xl items-center gap-4 px-5">
+        <div
+          className="mx-auto flex max-w-7xl items-center gap-4 px-5"
+          style={{ height: APP_NAV_HEIGHT_PX, minHeight: APP_NAV_HEIGHT_PX }}
+        >
           <button
             ref={hamburgerRef}
             type="button"
