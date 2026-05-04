@@ -1,3 +1,4 @@
+import { FAQ } from "@/components/landing/FAQ";
 import { FinalCTA } from "@/components/landing/FinalCTA";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Hero } from "@/components/landing/Hero";
@@ -51,6 +52,8 @@ export default function Home() {
       <WhoItsFor />
 
       <HowItWorks />
+
+      <FAQ />
 
       <FinalCTA />
 
