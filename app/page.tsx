@@ -1,4 +1,5 @@
 import { FinalCTA } from "@/components/landing/FinalCTA";
+import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Hero } from "@/components/landing/Hero";
 import { ToolsGrid } from "@/components/landing/ToolsGrid";
 import { WhoItsFor } from "@/components/landing/WhoItsFor";
@@ -48,6 +49,10 @@ export default function Home() {
       <ToolsGrid />
 
       <WhoItsFor />
+
+      <HowItWorks />
+
+      <FinalCTA />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-10 flex items-end justify-between">
@@ -110,8 +115,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      <FinalCTA />
     </>
   );
 }
