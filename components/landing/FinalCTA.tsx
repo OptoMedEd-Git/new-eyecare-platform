@@ -39,10 +39,10 @@ export function FinalCTA() {
           </p>
           <Link
             href="/signup"
-            className="inline-flex min-h-11 min-w-44 items-center justify-center gap-2 self-center rounded-lg bg-brand px-5 py-3 text-base font-medium leading-normal text-brand-foreground shadow-sm transition-colors hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(17,25,40,0.85)]"
+            className="inline-flex min-h-11 min-w-44 items-center justify-center gap-2 self-center rounded-lg bg-brand px-5 py-3 text-base font-medium leading-normal text-brand-foreground shadow-sm transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(17,25,40,0.85)]"
           >
             Get started
-            <ArrowRight className="size-4 shrink-0" aria-hidden />
+            <ArrowRight className="size-4 shrink-0 transition-colors duration-200" aria-hidden />
           </Link>
         </div>
       </div>

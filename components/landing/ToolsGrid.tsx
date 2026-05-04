@@ -100,7 +100,7 @@ function lgColSpanClass(span: 2 | 3) {
 function ToolCard({ card }: { card: ToolCard }) {
   return (
     <article
-      className={`flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800 ${lgColSpanClass(card.lgColSpan)}`}
+      className={`group flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600 ${lgColSpanClass(card.lgColSpan)}`}
     >
       <div className="flex min-h-[140px] flex-1 flex-col items-center justify-center pb-5">
         <Image
@@ -109,7 +109,7 @@ function ToolCard({ card }: { card: ToolCard }) {
           width={280}
           height={180}
           sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
-          className="h-auto max-h-[180px] w-full max-w-[280px] object-contain"
+          className="h-auto max-h-[180px] w-full max-w-[280px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
         />
       </div>
       <h3 className="text-center text-lg font-semibold leading-7 text-[#101828] dark:text-white">

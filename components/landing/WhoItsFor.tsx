@@ -79,9 +79,9 @@ const PERSONAS: readonly Persona[] = [
 function PersonaCard({ persona }: { persona: Persona }) {
   const { Icon, title, description } = persona;
   return (
-    <article className="flex h-full min-w-0 flex-col rounded-xl border border-gray-200 bg-secondary p-5 dark:border-gray-700 dark:bg-gray-900/60">
+    <article className="group flex h-full min-w-0 flex-col rounded-xl border border-gray-200 bg-secondary p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/60 dark:hover:border-gray-600">
       <div className="flex min-h-0 flex-1 gap-2">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 transition-colors duration-200 group-hover:text-brand dark:bg-blue-950/50 dark:text-blue-400 dark:group-hover:text-brand">
           <Icon className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
         </div>
         <div className="min-w-0 flex-1 border-l border-gray-200 pl-3.5 dark:border-gray-600">

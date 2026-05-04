@@ -9,7 +9,7 @@ export type FooterLink = {
 };
 
 const CLICKABLE_LINK_CLASS =
-  "cursor-pointer text-base leading-6 text-gray-700 transition-colors hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400";
+  "cursor-pointer text-base leading-6 text-gray-700 transition-colors duration-150 hover:text-brand dark:text-gray-300 dark:hover:text-brand";
 
 const DISABLED_LINK_CLASS =
   "text-base leading-6 text-gray-400 dark:text-gray-500 cursor-default";
@@ -131,7 +131,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`${label} (opens in a new tab)`}
-                    className="text-gray-500 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                    className="text-gray-500 transition-colors duration-200 hover:text-brand dark:text-gray-400 dark:hover:text-brand"
                   >
                     <Icon size={18} aria-hidden />
                   </a>

@@ -14,13 +14,13 @@ const NAV_LINKS = [
 ] as const;
 
 const navLinkClassName =
-  "rounded-md px-1 py-1 text-sm font-medium leading-[1.5] text-text-body transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:text-white";
+  "rounded-md px-1 py-1 text-sm font-medium leading-[1.5] text-text-body transition-colors duration-150 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-400 dark:hover:text-brand";
 
 const loginButtonClassName =
-  "border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium text-text-body shadow-xs hover:bg-gray-50 focus:ring-brand dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700";
+  "border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-all duration-200 hover:border-gray-300 hover:bg-gray-100 focus:ring-brand active:translate-y-0 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-700";
 
 const signupButtonClassName =
-  "border-0 bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] hover:bg-brand/90 focus:ring-brand";
+  "border-0 bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus:ring-brand";
 
 function SearchIcon(props: ComponentProps<"svg">) {
   return (
@@ -63,7 +63,7 @@ function SearchButton({ className }: { className?: string }) {
       aria-label="Search"
       onClick={() => console.log("search clicked")}
       className={
-        "inline-flex size-6 shrink-0 items-center justify-center rounded-xl text-text-body transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800" +
+        "inline-flex size-6 shrink-0 items-center justify-center rounded-xl text-text-body transition-colors duration-200 hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white" +
         (className ? ` ${className}` : "")
       }
     >

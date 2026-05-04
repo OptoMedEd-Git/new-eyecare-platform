@@ -99,17 +99,17 @@ export function HowItWorks() {
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 href="/signup"
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-brand-foreground shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-colors hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-brand-foreground shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
               >
                 Sign up
-                <ArrowRight className="size-4 shrink-0" aria-hidden />
+                <ArrowRight className="size-4 shrink-0 transition-colors duration-200" aria-hidden />
               </Link>
               <Link
                 href="/about"
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium leading-5 text-text-body shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-950"
+                className="group inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium leading-5 text-text-body shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-colors duration-200 hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-950"
               >
                 Learn more
-                <ArrowRight className="size-4 shrink-0" aria-hidden />
+                <ArrowRight className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
               </Link>
             </div>
           </div>

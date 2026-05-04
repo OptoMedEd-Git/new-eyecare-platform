@@ -35,7 +35,7 @@ export function FormCheckbox({
             defaultChecked={defaultChecked}
             aria-required={required}
             aria-invalid={!!error}
-            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 bg-white checked:border-blue-600 checked:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-colors"
+            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 bg-white transition-all duration-150 hover:border-gray-400 checked:border-blue-600 checked:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 dark:hover:border-gray-500"
             {...rest}
           />
           <svg
@@ -49,7 +49,7 @@ export function FormCheckbox({
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <span className="text-sm font-normal text-gray-700 select-none [&_a]:font-medium [&_a]:text-brand [&_a:hover]:underline">
+        <span className="text-sm font-normal text-gray-700 select-none [&_a]:font-medium [&_a]:text-brand [&_a]:transition-colors [&_a]:duration-150 [&_a:hover]:underline">
           {label}
         </span>
       </label>

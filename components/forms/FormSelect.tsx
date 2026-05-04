@@ -173,7 +173,7 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
               }
             }}
             className={
-              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pr-10 text-left text-sm placeholder:text-gray-400 outline-none ring-offset-0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 " +
+              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pr-10 text-left text-sm placeholder:text-gray-400 outline-none ring-offset-0 transition-all duration-150 hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:hover:border-gray-600 " +
               (icon ? "pl-10 " : "") +
               (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
               "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"

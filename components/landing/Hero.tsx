@@ -67,16 +67,17 @@ export function Hero() {
             <div className="flex flex-wrap items-start gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-3 text-base font-medium leading-6 text-brand-foreground shadow-xs transition-colors hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-3 text-base font-medium leading-6 text-brand-foreground shadow-xs transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
               >
                 Join for free
               </Link>
 
               <Link
                 href="#tools"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-3 text-base font-medium leading-6 text-brand transition-colors hover:bg-brand/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="group inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-3 text-base font-medium leading-6 text-brand transition-colors duration-200 hover:bg-brand/5 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:hover:text-blue-300"
               >
-                Learn more <ArrowRightIcon className="size-4" />
+                Learn more{" "}
+                <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
             </div>
           </div>

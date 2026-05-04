@@ -76,7 +76,7 @@ export const FormPasswordInput = forwardRef<HTMLInputElement, FormPasswordInputP
             aria-required={required || undefined}
             aria-describedby={describedBy ? describedBy : undefined}
             className={
-              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pl-10 pr-10 text-sm placeholder:text-gray-400 outline-none ring-offset-0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 " +
+              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pl-10 pr-10 text-sm placeholder:text-gray-400 outline-none ring-offset-0 transition-all duration-150 hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:hover:border-gray-600 " +
               (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
               "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
             }
@@ -84,7 +84,7 @@ export const FormPasswordInput = forwardRef<HTMLInputElement, FormPasswordInputP
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="absolute right-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 transition-colors duration-200 hover:text-gray-600 focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:hover:text-gray-300"
             onClick={() => setVisible((v) => !v)}
             aria-label={visible ? "Hide password" : "Show password"}
             aria-controls={controlId}
