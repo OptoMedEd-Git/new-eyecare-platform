@@ -1,3 +1,4 @@
+import { FinalCTA } from "@/components/landing/FinalCTA";
 import { Hero } from "@/components/landing/Hero";
 import { ToolsGrid } from "@/components/landing/ToolsGrid";
 import Link from "next/link";
@@ -106,6 +107,8 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      <FinalCTA />
     </>
   );
 }
