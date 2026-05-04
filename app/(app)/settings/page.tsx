@@ -1,10 +1,5 @@
-import { ComingSoonPage } from "@/components/layout/ComingSoonPage";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
-  return (
-    <ComingSoonPage
-      title="Settings"
-      description="Edit your profile, manage email preferences, and account settings. Coming soon."
-    />
-  );
+export default function SettingsIndexPage() {
+  redirect("/settings/account");
 }
