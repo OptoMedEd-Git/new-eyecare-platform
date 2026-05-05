@@ -45,11 +45,11 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       <div className={className}>
         <label
           htmlFor={controlId}
-          className="mb-2 block text-sm font-medium leading-5 text-gray-900 dark:text-gray-100"
+          className="mb-2 block text-sm font-medium leading-5 text-text-heading dark:text-text-inverse"
         >
           {label}
           {required ? (
-            <span className="ml-0.5 text-red-600" aria-hidden="true">
+            <span className="ml-0.5 text-text-fg-danger" aria-hidden="true">
               *
             </span>
           ) : null}
@@ -57,7 +57,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         <div className="relative">
           {icon ? (
             <span
-              className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 [&>svg]:size-4"
+              className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-text-placeholder [&>svg]:size-4"
               aria-hidden
             >
               {icon}
@@ -75,20 +75,22 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             aria-required={required || undefined}
             aria-describedby={describedBy ? describedBy : undefined}
             className={
-              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 text-sm placeholder:text-gray-400 outline-none ring-offset-0 transition-all duration-150 hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:hover:border-gray-600 " +
+              "h-[42px] w-full rounded-lg border bg-bg-primary px-3 py-2.5 text-sm text-text-body placeholder:text-text-placeholder outline-none ring-offset-0 transition-all duration-150 hover:border-border-default-medium focus:border-border-brand focus:ring-2 focus:ring-ring-brand dark:hover:border-border-default-medium " +
               (icon ? "pl-10 " : "") +
-              (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
-              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-400"
+              (error
+                ? "border-border-danger focus:border-border-danger focus:ring-2 focus:ring-ring-danger "
+                : "border-border-default ") +
+              "dark:border-border-default-medium dark:bg-bg-inverse-medium dark:text-text-inverse dark:placeholder:text-text-placeholder"
             }
             {...inputProps}
           />
         </div>
         {error ? (
-          <p id={errorId} className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p id={errorId} className="mt-2 text-sm text-text-fg-danger dark:text-text-fg-danger" role="alert">
             {error}
           </p>
         ) : helperText ? (
-          <p id={helperId} className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          <p id={helperId} className="mt-2 text-sm text-text-muted dark:text-text-placeholder">
             {helperText}
           </p>
         ) : null}

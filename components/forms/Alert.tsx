@@ -17,26 +17,26 @@ const VARIANT_STYLES: Record<
   { surface: string; iconClassName: string; Icon: typeof AlertCircle; role: "alert" | "status" }
 > = {
   error: {
-    surface: "rounded-lg border border-red-200 bg-red-50 p-4 text-red-800",
-    iconClassName: "text-red-600",
+    surface: "rounded-lg border border-border-danger-subtle bg-bg-danger-softer p-4 text-text-fg-danger-strong",
+    iconClassName: "text-text-fg-danger",
     Icon: AlertCircle,
     role: "alert",
   },
   warning: {
-    surface: "rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800",
-    iconClassName: "text-amber-600",
+    surface: "rounded-lg border border-border-warning-subtle bg-bg-warning-softer p-4 text-text-fg-warning-strong",
+    iconClassName: "text-text-fg-warning",
     Icon: AlertTriangle,
     role: "alert",
   },
   success: {
-    surface: "rounded-lg border border-green-200 bg-green-50 p-4 text-green-800",
-    iconClassName: "text-green-600",
+    surface: "rounded-lg border border-border-success-subtle bg-bg-success-softer p-4 text-text-fg-success-strong",
+    iconClassName: "text-text-fg-success",
     Icon: CheckCircle2,
     role: "status",
   },
   info: {
-    surface: "rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-800",
-    iconClassName: "text-blue-600",
+    surface: "rounded-lg border border-border-info-subtle bg-bg-info-softer p-4 text-text-fg-info-strong",
+    iconClassName: "text-text-fg-info",
     Icon: Info,
     role: "status",
   },
@@ -57,7 +57,7 @@ export function Alert({ variant, title, message, onDismiss }: AlertProps) {
         <button
           type="button"
           onClick={onDismiss}
-          className="ml-auto inline-flex size-6 items-center justify-center rounded-md text-current/70 hover:bg-black/5 hover:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          className="ml-auto inline-flex size-6 items-center justify-center rounded-md text-current/70 hover:bg-black/5 hover:text-current focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring-brand"
           aria-label="Dismiss"
         >
           <X className="size-4" aria-hidden />

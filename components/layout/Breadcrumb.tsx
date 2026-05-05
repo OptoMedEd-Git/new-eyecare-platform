@@ -11,7 +11,7 @@ type BreadcrumbProps = {
 };
 
 const linkClass =
-  "inline-flex items-center gap-1 text-gray-500 transition-colors duration-200 hover:text-brand dark:text-gray-400 dark:hover:text-brand";
+  "inline-flex items-center gap-1 text-text-muted transition-colors duration-200 hover:text-text-fg-brand dark:text-text-placeholder dark:hover:text-text-fg-brand";
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
   return (
@@ -21,7 +21,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
           return (
             <li key={`${item.label}-${index}`} className="flex items-center gap-1.5">
               {index > 0 ? (
-                <ChevronRight className="size-4 shrink-0 text-gray-400" aria-hidden strokeWidth={2} />
+                <ChevronRight className="size-4 shrink-0 text-text-placeholder" aria-hidden strokeWidth={2} />
               ) : null}
               {item.href ? (
                 <Link href={item.href} className={linkClass}>
@@ -36,7 +36,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 </Link>
               ) : (
                 <span
-                  className="font-medium text-gray-800 dark:text-gray-200"
+                  className="font-medium text-text-heading dark:text-text-inverse"
                   aria-current="page"
                 >
                   {item.label}

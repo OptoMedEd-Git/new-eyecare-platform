@@ -16,8 +16,8 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
 
   return (
     <Link href={`/blog/${post.slug}`} className="group block">
-      <article className="relative flex w-full flex-col items-start gap-6 overflow-hidden rounded-[12px] border border-solid border-[#e5e7eb] bg-background p-6 shadow-[0px_1px_2px_0px_rgba(29,41,61,0.05)] transition-shadow duration-300 group-hover:shadow-md">
-        <div className="relative h-[208px] w-full shrink-0 overflow-hidden rounded-[16px] bg-[#f3f4f6]">
+      <article className="relative flex w-full flex-col items-start gap-6 overflow-hidden rounded-base border border-solid border-border-default bg-bg-primary-soft p-6 shadow-xs transition-shadow duration-300 group-hover:shadow-md">
+        <div className="relative h-[208px] w-full shrink-0 overflow-hidden rounded-lg bg-bg-tertiary">
           {post.cover_image_url ? (
             <Image
               src={post.cover_image_url}
@@ -30,25 +30,25 @@ export function BlogPostCard({ post }: BlogPostCardProps) {
         </div>
 
         <div className="flex w-full shrink-0 flex-col items-start gap-4">
-          <div className="relative flex shrink-0 items-center justify-center gap-1 rounded-[6px] border border-[#bedbff] bg-[#eef6ff] px-1.5 py-0.5">
-            <Tag className="size-3 shrink-0 text-brand" aria-hidden />
-            <p className="whitespace-nowrap text-center text-xs font-medium leading-[16px] text-brand">{post.category.name}</p>
+          <div className="relative flex shrink-0 items-center justify-center gap-1 rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-1.5 py-0.5">
+            <Tag className="size-3 shrink-0 text-text-fg-brand-strong" aria-hidden />
+            <p className="whitespace-nowrap text-center text-xs font-medium leading-[16px] text-text-fg-brand-strong">{post.category.name}</p>
           </div>
 
           <div className="flex w-full shrink-0 flex-col items-start gap-2">
-            <p className="w-full text-[24px] font-semibold leading-[1.25] text-[#101828]">{post.title}</p>
+            <p className="w-full text-[24px] font-semibold leading-[1.25] text-text-heading">{post.title}</p>
             <p className="w-full line-clamp-2 text-[16px] font-normal leading-[24px] text-text-body">{post.description}</p>
           </div>
 
           <div className="relative flex shrink-0 items-center gap-2">
             <div
-              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-brand-foreground"
+              className="flex size-8 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-text-on-brand"
               aria-hidden
             >
               {authorInitials(post.author)}
             </div>
             <div className="flex min-w-0 flex-col gap-1.5 whitespace-nowrap">
-              <p className="text-[16px] font-medium leading-[16px] text-[#101828]">{authorDisplayName(post.author)}</p>
+              <p className="text-[16px] font-medium leading-[16px] text-text-heading">{authorDisplayName(post.author)}</p>
               <p className="text-[14px] font-normal leading-[14px] text-text-body">{metaLine}</p>
             </div>
           </div>

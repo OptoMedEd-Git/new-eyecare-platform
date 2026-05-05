@@ -105,11 +105,11 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
       <div className={className} ref={rootRef}>
         <label
           htmlFor={controlId}
-          className="mb-2 block text-sm font-medium leading-5 text-gray-900 dark:text-gray-100"
+          className="mb-2 block text-sm font-medium leading-5 text-text-heading dark:text-text-inverse"
         >
           {label}
           {required ? (
-            <span className="ml-0.5 text-red-600" aria-hidden="true">
+            <span className="ml-0.5 text-text-fg-danger" aria-hidden="true">
               *
             </span>
           ) : null}
@@ -117,7 +117,7 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
         <div className="relative">
           {icon ? (
             <span
-              className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400 [&>svg]:size-4"
+              className="pointer-events-none absolute left-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-text-placeholder [&>svg]:size-4"
               aria-hidden
             >
               {icon}
@@ -127,7 +127,7 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
           <input type="hidden" name={name} value={value} />
 
           <span
-            className="pointer-events-none absolute right-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-gray-400"
+            className="pointer-events-none absolute right-3 top-1/2 inline-flex size-4 -translate-y-1/2 items-center justify-center text-text-placeholder"
             aria-hidden
           >
             <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
@@ -173,14 +173,16 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
               }
             }}
             className={
-              "h-[42px] w-full rounded-lg border bg-gray-50 px-3 py-2.5 pr-10 text-left text-sm placeholder:text-gray-400 outline-none ring-offset-0 transition-all duration-150 hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:hover:border-gray-600 " +
+              "h-[42px] w-full rounded-lg border bg-bg-primary px-3 py-2.5 pr-10 text-left text-sm text-text-body outline-none ring-offset-0 transition-all duration-150 hover:border-border-default-medium focus:border-border-brand focus:ring-2 focus:ring-ring-brand dark:hover:border-border-default-medium " +
               (icon ? "pl-10 " : "") +
-              (error ? "border-red-500 focus:border-red-500 focus:ring-red-500 " : "border-gray-200 ") +
-              "dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              (error
+                ? "border-border-danger focus:border-border-danger focus:ring-2 focus:ring-ring-danger "
+                : "border-border-default ") +
+              "dark:border-border-default-medium dark:bg-bg-inverse-medium dark:text-text-inverse"
             }
             {...buttonProps}
           >
-            <span className={selectedOption ? "text-gray-900 dark:text-gray-100" : "text-gray-400"}>
+            <span className={selectedOption ? "text-text-heading dark:text-text-inverse" : "text-text-placeholder"}>
               {selectedOption?.label ?? placeholder}
             </span>
           </button>
@@ -208,7 +210,7 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
                   queueMicrotask(() => buttonRef.current?.focus());
                 }
               }}
-              className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-sm focus:outline-none dark:border-gray-700 dark:bg-gray-900"
+              className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-lg border border-border-default bg-bg-primary-soft shadow-sm focus:outline-none dark:border-border-default-medium dark:bg-bg-inverse"
             >
               {options.map((opt, idx) => {
                 const selected = opt.value === value;
@@ -223,14 +225,16 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
                     onClick={() => selectAtIndex(idx)}
                     className={
                       "flex cursor-pointer items-center gap-2 px-3 py-2 text-sm " +
-                      (selected ? "bg-gray-100 " : active ? "bg-gray-50 " : "") +
-                      "text-gray-900 dark:text-gray-100"
+                      (selected ? "bg-bg-tertiary " : active ? "bg-bg-primary " : "") +
+                      "text-text-heading dark:text-text-inverse"
                     }
                   >
                     <span
                       className={
                         "inline-flex size-4 items-center justify-center rounded-sm border " +
-                        (selected ? "border-blue-600 bg-blue-600 text-white" : "border-gray-300 bg-white text-transparent")
+                        (selected
+                          ? "border-border-brand bg-bg-brand text-text-on-brand"
+                          : "border-border-default-medium bg-bg-primary-soft text-transparent")
                       }
                       aria-hidden
                     >
@@ -252,7 +256,7 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
           ) : null}
         </div>
         {error ? (
-          <p id={errorId} className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p id={errorId} className="mt-2 text-sm text-text-fg-danger dark:text-text-fg-danger" role="alert">
             {error}
           </p>
         ) : null}

@@ -38,16 +38,16 @@ function isStrongPassword(password: string): boolean {
 }
 
 export async function signup(formData: FormData): Promise<SignupResult> {
-  const firstName = String(formData.get("firstName") ?? "").trim();
-  const lastName = String(formData.get("lastName") ?? "").trim();
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const confirmPassword = String(formData.get("confirm_password") ?? "");
   const profession = String(formData.get("profession") ?? "").trim();
   const phoneRaw = String(formData.get("phone") ?? "").trim();
   const phone = phoneRaw.length > 0 ? phoneRaw : null;
-  const termsAccepted = formData.get("termsAccepted") === "true";
-  const marketingOptIn = formData.get("marketingOptIn") === "true";
+  const termsAccepted = formData.get("agree_to_terms") === "true";
+  const marketingOptIn = formData.get("marketing_opt_in") === "true";
 
   if (!firstName || !lastName) {
     return { error: "Please enter your first and last name." };
