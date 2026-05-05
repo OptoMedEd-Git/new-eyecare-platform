@@ -27,6 +27,7 @@ export type BlogPost = {
   description: string;
   content: unknown;
   cover_image_url: string | null;
+  cover_image_path: string | null;
   author_id: string | null;
   category_id: string;
   status: "draft" | "published" | "archived";
@@ -37,4 +38,10 @@ export type BlogPost = {
   updated_at: string;
   author: BlogAuthor | null;
   category: Pick<BlogCategory, "id" | "slug" | "name">;
+};
+
+// Storage-related types for image uploads
+export type BlogImageUploadResult = {
+  url: string;
+  path: string;
 };
