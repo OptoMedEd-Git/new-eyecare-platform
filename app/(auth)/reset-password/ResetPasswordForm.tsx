@@ -3,7 +3,6 @@
 import { Alert } from "@/components/forms/Alert";
 import { FormPasswordInput } from "@/components/forms/FormPasswordInput";
 import { updatePassword } from "./actions";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
@@ -49,68 +48,47 @@ function ResetPasswordFormInner() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24">
-      <div className="flex w-full max-w-[448px] flex-col items-center gap-8">
-        <div className="w-full rounded-xl border border-gray-200 bg-white p-8 shadow-[0px_1px_2px_0px_rgba(29,41,61,0.05)] dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex justify-center">
-              <Image
-                src="/logos/logo.svg"
-                alt=""
-                width={48}
-                height={48}
-                className="size-12 shrink-0"
-                unoptimized
-              />
-            </div>
+    <div className="w-full max-w-md">
+      <div className="flex w-full flex-col gap-6 rounded-base border border-border-default bg-bg-primary-soft p-8 shadow-xs">
+        <h1 className="w-full text-xl font-semibold leading-7 text-text-heading">Reset password</h1>
 
-            <div className="flex w-full flex-col gap-1.5 text-center">
-              <h1 className="text-xl font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                Set a new password
-              </h1>
-              <p className="text-sm font-normal leading-5 text-text-body">
-                Choose a strong password you&apos;ll remember.
-              </p>
-            </div>
+        <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit} noValidate>
+          {urlError ? <Alert variant="error" message={urlError} /> : null}
 
-            <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit} noValidate>
-              {urlError ? <Alert variant="error" message={urlError} /> : null}
+          <div className="flex flex-col gap-4">
+            <FormPasswordInput
+              label="New password"
+              name="newPassword"
+              id="newPassword"
+              autoComplete="new-password"
+              placeholder="••••••••••"
+              required
+              error={fieldErrors.newPassword}
+            />
 
-              <div className="flex flex-col gap-4">
-                <FormPasswordInput
-                  label="New password"
-                  name="newPassword"
-                  id="newPassword"
-                  autoComplete="new-password"
-                  placeholder="Enter new password"
-                  required
-                  error={fieldErrors.newPassword}
-                />
-                <FormPasswordInput
-                  label="Confirm new password"
-                  name="confirmPassword"
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  placeholder="Confirm new password"
-                  required
-                  error={fieldErrors.confirmPassword}
-                />
-              </div>
+            <p className="text-sm text-text-muted">
+              Password must be at least 8 characters.
+            </p>
 
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Password must be at least 8 characters.
-              </p>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full rounded-xl border-0 bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
-              >
-                {isSubmitting ? "Updating..." : "Update password"}
-              </button>
-            </form>
+            <FormPasswordInput
+              label="Confirm new password"
+              name="confirmPassword"
+              id="confirmPassword"
+              autoComplete="new-password"
+              placeholder="••••••••••"
+              required
+              error={fieldErrors.confirmPassword}
+            />
           </div>
-        </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-base border-0 bg-bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-brand disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? "Resetting..." : "Reset password"}
+          </button>
+        </form>
       </div>
     </div>
   );
@@ -120,7 +98,7 @@ export function ResetPasswordForm() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24" />
+        <div className="w-full max-w-md" />
       }
     >
       <ResetPasswordFormInner />

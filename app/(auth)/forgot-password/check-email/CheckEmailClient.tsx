@@ -3,10 +3,9 @@
 import { Alert } from "@/components/forms/Alert";
 import { resendPasswordResetEmail } from "../actions";
 import Link from "next/link";
-import Image from "next/image";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Mail } from "lucide-react";
+import { ArrowLeft, CircleAlert } from "lucide-react";
 
 type ResendStatus = "idle" | "success" | "error";
 
@@ -38,85 +37,66 @@ function CheckEmailInner() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24">
-      <div className="flex w-full max-w-[448px] flex-col items-center gap-8">
-        <div className="w-full rounded-xl border border-gray-200 bg-white p-8 shadow-[0px_1px_2px_0px_rgba(29,41,61,0.05)] dark:border-gray-700 dark:bg-gray-900">
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex justify-center">
-              <Image
-                src="/logos/logo.svg"
-                alt=""
-                width={48}
-                height={48}
-                className="size-12 shrink-0"
-                unoptimized
-              />
-            </div>
+    <div className="w-full max-w-[512px]">
+      <div className="flex w-full flex-col gap-6 rounded-base border border-border-default bg-bg-primary-soft p-8 shadow-xs">
+        <div className="flex w-full flex-col gap-1.5">
+          <h1 className="w-full text-xl font-semibold leading-6 text-text-heading">Check your email</h1>
+          <p className="w-full text-base font-normal leading-6 text-text-body">
+            {email ? (
+              <>
+                We sent a password reset link to <span className="font-medium">{email}</span>. Click the link to reset your password and access your account.
+              </>
+            ) : (
+              <>Click the link in the email to reset your password and access your account.</>
+            )}
+          </p>
+        </div>
 
-            <div className="flex size-14 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950/50">
-              <Mail className="size-7 text-brand dark:text-blue-400" aria-hidden strokeWidth={2} />
-            </div>
+        {!email ? (
+          <Alert
+            variant="warning"
+            message="No email address was provided. Go back and request a reset link again."
+          />
+        ) : null}
 
-            <div className="flex flex-col gap-1.5 text-center">
-              <h1 className="text-xl font-semibold leading-6 text-gray-900 dark:text-gray-100">
-                Check your email
-              </h1>
-              <p className="text-sm font-normal leading-relaxed text-text-body">
-                We&apos;ve sent a password reset link to{" "}
-                {email ? (
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{email}</span>
-                ) : (
-                  <span className="font-medium text-gray-900 dark:text-gray-100">your email</span>
-                )}
-                . Click the link in your email to reset your password.
-              </p>
-            </div>
-
-            {!email ? (
-              <Alert
-                variant="warning"
-                message="No email address was provided. Go back and request a reset link again."
-              />
-            ) : null}
-
-            <p className="text-center text-sm text-text-body">
-              Don&apos;t see it? Check your spam folder or try resending.
-            </p>
-
-            <div className="flex w-full flex-col gap-3 sm:flex-row">
+        <div className="rounded-base border border-border-default bg-bg-secondary-medium p-4">
+          <div className="flex items-start gap-2">
+            <CircleAlert className="size-4 shrink-0 text-text-body" aria-hidden />
+            <div className="text-base leading-6 text-text-body">
+              <span className="font-normal">
+                Didn&apos;t receive an email? Check your spam folder. Still not there?{" "}
+              </span>
               <button
                 type="button"
                 onClick={handleResend}
                 disabled={isResending || !email}
-                className="inline-flex w-full flex-1 items-center justify-center rounded-xl border-0 bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
+                className="font-semibold text-text-fg-brand underline hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Resend reset link"
               >
-                {isResending ? "Sending..." : "Resend email"}
+                {isResending ? "Resending..." : "Resend reset link"}
               </button>
-              <Link
-                href="/forgot-password"
-                className="inline-flex w-full flex-1 items-center justify-center rounded-xl border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-all duration-200 hover:border-gray-300 hover:bg-gray-100 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-              >
-                Try a different email
-              </Link>
+              {resendStatus !== "idle" ? (
+                <span
+                  className={
+                    "ml-2 " +
+                    (resendStatus === "success" ? "text-text-fg-success" : "text-text-fg-danger")
+                  }
+                  role={resendStatus === "success" ? "status" : "alert"}
+                >
+                  {resendMessage}
+                </span>
+              ) : null}
             </div>
-
-            {resendStatus !== "idle" ? (
-              <p
-                className={
-                  "text-center text-sm " +
-                  (resendStatus === "success" ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400")
-                }
-                role={resendStatus === "success" ? "status" : "alert"}
-              >
-                {resendMessage}
-              </p>
-            ) : null}
-
-            <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-              The link will expire in 1 hour for security.
-            </p>
           </div>
         </div>
+
+        <Link
+          href="/login"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-brand"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Return to login
+        </Link>
       </div>
     </div>
   );
@@ -126,7 +106,7 @@ export function CheckEmailClient() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24" />
+        <div className="w-full max-w-[512px]" />
       }
     >
       <CheckEmailInner />

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { ArrowLeft, CircleAlert } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -37,57 +37,59 @@ function CheckEmailInner() {
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24">
-      <div className="flex w-full max-w-[672px] flex-col items-center">
-        <div className="w-full rounded-xl border border-gray-200 bg-white p-8 shadow-[0px_1px_2px_0px_rgba(29,41,61,0.05)] dark:border-gray-700 dark:bg-gray-900">
-          <h1 className="text-xl font-semibold text-gray-900">Verification email sent</h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-gray-600">
-            We emailed a verification link to{" "}
+    <div className="w-full max-w-[512px]">
+      <div className="flex w-full flex-col gap-6 rounded-base border border-border-default bg-bg-primary-soft p-8 shadow-xs">
+        <div className="flex w-full flex-col gap-1.5">
+          <h1 className="w-full text-xl font-semibold leading-6 text-text-heading">Verification email sent</h1>
+          <p className="w-full text-base font-normal leading-6 text-text-body">
             {email ? (
-              <span className="font-medium text-gray-900">{email}</span>
+              <>
+                We sent a verification link to <span className="font-medium">{email}</span>. Click the link to confirm your email address and access your account.
+              </>
             ) : (
-              <span className="font-medium text-gray-900">your email address</span>
+              <>Click the link in the email to confirm your email address and access your account.</>
             )}
-            . Click the link to confirm your email address and access your account.
           </p>
+        </div>
 
-          <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 size-5 text-gray-500" aria-hidden />
-              <div className="text-sm leading-5 text-gray-700">
+        <div className="rounded-base border border-border-default bg-bg-secondary-medium p-4">
+          <div className="flex items-start gap-2">
+            <CircleAlert className="size-4 shrink-0 text-text-body" aria-hidden />
+            <div className="text-base leading-6 text-text-body">
+              <span className="font-normal">
                 Didn&apos;t receive an email? Check your spam folder. Still not there?{" "}
-                <button
-                  type="button"
-                  onClick={handleResend}
-                  disabled={isResending || !email}
-                  className="font-medium text-brand underline hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
-                  aria-label="Resend verification email"
+              </span>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={isResending || !email}
+                className="font-semibold text-text-fg-brand underline hover:no-underline disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Resend verification email"
+              >
+                {isResending ? "Resending..." : "Resend verification email"}
+              </button>
+              {resendStatus !== "idle" ? (
+                <span
+                  className={
+                    "ml-2 " +
+                    (resendStatus === "success" ? "text-text-fg-success" : "text-text-fg-danger")
+                  }
+                  role={resendStatus === "success" ? "status" : "alert"}
                 >
-                  {isResending ? "Resending..." : "Resend verification email"}
-                </button>
-                {resendStatus !== "idle" ? (
-                  <span
-                    className={
-                      "ml-2 inline-block " +
-                      (resendStatus === "success" ? "text-green-700" : "text-red-700")
-                    }
-                    role={resendStatus === "success" ? "status" : "alert"}
-                  >
-                    {resendMessage}
-                  </span>
-                ) : null}
-              </div>
+                  {resendMessage}
+                </span>
+              ) : null}
             </div>
           </div>
-
-          <Link
-            href="/"
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium text-brand-foreground shadow-[0px_1px_0.5px_0px_rgba(29,41,61,0.02)] transition-colors hover:bg-brand/90 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand/30"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            Return to Home
-          </Link>
         </div>
+
+        <Link
+          href="/login"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-brand"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Return to login
+        </Link>
       </div>
     </div>
   );
@@ -97,7 +99,7 @@ export default function SignupCheckEmailPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-[calc(100vh-5rem)] w-full justify-center bg-secondary px-4 py-16 sm:py-24" />
+        <div className="w-full max-w-[512px]" />
       }
     >
       <CheckEmailInner />
