@@ -1,5 +1,5 @@
-import { Footer } from "@/components/layout/Footer";
-import { MarketingNav } from "@/components/layout/MarketingNav";
+import { AppShell } from "@/components/layout/AppShell";
+import { MarketingShell } from "@/components/layout/MarketingShell";
 import { getNavUser } from "@/lib/auth/nav-user";
 
 export default async function MarketingGroupLayout({
@@ -9,14 +9,9 @@ export default async function MarketingGroupLayout({
 }>) {
   const initialUser = await getNavUser();
 
-  return (
-    <>
-      <MarketingNav
-        key={initialUser ? `u:${initialUser.email}` : "out"}
-        initialUser={initialUser}
-      />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </>
-  );
+  if (!initialUser) {
+    return <MarketingShell initialUser={null}>{children}</MarketingShell>;
+  }
+
+  return <AppShell user={initialUser}>{children}</AppShell>;
 }
