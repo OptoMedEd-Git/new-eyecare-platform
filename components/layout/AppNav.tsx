@@ -1,10 +1,10 @@
 "use client";
 
-import { logout } from "@/app/auth-actions";
 import { AppSideNav } from "@/components/layout/AppSideNav";
 import { useSidebar } from "@/components/layout/SidebarProvider";
+import { UserDropdownMenu } from "@/components/layout/UserDropdownMenu";
 import type { NavUser } from "@/lib/auth/nav-user";
-import { Bell, ChevronDown, LayoutDashboard, Menu, Search, Settings } from "lucide-react";
+import { Bell, ChevronDown, Menu, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
@@ -16,12 +16,6 @@ function getInitials(user: NavUser): string {
   if (a) return a.toUpperCase().slice(0, 2);
   if (user.email) return user.email.slice(0, 2).toUpperCase();
   return "?";
-}
-
-function fullName(user: NavUser): string {
-  const n = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
-  if (n) return n;
-  return user.email.split("@")[0] || "Account";
 }
 
 export type AppNavProps = {
@@ -140,52 +134,12 @@ function AppNavInner({ user }: AppNavProps) {
               </button>
 
               {dropdownOpen ? (
-                <div
+                <UserDropdownMenu
                   id={menuId}
-                  role="menu"
-                  aria-labelledby={`${menuId}-trigger`}
-                  className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-base border border-border-default bg-bg-primary-soft py-1 shadow-md"
-                >
-                  <div className="border-b border-border-default px-4 py-3">
-                    <p className="truncate text-sm font-semibold text-text-heading">{fullName(user)}</p>
-                    <p className="mt-0.5 truncate text-xs text-text-muted">{user.email}</p>
-                  </div>
-
-                  <div className="py-1">
-                    <Link
-                      href="/dashboard"
-                      role="menuitem"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft hover:text-text-heading"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      <LayoutDashboard className="size-4 shrink-0" aria-hidden strokeWidth={2} />
-                      Dashboard
-                    </Link>
-                    <Link
-                      href="/settings"
-                      role="menuitem"
-                      className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft hover:text-text-heading"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      <Settings className="size-4 shrink-0" aria-hidden strokeWidth={2} />
-                      Settings
-                    </Link>
-                  </div>
-
-                  <div className="border-t border-border-default" />
-
-                  <div className="py-1">
-                    <form action={logout}>
-                      <button
-                        type="submit"
-                        role="menuitem"
-                        className="w-full px-4 py-2.5 text-left text-sm font-medium text-text-fg-danger transition-colors hover:bg-bg-secondary-soft"
-                      >
-                        Sign out
-                      </button>
-                    </form>
-                  </div>
-                </div>
+                  ariaLabelledBy={`${menuId}-trigger`}
+                  className="absolute right-0 top-full mt-2 origin-top-right"
+                  onItemClick={() => setDropdownOpen(false)}
+                />
               ) : null}
             </div>
           </div>
