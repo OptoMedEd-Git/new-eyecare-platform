@@ -2,7 +2,7 @@
 
 import { logout } from "@/app/auth-actions";
 import { AppSideNav } from "@/components/layout/AppSideNav";
-import { SidebarProvider, useSidebar } from "@/components/layout/SidebarProvider";
+import { useSidebar } from "@/components/layout/SidebarProvider";
 import type { NavUser } from "@/lib/auth/nav-user";
 import { Bell, ChevronDown, LayoutDashboard, Menu, Search, Settings } from "lucide-react";
 import Image from "next/image";
@@ -198,9 +198,5 @@ function AppNavInner({ user }: AppNavProps) {
 }
 
 export function AppNav(props: AppNavProps) {
-  return (
-    <SidebarProvider>
-      <AppNavInner {...props} />
-    </SidebarProvider>
-  );
+  return <AppNavInner {...props} />;
 }

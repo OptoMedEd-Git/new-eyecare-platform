@@ -30,6 +30,63 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+/**
+ * Parse the tag_ids field from FormData. Returns:
+ * - undefined if the key is absent (don't touch tags)
+ * - an array of UUIDs (validated, deduped) if the key is present
+ * - throws if the JSON is malformed or any entry is not a valid UUID
+ */
+function parseTagIds(formData: FormData): string[] | undefined {
+  if (!formData.has("tag_ids")) return undefined;
+  const raw = formData.get("tag_ids");
+  if (typeof raw !== "string") return [];
+  const trimmed = raw.trim();
+  if (trimmed === "") return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error("tag_ids must be valid JSON");
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error("tag_ids must be a JSON array");
+  }
+
+  const ids = new Set<string>();
+  for (const entry of parsed) {
+    if (typeof entry !== "string" || !isUuid(entry)) {
+      throw new Error("tag_ids must contain only valid UUIDs");
+    }
+    ids.add(entry);
+  }
+  return Array.from(ids);
+}
+
+/**
+ * Replace all tag associations for a post with the given list.
+ * - Deletes all existing rows in blog_post_tags for this post
+ * - Inserts new rows for each tagId
+ * - Tags array can be empty (results in no rows)
+ *
+ * Uses the user's session (RLS enforced). Returns success or throws.
+ */
+async function replacePostTags(ctx: AuthedContext, postId: string, tagIds: string[]): Promise<void> {
+  const { error: delError } = await ctx.supabase.from("blog_post_tags").delete().eq("post_id", postId);
+  if (delError) throw new Error(`Failed to clear existing tags: ${delError.message}`);
+
+  if (tagIds.length === 0) return;
+
+  const rows = tagIds.map((tag_id) => ({ post_id: postId, tag_id }));
+  const { error: insError } = await ctx.supabase.from("blog_post_tags").insert(rows);
+  if (insError) {
+    const code = (insError as { code?: unknown }).code;
+    if (code === "23503") throw new Error("One or more selected tags no longer exist");
+    if (code === "23505") throw new Error("Duplicate tag selection");
+    throw new Error(`Failed to insert tags: ${insError.message}`);
+  }
+}
+
 function getString(formData: FormData, key: string): string | null {
   const v = formData.get(key);
   if (typeof v !== "string") return null;
@@ -122,6 +179,14 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
   try {
     const ctx = await getCurrentUserAndRole();
 
+    let tagIds: string[] | undefined;
+    try {
+      tagIds = parseTagIds(formData);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Invalid tags";
+      return { ok: false, error: message, fieldErrors: { tag_ids: "Invalid tag selection" } };
+    }
+
     const titleRaw = getString(formData, "title");
     const descriptionRaw = getString(formData, "description");
     const categoryId = getString(formData, "category_id");
@@ -184,6 +249,18 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
       return { ok: false, error: msg };
     }
 
+    // Persist tag associations if the caller submitted tag_ids (even if empty)
+    if (tagIds !== undefined) {
+      try {
+        await replacePostTags(ctx, data.id, tagIds);
+      } catch (e) {
+        // Roll back the post creation to avoid orphaned posts with missing tag state.
+        await ctx.supabase.from("blog_posts").delete().eq("id", data.id);
+        const message = e instanceof Error ? e.message : "Failed to save tags";
+        return { ok: false, error: message };
+      }
+    }
+
     revalidatePath("/admin/blog");
     return { ok: true, data: { postId: data.id } };
   } catch (err) {
@@ -196,6 +273,14 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
   try {
     const ctx = await getCurrentUserAndRole();
     const existing = await authorizePostAccess(postId, ctx);
+
+    let tagIds: string[] | undefined;
+    try {
+      tagIds = parseTagIds(formData);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Invalid tags";
+      return { ok: false, error: message, fieldErrors: { tag_ids: "Invalid tag selection" } };
+    }
 
     const titleRaw = getString(formData, "title");
     const descriptionRaw = getString(formData, "description");
@@ -294,6 +379,19 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
         await deleteBlogImage(oldCoverPath);
       } catch (cleanupErr) {
         console.warn("[blog] updatePost cover image cleanup failed", cleanupErr);
+      }
+    }
+
+    // Sync tag associations IF the caller submitted tag_ids (even if empty)
+    if (tagIds !== undefined) {
+      try {
+        await replacePostTags(ctx, postId, tagIds);
+      } catch (e) {
+        const message =
+          e instanceof Error
+            ? e.message
+            : "Failed to sync tags (post was updated, but tags were not changed)";
+        return { ok: false, error: message };
       }
     }
 
