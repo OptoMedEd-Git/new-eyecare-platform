@@ -1,144 +1,84 @@
 "use client";
 
-import {
-  BookMarked,
-  BookOpen,
-  ClipboardList,
-  HelpCircle,
-  Layers,
-  LayoutDashboard,
-  Lightbulb,
-  Route,
-} from "lucide-react";
-import { APP_NAV_HEIGHT_PX } from "@/lib/layout/app-shell";
-import Link from "next/link";
+import { getNavItems } from "@/lib/nav/get-nav-items";
 import { usePathname } from "next/navigation";
-import { forwardRef } from "react";
+import { useEffect } from "react";
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-  { href: "/pathways", label: "Pathways", Icon: Route },
-  { href: "/courses", label: "Courses", Icon: BookOpen },
-  { href: "/quiz-bank", label: "Quiz Bank", Icon: HelpCircle },
-  { href: "/flashcards", label: "Flashcards", Icon: Layers },
-  { href: "/cases", label: "Cases", Icon: ClipboardList },
-  { href: "/encyclopedia", label: "Encyclopedia", Icon: BookMarked },
-] as const;
+import { SidebarItem } from "@/components/layout/SidebarItem";
+import { useSidebar } from "@/components/layout/SidebarProvider";
 
 export type AppSideNavProps = {
-  isOpen: boolean;
-  isLocked: boolean;
-  onBackdropClick: () => void;
-  onSidebarPointerEnter: () => void;
-  onSidebarPointerLeave: () => void;
-  onNavLinkClick: () => void;
+  user: {
+    role: "admin" | "contributor" | "member";
+  };
 };
 
-export const AppSideNav = forwardRef<HTMLElement, AppSideNavProps>(
-  function AppSideNav(
-    {
-      isOpen,
-      isLocked,
-      onBackdropClick,
-      onSidebarPointerEnter,
-      onSidebarPointerLeave,
-      onNavLinkClick,
-    },
-    ref,
-  ) {
-    const pathname = usePathname();
+export function AppSideNav({ user }: AppSideNavProps) {
+  const pathname = usePathname();
+  const { collapsed, hovered, mobileOpen, setHovered, closeMobile } = useSidebar();
 
-    const itemClass = (active: boolean) =>
-      [
-        "flex items-center gap-3 rounded-md p-3 text-sm transition-colors duration-200",
-        active
-          ? "bg-blue-50 font-semibold text-blue-600 dark:bg-blue-950/50 dark:text-blue-300"
-          : "text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-800/80",
-      ].join(" ");
+  const { primary, secondary } = getNavItems({ role: user.role, pathname });
 
-    const navTopPx = APP_NAV_HEIGHT_PX;
-    const shellTopStyle = { top: `${navTopPx}px` } as const;
-    const shellHeightStyle = { height: `calc(100vh - ${navTopPx}px)` } as const;
+  useEffect(() => {
+    closeMobile();
+  }, [pathname, closeMobile]);
 
-    const backdropClass =
-      "fixed inset-x-0 bottom-0 z-[32] transition-opacity duration-200 ease-out " +
-      (!isOpen
-        ? "pointer-events-none opacity-0"
-        : isLocked
-          ? "bg-black/40 opacity-100 max-md:pointer-events-auto md:pointer-events-none md:bg-transparent md:opacity-0"
-          : "pointer-events-none bg-black/20 opacity-100");
+  const isMobileDrawer = mobileOpen;
+  const isCollapsed = collapsed && !hovered && !mobileOpen;
 
-    return (
-      <>
-        {/* Hover preview: subtle overlay. Locked on md+: hidden so main margin shows clean layout; locked on mobile: dim + tap to close. */}
+  return (
+    <>
+      {isMobileDrawer ? (
         <div
-          className={backdropClass}
-          style={shellTopStyle}
+          className="fixed inset-0 z-30 bg-bg-inverse/40 md:hidden"
+          onClick={closeMobile}
           aria-hidden
-          onClick={isLocked ? onBackdropClick : undefined}
         />
+      ) : null}
 
-        <aside
-          ref={ref}
-          id="side-nav"
-          role="navigation"
-          aria-label="Main navigation"
-          onMouseEnter={onSidebarPointerEnter}
-          onMouseLeave={onSidebarPointerLeave}
-          style={{ ...shellTopStyle, ...shellHeightStyle }}
-          className={`fixed left-0 z-[42] flex w-[min(280px,100%-1rem)] max-w-[85vw] flex-col border-r border-gray-200 bg-white shadow-lg transition-transform duration-300 ease-out dark:border-gray-700 dark:bg-gray-900 sm:max-w-none sm:w-[280px] ${
-            isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
-          }`}
-        >
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-4 pt-4">
-            <p className="mb-3 px-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-              Learn
-            </p>
-            <nav className="flex flex-col gap-0.5" aria-label="App learn navigation">
-              {NAV_ITEMS.map(({ href, label, Icon }) => {
-                const active =
-                  pathname === href || pathname.startsWith(`${href}/`);
+      <aside
+        id="side-nav"
+        onMouseEnter={() => {
+          if (collapsed) setHovered(true);
+        }}
+        onMouseLeave={() => setHovered(false)}
+        className={[
+          "fixed left-0 top-[65px] z-40 h-[calc(100vh-65px)] overflow-y-auto border-r border-border-default bg-bg-primary-soft",
+          "transition-[width,transform] duration-200 ease-out",
+          isCollapsed ? "w-[76px]" : "w-[280px]",
+          mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        ].join(" ")}
+        aria-label="Main navigation"
+      >
+        <div className="flex flex-col gap-6 p-5">
+          <nav className="flex w-full flex-col gap-2" aria-label="Primary">
+            {primary.map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                expanded={!isCollapsed}
+                pathname={pathname}
+                onNavigate={closeMobile}
+              />
+            ))}
+          </nav>
 
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={itemClass(active)}
-                    onClick={onNavLinkClick}
-                  >
-                    <Icon className="size-5 shrink-0" aria-hidden strokeWidth={2} />
-                    {label}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-auto pt-6">
-              <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950/40">
-                <Lightbulb
-                  className="mb-2 size-5 text-brand dark:text-blue-400"
-                  aria-hidden
-                  strokeWidth={2}
-                />
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  Just getting started?
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-text-body dark:text-gray-400">
-                  Your dashboard adapts as you use the platform. Sign up for updates to know when new
-                  content launches.
-                </p>
-                <Link
-                  href="/settings"
-                  className="mt-3 inline-flex text-sm font-medium text-brand transition-colors duration-200 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-                  onClick={onNavLinkClick}
-                >
-                  Update preferences →
-                </Link>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </>
-    );
-  },
-);
+          <nav
+            className="flex w-full flex-col gap-2 border-t border-border-divider pt-4"
+            aria-label="Secondary"
+          >
+            {secondary.map((item) => (
+              <SidebarItem
+                key={item.id}
+                item={item}
+                expanded={!isCollapsed}
+                pathname={pathname}
+                onNavigate={closeMobile}
+              />
+            ))}
+          </nav>
+        </div>
+      </aside>
+    </>
+  );
+}

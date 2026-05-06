@@ -41,7 +41,8 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
   const isEdit = Boolean(initialPost);
 
   const [title, setTitle] = useState(initialPost?.title ?? "");
-  const [slug, setSlug] = useState(initialPost?.slug ?? "");
+  /** Only used in edit mode; create mode derives slug from title during render. */
+  const [editedSlug, setEditedSlug] = useState(initialPost?.slug ?? "");
   const [description, setDescription] = useState(initialPost?.description ?? "");
   const [content, setContent] = useState(initialPost?.content ?? "");
   const [coverImage, setCoverImage] = useState({
@@ -66,11 +67,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
 
   const tagPickerTags = useMemo(() => availableTags.map(({ id, name }) => ({ id, name })), [availableTags]);
 
-  useEffect(() => {
-    if (!isEdit) {
-      setSlug(slugify(title));
-    }
-  }, [title, isEdit]);
+  const slug = isEdit ? editedSlug : slugify(title);
 
   useEffect(() => {
     if (!dirty) return;
@@ -188,10 +185,14 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
                   label={isEdit ? "Slug" : "Slug (auto-generated)"}
                   name="slug"
                   value={slug}
-                  onChange={(e) => {
-                    setSlug(e.target.value);
-                    setDirty(true);
-                  }}
+                  onChange={
+                    isEdit
+                      ? (e) => {
+                          setEditedSlug(e.target.value);
+                          setDirty(true);
+                        }
+                      : undefined
+                  }
                   disabled={!isEdit}
                   placeholder="will-appear-here"
                 />
@@ -201,7 +202,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
                   type="button"
                   title="Regenerate slug from title"
                   onClick={() => {
-                    setSlug(slugify(title));
+                    setEditedSlug(slugify(title));
                     setDirty(true);
                   }}
                   disabled={saving || publishing}

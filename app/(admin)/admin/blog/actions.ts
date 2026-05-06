@@ -134,7 +134,7 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
     if (!isNonEmptyString(titleRaw)) fieldErrors.title = "Title is required";
     if (typeof titleRaw === "string" && titleRaw.length > 200) fieldErrors.title = "Title too long";
 
-    const description = typeof descriptionRaw === "string" ? descriptionRaw : "";
+    const description = descriptionRaw ?? "";
     if (description.length > 500) fieldErrors.description = "Description too long";
 
     if (!isNonEmptyString(categoryId) || !isUuid(categoryId)) fieldErrors.category_id = "Invalid category";
@@ -142,6 +142,16 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
 
     if (Object.keys(fieldErrors).length > 0) {
       return { ok: false, error: "Validation failed", fieldErrors };
+    }
+
+    if (!isNonEmptyString(titleRaw)) {
+      return { ok: false, error: "Validation failed", fieldErrors: { title: "Title is required" } };
+    }
+    if (!isNonEmptyString(categoryId) || !isUuid(categoryId)) {
+      return { ok: false, error: "Validation failed", fieldErrors: { category_id: "Invalid category" } };
+    }
+    if (!isNonEmptyString(contentRaw)) {
+      return { ok: false, error: "Validation failed", fieldErrors: { content: "Content is required" } };
     }
 
     const baseSlug = slugify(titleRaw);
@@ -200,7 +210,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     if (titleRaw != null && titleRaw.length > 200) fieldErrors.title = "Title too long";
     if (descriptionRaw != null && descriptionRaw.length > 500) fieldErrors.description = "Description too long";
     if (categoryIdRaw != null && categoryIdRaw !== "" && !isUuid(categoryIdRaw)) fieldErrors.category_id = "Invalid category";
-    if (slugOverrideRaw != null && slugOverrideRaw !== "") {
+    if (isNonEmptyString(slugOverrideRaw)) {
       const s = slugify(slugOverrideRaw);
       if (!s) fieldErrors.slug = "Slug must be URL-safe";
     }
@@ -227,18 +237,20 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     const cover_image_path = coverImagePath;
 
     let nextSlug: string | undefined;
-    const hasSlugOverride = slugOverrideRaw != null && slugOverrideRaw !== "";
     const hasTitle = typeof title === "string";
     const titleChanged = hasTitle && title.trim() !== "" && title.trim() !== existing.title.trim();
 
-    if (hasSlugOverride) {
+    if (isNonEmptyString(slugOverrideRaw)) {
       const base = slugify(slugOverrideRaw);
       if (!base) {
         return { ok: false, error: "Validation failed", fieldErrors: { slug: "Slug must be URL-safe" } };
       }
       nextSlug = await ensureUniqueSlug(base, (s) => slugExists(ctx, s, postId));
     } else if (titleChanged) {
-      const base = slugify(title);
+      if (!isNonEmptyString(titleRaw)) {
+        return { ok: false, error: "Validation failed", fieldErrors: { title: "Title is required" } };
+      }
+      const base = slugify(titleRaw);
       if (!base) {
         return { ok: false, error: "Validation failed", fieldErrors: { title: "Title must produce a valid slug" } };
       }

@@ -86,16 +86,23 @@ async function fetchNavUserFromSession(): Promise<NavUser | null> {
   if (!user?.email) return null;
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, profession")
+    .select("first_name, last_name, profession, role")
     .eq("id", user.id)
     .maybeSingle();
   const metaFirst = (user.user_metadata?.first_name as string | undefined)?.trim() ?? "";
   const metaLast = (user.user_metadata?.last_name as string | undefined)?.trim() ?? "";
+  const roleRaw = profile?.role;
+  const role =
+    roleRaw === "admin" || roleRaw === "contributor" || roleRaw === "member"
+      ? roleRaw
+      : "member";
+
   return {
     email: user.email,
     firstName: profile?.first_name?.trim() ?? metaFirst,
     lastName: profile?.last_name?.trim() ?? metaLast,
     profession: profile?.profession ?? null,
+    role,
   };
 }
 

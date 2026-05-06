@@ -1,11 +1,21 @@
 import { createClient } from "@/lib/supabase/server";
 
+export type NavUserRole = "admin" | "contributor" | "member";
+
+function normalizeRole(value: unknown): NavUserRole {
+  if (value === "admin" || value === "contributor" || value === "member") {
+    return value;
+  }
+  return "member";
+}
+
 /** Serializable user context for marketing/app navigation (Server Component → client nav). */
 export type NavUser = {
   email: string;
   firstName: string;
   lastName: string;
   profession: string | null;
+  role: NavUserRole;
 };
 
 export async function getNavUser(): Promise<NavUser | null> {
@@ -19,7 +29,7 @@ export async function getNavUser(): Promise<NavUser | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, profession")
+    .select("first_name, last_name, profession, role")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -31,5 +41,6 @@ export async function getNavUser(): Promise<NavUser | null> {
     firstName: profile?.first_name?.trim() ?? metaFirst,
     lastName: profile?.last_name?.trim() ?? metaLast,
     profession: profile?.profession ?? null,
+    role: normalizeRole(profile?.role),
   };
 }
