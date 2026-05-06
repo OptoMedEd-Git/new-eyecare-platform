@@ -2,11 +2,12 @@ import Link from "next/link";
 import { AlertTriangle, ArrowLeft, CircleAlert } from "lucide-react";
 
 type ForgotPasswordCheckEmailPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function ForgotPasswordCheckEmailPage({ searchParams }: ForgotPasswordCheckEmailPageProps) {
-  const email = (searchParams?.email?.toString().trim() ?? "");
+export default async function ForgotPasswordCheckEmailPage({ searchParams }: ForgotPasswordCheckEmailPageProps) {
+  const params = (await searchParams) ?? {};
+  const email = (params.email?.toString().trim() ?? "");
   const hasEmail = email.length > 0;
 
   return (
