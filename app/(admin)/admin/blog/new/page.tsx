@@ -1,14 +1,12 @@
-import { ComingSoonPage } from "@/components/layout/ComingSoonPage";
+import { PostForm } from "@/components/admin/PostForm";
+import { getAllTags } from "@/lib/blog/admin-tags-queries";
+import { getCategories } from "@/lib/blog/queries";
 
 export const metadata = { title: "New post" };
 
-export default function NewPostPage() {
-  return (
-    <ComingSoonPage
-      title="New post editor"
-      description="The post authoring interface is coming soon. Check back shortly."
-      showSignupCTA={false}
-    />
-  );
+export default async function NewPostPage() {
+  const [categories, availableTags] = await Promise.all([getCategories(), getAllTags()]);
+
+  return <PostForm categories={categories} availableTags={availableTags} />;
 }
 

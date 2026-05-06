@@ -147,50 +147,6 @@ export function ImageUpload({
     setIsDragging(false);
   }
 
-  if (mode === "uploaded" && currentImageUrl) {
-    return (
-      <div className="relative w-full aspect-video overflow-hidden rounded-base border border-border-default">
-        <Image
-          src={currentImageUrl}
-          alt="Cover image preview"
-          fill
-          sizes="(max-width: 768px) 100vw, 768px"
-          className="object-cover"
-        />
-
-        <div className="absolute right-0 top-0 flex gap-2 p-2">
-          <button
-            type="button"
-            onClick={openFilePicker}
-            disabled={disabled}
-            className="inline-flex items-center justify-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-1 text-xs font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Replace
-          </button>
-          <button
-            type="button"
-            onClick={() => onChange({ url: null, path: null })}
-            disabled={disabled}
-            className="inline-flex items-center justify-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-1 text-xs font-medium text-text-fg-danger-strong shadow-xs transition-colors hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Remove
-          </button>
-        </div>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={onInputChange}
-        />
-
-        {/* preserve parent tracking for deletion later */}
-        <input type="hidden" value={currentImagePath ?? ""} readOnly hidden />
-      </div>
-    );
-  }
-
   const baseContainer =
     "w-full aspect-video rounded-base border-2 border-dashed transition-colors flex flex-col items-center justify-center text-center";
   const interactive =
@@ -231,45 +187,81 @@ export function ImageUpload({
   })();
 
   return (
-    <div
-      className={containerClassName}
-      role="button"
-      tabIndex={0}
-      onClick={() => {
-        setError(null);
-        openFilePicker();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          setError(null);
-          openFilePicker();
-        }
-      }}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragEnter={onDragEnter}
-      onDragLeave={onDragLeave}
-      aria-disabled={disabled || isUploading}
-    >
-      <Icon className={iconClassName} aria-hidden />
-      <p className="mt-2 text-sm font-medium text-text-body">{headline}</p>
-      <p className="mt-1 text-xs text-text-muted">{subtext}</p>
-
+    <>
+      {/* Single file input — rendered once, used by both modes via inputRef.click() */}
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
+        disabled={disabled || isUploading}
         onChange={(e) => {
           setError(null);
           onInputChange(e);
         }}
-        disabled={disabled || isUploading}
       />
-    </div>
+
+      {/* preserve parent tracking for deletion later; always mounted so value stays stable across mode switches */}
+      <input type="hidden" value={currentImagePath ?? ""} readOnly hidden />
+
+      {mode === "uploaded" && currentImageUrl ? (
+        <div className="relative w-full aspect-video overflow-hidden rounded-base border border-border-default">
+          <Image
+            src={currentImageUrl}
+            alt="Cover image preview"
+            fill
+            sizes="(max-width: 768px) 100vw, 768px"
+            className="object-cover"
+          />
+
+          <div className="absolute right-0 top-0 flex gap-2 p-2">
+            <button
+              type="button"
+              onClick={openFilePicker}
+              disabled={disabled}
+              className="inline-flex items-center justify-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-1 text-xs font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Replace
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ url: null, path: null })}
+              disabled={disabled}
+              className="inline-flex items-center justify-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-1 text-xs font-medium text-text-fg-danger-strong shadow-xs transition-colors hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={containerClassName}
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            setError(null);
+            openFilePicker();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setError(null);
+              openFilePicker();
+            }
+          }}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          aria-disabled={disabled || isUploading}
+        >
+          <Icon className={iconClassName} aria-hidden />
+          <p className="mt-2 text-sm font-medium text-text-body">{headline}</p>
+          <p className="mt-1 text-xs text-text-muted">{subtext}</p>
+        </div>
+      )}
+    </>
   );
 }
 
 export default ImageUpload;
-

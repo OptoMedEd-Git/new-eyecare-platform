@@ -86,3 +86,93 @@ export async function getAdminPosts({
   });
 }
 
+export type AdminPostForEdit = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  content: string;
+  category_id: string | null;
+  cover_image_url: string | null;
+  cover_image_path: string | null;
+  tag_ids: string[];
+  status: "draft" | "published";
+  published_at: string | null;
+  updated_at: string;
+};
+
+/**
+ * Fetch a post for the edit page. Enforces per-post authorization:
+ * - admins can edit any post
+ * - contributors can only edit their own posts
+ *
+ * Returns null if the post doesn't exist OR the user can't access it.
+ * The page is responsible for converting null -> notFound() / redirect.
+ *
+ * Returns the post with content JSON-stringified (since PostForm's content prop is typed as string).
+ */
+export async function getAdminPostForEdit({
+  id,
+  userId,
+  role,
+}: {
+  id: string;
+  userId: string;
+  role: "admin" | "contributor";
+}): Promise<AdminPostForEdit | null> {
+  const supabase = await createClient();
+
+  const { data: post, error } = await supabase
+    .from("blog_posts")
+    .select(
+      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, author_id, status, published_at, updated_at"
+    )
+    .eq("id", id)
+    .maybeSingle<{
+      id: string;
+      title: string;
+      slug: string;
+      description: string;
+      content: unknown;
+      category_id: string | null;
+      cover_image_url: string | null;
+      cover_image_path: string | null;
+      author_id: string | null;
+      status: "draft" | "published" | "archived";
+      published_at: string | null;
+      updated_at: string;
+    }>();
+
+  if (error || !post) return null;
+  if (role === "contributor" && post.author_id !== userId) return null;
+
+  const { data: tagRows, error: tagError } = await supabase
+    .from("blog_post_tags")
+    .select("tag_id")
+    .eq("post_id", id)
+    .returns<{ tag_id: string }[]>();
+
+  if (tagError) {
+    console.warn(`[admin-queries] Failed to fetch tags for post ${id}`, tagError);
+  }
+
+  const tag_ids = (tagRows ?? []).map((r) => r.tag_id);
+
+  const status: "draft" | "published" = post.status === "published" ? "published" : "draft";
+
+  return {
+    id: post.id,
+    title: post.title ?? "",
+    slug: post.slug ?? "",
+    description: post.description ?? "",
+    content: post.content == null ? "" : JSON.stringify(post.content),
+    category_id: post.category_id,
+    cover_image_url: post.cover_image_url,
+    cover_image_path: post.cover_image_path,
+    tag_ids,
+    status,
+    published_at: post.published_at,
+    updated_at: post.updated_at,
+  };
+}
+
