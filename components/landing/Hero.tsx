@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { ComponentProps } from "react";
 
 function ChevronRightIcon(props: ComponentProps<"svg">) {
@@ -15,24 +16,6 @@ function ChevronRightIcon(props: ComponentProps<"svg">) {
       {...props}
     >
       <path d="M7.5 4.5 12.5 10l-5 5.5" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon(props: ComponentProps<"svg">) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      {...props}
-    >
-      <path d="M4 10h11" />
-      <path d="m11 5 5 5-5 5" />
     </svg>
   );
 }
@@ -67,17 +50,17 @@ export function Hero() {
             <div className="flex flex-wrap items-start gap-4">
               <Link
                 href="/signup"
-                className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-3 text-base font-medium leading-6 text-brand-foreground shadow-xs transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="inline-flex items-center justify-center rounded-base bg-bg-brand px-5 py-3 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-brand"
               >
                 Join for free
               </Link>
 
               <Link
                 href="#tools"
-                className="group inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-3 text-base font-medium leading-6 text-brand transition-colors duration-200 hover:bg-brand/5 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:hover:text-blue-300"
+                className="inline-flex items-center justify-center gap-2 rounded-base border border-border-default-medium bg-bg-primary-soft px-5 py-3 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-default"
               >
                 Learn more{" "}
-                <ArrowRightIcon className="size-4 transition-transform duration-200 group-hover:translate-x-1" />
+                <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>
           </div>
