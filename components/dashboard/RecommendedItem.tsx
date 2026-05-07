@@ -1,45 +1,50 @@
 import Link from "next/link";
-import { BookOpen, ClipboardList, Compass, Stethoscope } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import type { SampleRecommendation } from "@/lib/dashboard/sample-data";
 
 type Props = {
-  item: {
-    id: string;
-    title: string;
-    category: string;
-    type: "Course" | "Pathway" | "Case" | "Quiz";
-    estimatedMinutes: number;
-  };
+  item: SampleRecommendation;
 };
 
-const TYPE_ICONS = {
-  Course: BookOpen,
-  Pathway: Compass,
-  Case: Stethoscope,
-  Quiz: ClipboardList,
+const TYPE_PLURAL = {
+  Pathway: "pathways",
+  Course: "courses",
+  Quiz: "quizzes",
+  Case: "cases",
 } as const;
 
 export function RecommendedItem({ item }: Props) {
-  const Icon = TYPE_ICONS[item.type];
-
   return (
-    <Link
-      href="#"
-      // SAMPLE: placeholder route — replace with real destinations when available.
-      className="group flex items-start gap-3 rounded-sm p-2 transition-colors hover:bg-bg-secondary-soft"
-    >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-base bg-bg-brand-softer">
-        <Icon className="size-4 text-text-fg-brand-strong" aria-hidden />
+    <article className="rounded-base border border-border-default bg-bg-primary-soft p-4">
+      <div className="text-xs font-medium text-text-muted">
+        {item.type} · {item.estimatedMinutes} min
       </div>
-      <div className="min-w-0 flex flex-col gap-0.5">
-        <span className="text-xs font-medium text-text-fg-brand-strong">
-          {item.type} · {item.estimatedMinutes} min
-        </span>
-        <span className="text-sm font-medium leading-tight text-text-heading group-hover:text-text-fg-brand-strong">
+
+      <h3 className="mt-2 text-base font-bold leading-tight tracking-tight text-text-heading">
+        <Link href="#" className="transition-colors hover:text-text-fg-brand-strong">
           {item.title}
-        </span>
-        <span className="text-xs text-text-muted">{item.category}</span>
+        </Link>
+      </h3>
+
+      <p className="mt-1.5 text-sm leading-snug text-text-body">{item.description}</p>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <Link
+          href={`#category-${item.category.toLowerCase().replace(/\s+/g, "-")}`}
+          className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong transition-colors hover:bg-bg-brand-soft"
+        >
+          {item.category}
+        </Link>
+
+        <Link
+          href={item.seeMoreHref}
+          className="inline-flex items-center gap-1 text-xs font-medium text-text-fg-brand-strong hover:underline"
+        >
+          See more {TYPE_PLURAL[item.type]}
+          <ArrowRight className="size-3" aria-hidden />
+        </Link>
       </div>
-    </Link>
+    </article>
   );
 }
 

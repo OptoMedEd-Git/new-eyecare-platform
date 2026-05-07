@@ -21,9 +21,11 @@ export type SampleCourse = {
 export type SampleRecommendation = {
   id: string;
   title: string;
+  description: string;
   category: string;
-  type: "Course" | "Pathway" | "Case" | "Quiz";
+  type: "Pathway" | "Course" | "Quiz" | "Case";
   estimatedMinutes: number;
+  seeMoreHref: string;
 };
 
 export type DailyActivity = {
@@ -139,24 +141,39 @@ export const SAMPLE_CONTINUE_LEARNING: SampleCourse[] = [
 export const SAMPLE_RECOMMENDATIONS: SampleRecommendation[] = [
   {
     id: "r1",
-    title: "Reading OCT scans systematically",
-    category: "Diagnostic imaging",
-    type: "Course",
-    estimatedMinutes: 35,
+    title: "Glaucoma management mastery",
+    description: "Build a full clinical workflow for diagnosing and managing primary open-angle glaucoma.",
+    category: "Glaucoma",
+    type: "Pathway",
+    estimatedMinutes: 120,
+    seeMoreHref: "/pathways",
   },
   {
     id: "r2",
-    title: "Acute red eye: differential diagnosis",
-    category: "Anterior segment",
-    type: "Case",
-    estimatedMinutes: 20,
+    title: "Reading OCT scans systematically",
+    description: "Learn a structured framework for interpreting OCT imaging across common pathologies.",
+    category: "Diagnostic imaging",
+    type: "Course",
+    estimatedMinutes: 35,
+    seeMoreHref: "/courses",
   },
   {
     id: "r3",
     title: "Glaucoma medication interactions",
+    description: "Test your knowledge of common glaucoma drugs and their systemic considerations.",
     category: "Glaucoma",
     type: "Quiz",
     estimatedMinutes: 15,
+    seeMoreHref: "/quiz-bank",
+  },
+  {
+    id: "r4",
+    title: "Acute red eye: differential diagnosis",
+    description: "Work through a case-based approach to narrowing down acute anterior segment causes.",
+    category: "Anterior segment",
+    type: "Case",
+    estimatedMinutes: 20,
+    seeMoreHref: "/cases",
   },
 ];
 
