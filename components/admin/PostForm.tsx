@@ -9,6 +9,7 @@ import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import type { AdminTag } from "@/lib/blog/admin-tags-queries";
 import { slugify } from "@/lib/blog/slugify";
+import { PostEditor, type PostEditorHandle } from "@/components/admin/PostEditor";
 import { ArrowLeft, RefreshCw, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,13 +39,13 @@ export type PostFormProps = {
 export function PostForm({ initialPost, categories, availableTags }: PostFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const editorRef = useRef<PostEditorHandle>(null);
   const isEdit = Boolean(initialPost);
 
   const [title, setTitle] = useState(initialPost?.title ?? "");
   /** Only used in edit mode; create mode derives slug from title during render. */
   const [editedSlug, setEditedSlug] = useState(initialPost?.slug ?? "");
   const [description, setDescription] = useState(initialPost?.description ?? "");
-  const [content, setContent] = useState(initialPost?.content ?? "");
   const [coverImage, setCoverImage] = useState({
     url: initialPost?.cover_image_url ?? null,
     path: initialPost?.cover_image_path ?? null,
@@ -94,6 +95,8 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
       fd.set("cover_image_url", coverImage.url ?? "");
       fd.set("cover_image_path", coverImage.path ?? "");
       fd.set("tag_ids", JSON.stringify(tagIds));
+      const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
+      fd.set("content", JSON.stringify(editorJSON));
 
       let result: Awaited<ReturnType<typeof createPost>> | Awaited<ReturnType<typeof updatePost>>;
       if (isEdit) {
@@ -146,7 +149,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
     <form ref={formRef} onSubmit={handleSubmit} className="mx-auto flex w-full max-w-[640px] flex-col gap-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold leading-[1.25] tracking-tight text-text-heading">{isEdit ? "Edit post" : "New post"}</h1>
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">{isEdit ? "Edit post" : "New post"}</h1>
         </div>
         {isEdit && initialPost ? (
           <PostStatusDisplay
@@ -280,19 +283,15 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
           <label className="mb-2.5 block text-sm font-medium text-text-heading">
             Content <span className="text-text-fg-danger">*</span>
           </label>
-          <div className="min-h-[300px] rounded-base border border-border-default bg-bg-secondary-soft p-3.5">
-            <textarea
-              name="content"
-              value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-                setDirty(true);
-              }}
-              placeholder="Rich text editor coming soon. For now, write plain text or paste TipTap-compatible JSON."
-              className="min-h-[280px] w-full resize-y border-none bg-transparent text-sm font-normal leading-6 text-text-heading outline-none placeholder:text-text-placeholder"
-            />
-          </div>
-          <p className="mt-1.5 text-xs text-text-muted">Rich text editor (with formatting, images, etc.) coming in next session.</p>
+          <PostEditor
+            ref={editorRef}
+            initialContent={initialPost?.content ?? ""}
+            onUpdate={() => setDirty(true)}
+            disabled={saving || publishing}
+          />
+          <p className="mt-1.5 text-xs text-text-muted">
+            Write your post content. Use the toolbar for formatting, links, and images.
+          </p>
         </div>
       </div>
 
