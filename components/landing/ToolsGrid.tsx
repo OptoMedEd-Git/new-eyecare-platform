@@ -1,151 +1,82 @@
-import Image from "next/image";
+import { BookOpen, GraduationCap, Layers, Route, Stethoscope, Eye } from "lucide-react";
 
-type ToolCard = {
-  id: string;
+type ToolItem = {
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   title: string;
   description: string;
-  /** Public path after you export assets to `public/images/tools/`. */
-  imageSrc: string;
-  imageAlt: string;
-  /** Desktop (lg) column span within a 6-column grid: row1 → 3+3, rows 2–3 → 2+2+2. */
-  lgColSpan: 2 | 3;
 };
 
-const TOOL_CARDS: readonly ToolCard[] = [
+const TOOLS: readonly ToolItem[] = [
   {
-    id: "learning-pathways",
     title: "Learning Pathways",
     description:
       "Structured progressions tailored to your role. Start where you are, build toward where you want to be.",
-    imageSrc: "/images/tools/learning-pathways.png",
-    imageAlt:
-      "Illustration for Learning Pathways: structured learning journey and progression milestones.",
-    lgColSpan: 3,
+    icon: Route,
   },
   {
-    id: "microlearning-modules",
     title: "Microlearning Modules",
     description:
       "Bite-sized lessons under 10 minutes each. Learn one concept at a time, between patients or on your commute.",
-    imageSrc: "/images/tools/microlearning-modules.png",
-    imageAlt:
-      "Illustration for Microlearning Modules: short lesson units and quick study sessions.",
-    lgColSpan: 3,
+    icon: BookOpen,
   },
   {
-    id: "case-studies",
     title: "Case Studies",
     description:
       "Interactive cases that walk you through differential diagnosis and clinical decision-making.",
-    imageSrc: "/images/tools/case-studies.png",
-    imageAlt:
-      "Illustration for Case Studies: clinical case review and diagnostic reasoning.",
-    lgColSpan: 2,
+    icon: Stethoscope,
   },
   {
-    id: "flashcards",
     title: "Flashcards",
     description:
       "Spaced repetition for the facts you need to retain — pharmacology, anatomy, key clinical pearls.",
-    imageSrc: "/images/tools/flashcards.png",
-    imageAlt:
-      "Illustration for Flashcards: spaced repetition and memorization cards.",
-    lgColSpan: 2,
+    icon: Layers,
   },
   {
-    id: "media-gallery",
     title: "Media Gallery",
     description:
       "Curated images, videos, and clinical photos. Build your visual diagnostic library across slit-lamp, fundus, OCT, and more.",
-    imageSrc: "/images/tools/media-gallery.png",
-    imageAlt:
-      "Illustration for Media Gallery: clinical imaging and educational media.",
-    lgColSpan: 2,
+    icon: Eye,
   },
   {
-    id: "courses",
     title: "Courses",
     description:
       "Deep-dive modules covering core eye care topics with video, reading, and assessment built in.",
-    imageSrc: "/images/tools/courses.png",
-    imageAlt: "Illustration for Courses: structured course modules and assessments.",
-    lgColSpan: 2,
-  },
-  {
-    id: "question-bank",
-    title: "Question Bank",
-    description:
-      "Active recall practice with high-yield clinical scenarios. Test what you know, surface what you don't.",
-    imageSrc: "/images/tools/question-bank.png",
-    imageAlt:
-      "Illustration for Question Bank: practice questions and clinical scenarios.",
-    lgColSpan: 2,
-  },
-  {
-    id: "encyclopedia",
-    title: "Encyclopedia",
-    description:
-      "Searchable, evidence-based reference for the conditions and concepts you encounter daily.",
-    imageSrc: "/images/tools/encyclopedia.png",
-    imageAlt:
-      "Illustration for Encyclopedia: searchable reference and knowledge base.",
-    lgColSpan: 2,
+    icon: GraduationCap,
   },
 ] as const;
-
-function lgColSpanClass(span: 2 | 3) {
-  return span === 3 ? "lg:col-span-3" : "lg:col-span-2";
-}
-
-function ToolCard({ card }: { card: ToolCard }) {
-  return (
-    <article
-      className={`group flex h-full flex-col rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600 ${lgColSpanClass(card.lgColSpan)}`}
-    >
-      <div className="flex min-h-[140px] flex-1 flex-col items-center justify-center pb-5">
-        <Image
-          src={card.imageSrc}
-          alt={card.imageAlt}
-          width={280}
-          height={180}
-          sizes="(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 33vw"
-          className="h-auto max-h-[180px] w-full max-w-[280px] object-contain transition-transform duration-300 group-hover:scale-[1.02]"
-        />
-      </div>
-      <h3 className="text-center text-lg font-semibold leading-7 text-[#101828] dark:text-white">
-        {card.title}
-      </h3>
-      <p className="mt-3 text-center text-base font-normal leading-6 text-text-body dark:text-gray-300">
-        {card.description}
-      </p>
-    </article>
-  );
-}
 
 export function ToolsGrid() {
   return (
     <section
       id="tools"
       aria-labelledby="tools-heading"
-      className="w-full scroll-mt-20 overflow-hidden bg-secondary dark:bg-gray-900/40"
+      className="w-full scroll-mt-20 overflow-hidden bg-bg-primary-soft py-16 lg:py-24"
     >
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
-        <header className="mx-auto mb-12 max-w-3xl text-center md:mb-16">
+      <div className="mx-auto w-full max-w-7xl px-6">
+        <header className="max-w-2xl">
           <h2
             id="tools-heading"
-            className="text-3xl font-bold leading-tight tracking-tight text-[#101828] sm:text-4xl dark:text-white"
+            className="text-3xl font-extrabold tracking-tight text-text-heading lg:text-4xl"
           >
             Comprehensive learning tools for eye care professionals
           </h2>
-          <p className="mt-4 text-lg leading-7 text-gray-600 sm:text-xl dark:text-gray-300">
+          <p className="mt-4 text-base leading-7 text-text-body lg:text-lg">
             Active learning tools designed for the way clinicians actually retain
             and apply knowledge.
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-6 lg:gap-8">
-          {TOOL_CARDS.map((card) => (
-            <ToolCard key={card.id} card={card} />
+        <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:mt-16 lg:grid-cols-3 lg:gap-x-12 lg:gap-y-12">
+          {TOOLS.map((tool) => (
+            <div key={tool.title} className="flex flex-col">
+              <div className="flex size-12 items-center justify-center rounded-base bg-bg-brand-softer">
+                <tool.icon className="size-6 text-text-fg-brand-strong" aria-hidden />
+              </div>
+              <h3 className="mt-5 text-lg font-bold leading-tight tracking-tight text-text-heading">
+                {tool.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-text-body">{tool.description}</p>
+            </div>
           ))}
         </div>
       </div>
