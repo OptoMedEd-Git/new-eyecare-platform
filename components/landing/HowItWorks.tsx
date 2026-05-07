@@ -11,25 +11,25 @@ type JourneyStep = {
 const STEPS: readonly JourneyStep[] = [
   {
     id: "sign-up",
-    title: "Step 1: Sign up and tell us about yourself",
+    title: "Sign up and tell us about yourself",
     description:
       "Create your free account in under two minutes. Tell us your role and specialty so your experience adapts to what you actually need.",
   },
   {
     id: "learning-path",
-    title: "Step 2: Get your personalized learning path",
+    title: "Get your personalized learning path",
     description:
       "We surface the most relevant modules, cases, and references for your stage and goals. Skip what you know, focus on what matters.",
   },
   {
     id: "learn-your-way",
-    title: "Step 3: Learn the way you learn best",
+    title: "Learn the way you learn best",
     description:
       "Combine reading, video, quizzes, flashcards, and case studies. Mix passive learning with active recall — the way it actually sticks.",
   },
   {
     id: "track-progress",
-    title: "Step 4: Track progress and earn credits",
+    title: "Track progress and earn credits",
     description:
       "Watch your progress across pathways. Earn CE credits where applicable, and download certificates as you complete content.",
   },
@@ -69,47 +69,36 @@ export function HowItWorks() {
               </p>
             </header>
 
-            <div className="relative">
-              <div
-                className="absolute bottom-2 left-[7px] top-2 w-px bg-gray-200 dark:bg-gray-600"
-                aria-hidden
-              />
-              <ol className="relative m-0 list-none space-y-11 p-0">
-                {STEPS.map((step) => (
-                  <li key={step.id} className="relative flex gap-4">
-                    <div className="relative z-10 shrink-0">
-                      <div
-                        className="h-4 w-4 rounded-full border-4 border-white bg-brand dark:border-gray-950"
-                        aria-hidden
-                      />
-                    </div>
-                    <div className="-mt-1 min-w-0 flex-1">
-                      <h3 className="text-xl font-semibold leading-7 text-[#101828] dark:text-white">
-                        {step.title}
-                      </h3>
-                      <p className="mt-2 text-base leading-6 text-text-body dark:text-gray-300">
-                        {step.description}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <ol className="relative mt-8 flex flex-col gap-8">
+              <div className="absolute bottom-4 left-[11px] top-4 w-px bg-border-default" aria-hidden />
+              {STEPS.map((step, i) => (
+                <li key={step.id} className="relative flex gap-5">
+                  <div className="relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand text-xs font-semibold text-text-on-brand shadow-xs">
+                    {i + 1}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="text-lg font-bold leading-tight tracking-tight text-text-heading">
+                      {step.title}
+                    </h3>
+                    <p className="text-sm leading-6 text-text-body">{step.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 href="/signup"
-                className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-brand-foreground shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-950"
+                className="inline-flex items-center justify-center rounded-base bg-bg-brand px-5 py-3 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-brand"
               >
                 Sign up
-                <ArrowRight className="size-4 shrink-0 transition-colors duration-200" aria-hidden />
               </Link>
               <Link
                 href="/about"
-                className="group inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-secondary px-4 py-2.5 text-sm font-medium leading-5 text-text-body shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-colors duration-200 hover:border-gray-300 hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-950"
+                className="inline-flex items-center justify-center gap-2 rounded-base border border-border-default-medium bg-bg-primary-soft px-5 py-3 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring-default"
               >
                 Learn more
-                <ArrowRight className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-1" aria-hidden />
+                <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>
           </div>
