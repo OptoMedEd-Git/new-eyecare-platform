@@ -16,7 +16,7 @@ export const blogExtensions = [
     openOnClick: false,
     HTMLAttributes: {
       class:
-        "text-brand underline decoration-brand/30 underline-offset-2 transition-colors hover:text-blue-700 hover:decoration-brand",
+        "text-text-fg-brand underline decoration-text-fg-brand/40 underline-offset-2 transition-colors hover:text-text-fg-brand-strong hover:decoration-text-fg-brand-strong",
       rel: "noopener noreferrer nofollow",
       target: "_blank",
     },

@@ -257,3 +257,234 @@ body {
     transform: translateY(0) scale(1);
   }
 }
+
+/* ==========================================================================
+   TipTap content typography — editor preview AND public rendering.
+   Aligned to Flowbite Pro's typography scale (Inter font family, bold
+   headings with tight tracking, text-base body at line-height 1.6).
+   ========================================================================== */
+
+.prose-editor,
+.blog-content {
+  color: var(--color-text-body);
+  font-size: 1rem; /* text-base, 16px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Headings — bold weight + tighter tracking per Flowbite typography tokens */
+.prose-editor h2,
+.blog-content h2 {
+  color: var(--color-text-heading);
+  font-size: 1.875rem; /* text-3xl, 30px */
+  font-weight: 700; /* bold per Flowbite */
+  line-height: 1.25;
+  letter-spacing: -0.025em; /* tracking-tight per Flowbite */
+  margin-top: 2.5rem; /* 40px breathing room above */
+  margin-bottom: 1rem;
+}
+
+.prose-editor h2:first-child,
+.blog-content h2:first-child {
+  margin-top: 0;
+}
+
+.prose-editor h3,
+.blog-content h3 {
+  color: var(--color-text-heading);
+  font-size: 1.5rem; /* text-2xl, 24px */
+  font-weight: 700; /* bold per Flowbite */
+  line-height: 1.3;
+  letter-spacing: -0.025em; /* tracking-tight per Flowbite */
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Paragraphs */
+.prose-editor p,
+.blog-content p {
+  margin-top: 0;
+  margin-bottom: 1.25rem; /* 20px */
+}
+
+.prose-editor p:last-child,
+.blog-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline marks */
+.prose-editor strong,
+.blog-content strong {
+  color: var(--color-text-heading);
+  font-weight: 600; /* semibold for inline emphasis */
+}
+
+.prose-editor em,
+.blog-content em {
+  font-style: italic;
+}
+
+.prose-editor s,
+.blog-content s {
+  text-decoration: line-through;
+}
+
+.prose-editor u,
+.blog-content u {
+  text-decoration: underline;
+}
+
+/* Inline code */
+.prose-editor code,
+.blog-content code {
+  background-color: var(--color-bg-secondary-medium);
+  color: var(--color-text-heading);
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* Code blocks */
+.prose-editor pre,
+.blog-content pre {
+  background-color: var(--color-bg-inverse);
+  color: var(--color-text-on-brand);
+  padding: 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.prose-editor pre code,
+.blog-content pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-weight: 400;
+}
+
+/* Blockquote — minimal Flowbite-style (italic, subtle border, no bg tint) */
+.prose-editor blockquote,
+.blog-content blockquote {
+  border-left: 4px solid var(--color-border-default-medium);
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  margin-top: 1.75rem;
+  margin-bottom: 1.75rem;
+  font-style: italic;
+  color: var(--color-text-heading);
+  font-size: 1rem;
+}
+
+.prose-editor blockquote p,
+.blog-content blockquote p {
+  margin-bottom: 0.5rem;
+}
+
+.prose-editor blockquote p:last-child,
+.blog-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.prose-editor ul,
+.blog-content ul,
+.prose-editor ol,
+.blog-content ol {
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.prose-editor ul,
+.blog-content ul {
+  list-style-type: disc;
+}
+
+.prose-editor ol,
+.blog-content ol {
+  list-style-type: decimal;
+}
+
+.prose-editor li,
+.blog-content li {
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+/* Nested lists */
+.prose-editor ul ul,
+.blog-content ul ul,
+.prose-editor ol ol,
+.blog-content ol ol,
+.prose-editor ul ol,
+.blog-content ul ol,
+.prose-editor ol ul,
+.blog-content ol ul {
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+}
+
+.prose-editor li p,
+.blog-content li p {
+  margin-bottom: 0.375rem;
+}
+
+.prose-editor li p:last-child,
+.blog-content li p:last-child {
+  margin-bottom: 0;
+}
+
+/* Horizontal rule */
+.prose-editor hr,
+.blog-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border-default);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Links — Link extension provides classes via HTMLAttributes; this is fallback */
+.prose-editor a,
+.blog-content a {
+  color: var(--color-text-fg-brand);
+  text-decoration: underline;
+  text-decoration-color: rgb(from var(--color-text-fg-brand) r g b / 0.4);
+  text-underline-offset: 2px;
+  transition: color 150ms ease, text-decoration-color 150ms ease;
+}
+
+.prose-editor a:hover,
+.blog-content a:hover {
+  color: var(--color-text-fg-brand-strong);
+  text-decoration-color: var(--color-text-fg-brand-strong);
+}
+
+/* Images */
+.prose-editor img,
+.blog-content img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+}
+
+/* Editor-only: focus reset and empty placeholder */
+.prose-editor:focus {
+  outline: none;
+}
+
+.prose-editor p:first-child:last-child:empty::before {
+  content: "Start writing...";
+  color: var(--color-text-placeholder);
+  pointer-events: none;
+}

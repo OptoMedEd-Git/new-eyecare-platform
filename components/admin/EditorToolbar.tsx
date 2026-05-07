@@ -64,7 +64,13 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-1 border-b border-border-default p-2">
+      {/* Prevent toolbar buttons from taking focus — node commands need the editor selection intact */}
+      <div
+        className="flex flex-wrap items-center gap-1 border-b border-border-default p-2"
+        onMouseDown={(e) => {
+          e.preventDefault();
+        }}
+      >
         <div className="flex items-center gap-0.5">
           <button
             type="button"
