@@ -8,12 +8,18 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { RecommendedItem } from "@/components/dashboard/RecommendedItem";
 import { LearningActivityChart } from "@/components/dashboard/LearningActivityChart";
+import { SkillMasteryChart } from "@/components/dashboard/SkillMasteryChart";
+import { MonthlyProgressChart } from "@/components/dashboard/MonthlyProgressChart";
+import { AchievementsCard } from "@/components/dashboard/AchievementsCard";
 import { HomeBlogPostCard } from "@/components/blog/HomeBlogPostCard";
 
 import { getFeaturedPosts } from "@/lib/blog/queries";
 import {
   SAMPLE_CONTINUE_LEARNING,
+  SAMPLE_BADGES,
+  SAMPLE_MONTHLY_PROGRESS,
   SAMPLE_RECOMMENDATIONS,
+  SAMPLE_SKILL_MASTERY,
   SAMPLE_STATS,
   SAMPLE_WEEKLY_ACTIVITY,
 } from "@/lib/dashboard/sample-data";
@@ -96,11 +102,24 @@ export default async function DashboardPage() {
         </aside>
       </div>
 
-      {/* Learning Activity chart */}
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-3">
+      {/* Charts row: Learning Activity (2/3) + Skill mastery (1/3) */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <LearningActivityChart data={SAMPLE_WEEKLY_ACTIVITY} />
         </div>
+        <div>
+          <SkillMasteryChart data={SAMPLE_SKILL_MASTERY} />
+        </div>
+      </div>
+
+      {/* Monthly progress chart — SAMPLE */}
+      <div className="mt-6">
+        <MonthlyProgressChart data={SAMPLE_MONTHLY_PROGRESS} />
+      </div>
+
+      {/* Achievements / badges — SAMPLE placeholder */}
+      <div className="mt-6">
+        <AchievementsCard badges={SAMPLE_BADGES} />
       </div>
 
       {/* Latest from the blog — REAL data */}

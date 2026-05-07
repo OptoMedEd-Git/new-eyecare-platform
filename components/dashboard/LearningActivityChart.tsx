@@ -1,24 +1,34 @@
+"use client";
+
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 import type { DailyActivity } from "@/lib/dashboard/sample-data";
+
+const CHART_COLORS = {
+  brand: "#155dfc", // --color-bg-brand
+  brandSofter: "#eef6ff", // --color-bg-brand-softer
+  grid: "#e5e7eb", // --color-border-default
+  muted: "#6a7282", // --color-text-muted
+} as const;
 
 type Props = {
   data: DailyActivity[];
 };
 
 export function LearningActivityChart({ data }: Props) {
-  const maxValue = Math.max(...data.map((d) => d.questions), 1);
   const total = data.reduce((sum, d) => sum + d.questions, 0);
-
-  const height = 200;
-  const padding = { top: 20, bottom: 30 };
-  const chartHeight = height - padding.top - padding.bottom;
-
-  const barCount = data.length;
-  const barWidth = 8; // viewBox units (0-100)
-  const barGap = (100 - barCount * barWidth) / (barCount + 1);
 
   return (
     <div className="rounded-base border border-border-default bg-bg-primary-soft p-6">
-      <div className="flex items-center justify-between gap-6">
+      <div className="flex items-start justify-between gap-6">
         <div>
           <h2 className="text-base font-bold text-text-heading">Learning activity</h2>
           <p className="mt-1 text-sm text-text-body">Questions answered this week</p>
@@ -29,53 +39,38 @@ export function LearningActivityChart({ data }: Props) {
         </div>
       </div>
 
-      <div className="mt-6">
-        <svg
-          viewBox={`0 0 100 ${height}`}
-          preserveAspectRatio="none"
-          className="w-full"
-          style={{ height: `${height}px` }}
-          role="img"
-          aria-label={`Bar chart showing questions answered per day this week. Total: ${total}`}
-        >
-          {data.map((d, i) => {
-            const barHeight = (d.questions / maxValue) * chartHeight;
-            const x = barGap + i * (barWidth + barGap);
-            const y = padding.top + (chartHeight - barHeight);
-
-            return (
-              <g key={d.day}>
-                <rect
-                  x={x}
-                  y={y}
-                  width={barWidth}
-                  height={barHeight}
-                  fill="var(--color-bg-brand)"
-                  rx={1}
-                />
-                <text
-                  x={x + barWidth / 2}
-                  y={height - 8}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fill="var(--color-text-muted)"
-                >
-                  {d.day}
-                </text>
-                <text
-                  x={x + barWidth / 2}
-                  y={y - 6}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fontWeight={600}
-                  fill="var(--color-text-heading)"
-                >
-                  {d.questions}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+      <div className="mt-6 h-[240px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="activityGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={CHART_COLORS.brand} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={CHART_COLORS.brand} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} vertical={false} />
+            <XAxis dataKey="day" stroke={CHART_COLORS.muted} fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis stroke={CHART_COLORS.muted} fontSize={12} tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "white",
+                border: `1px solid ${CHART_COLORS.grid}`,
+                borderRadius: "8px",
+                fontSize: "12px",
+              }}
+              labelStyle={{ fontWeight: 600 }}
+            />
+            <Area
+              type="monotone"
+              dataKey="questions"
+              stroke={CHART_COLORS.brand}
+              strokeWidth={2}
+              fill="url(#activityGradient)"
+              dot={{ fill: CHART_COLORS.brand, r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
