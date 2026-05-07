@@ -27,7 +27,7 @@ export function LearningActivityChart({ data }: Props) {
   const total = data.reduce((sum, d) => sum + d.questions, 0);
 
   return (
-    <div className="rounded-base border border-border-default bg-bg-primary-soft p-6">
+    <div className="flex h-full flex-col rounded-base border border-border-default bg-bg-primary-soft p-6">
       <div className="flex items-start justify-between gap-6">
         <div>
           <h2 className="text-base font-bold text-text-heading">Learning activity</h2>
@@ -39,7 +39,7 @@ export function LearningActivityChart({ data }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 h-[240px] w-full">
+      <div className="mt-6 min-h-[240px] w-full flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>

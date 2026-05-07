@@ -18,7 +18,7 @@ export function SkillMasteryChart({ data }: Props) {
   const avg = data.length > 0 ? Math.round(data.reduce((sum, d) => sum + d.value, 0) / data.length) : 0;
 
   return (
-    <div className="rounded-base border border-border-default bg-bg-primary-soft p-6">
+    <div className="flex h-full flex-col rounded-base border border-border-default bg-bg-primary-soft p-6">
       <div>
         <h2 className="text-base font-bold text-text-heading">Skill mastery</h2>
         <p className="mt-1 text-sm text-text-body">By specialty area</p>

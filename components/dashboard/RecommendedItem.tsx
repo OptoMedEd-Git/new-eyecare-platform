@@ -26,9 +26,7 @@ export function RecommendedItem({ item }: Props) {
         </Link>
       </h3>
 
-      <p className="mt-1.5 text-sm leading-snug text-text-body">{item.description}</p>
-
-      <div className="mt-3 flex items-center justify-between gap-3">
+      <div className="mt-4 flex items-center justify-between gap-3">
         <Link
           href={`#category-${item.category.toLowerCase().replace(/\s+/g, "-")}`}
           className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong transition-colors hover:bg-bg-brand-soft"

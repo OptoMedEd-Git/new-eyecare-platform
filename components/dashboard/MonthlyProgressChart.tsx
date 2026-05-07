@@ -12,9 +12,10 @@ import {
 } from "recharts";
 
 const CHART_COLORS = {
-  questions: "#155dfc", // --color-bg-brand
-  cases: "#007a55", // --color-bg-success
-  flashcards: "#d08700", // --color-bg-warning
+  // Monochromatic brand-blue palette (dark → light) for visual consistency with SkillMasteryChart
+  questions: "#1e3a8a", // brand-blue dark (primary activity)
+  cases: "#3b82f6", // brand-blue mid (secondary activity)
+  flashcards: "#93c5fd", // brand-blue light (tertiary activity)
   grid: "#e5e7eb", // --color-border-default
   muted: "#6a7282", // --color-text-muted
 } as const;

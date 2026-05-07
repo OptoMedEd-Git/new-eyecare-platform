@@ -90,7 +90,7 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <aside className="rounded-base border border-border-default bg-bg-primary-soft p-5">
+        <aside className="rounded-base border border-border-default bg-bg-secondary-soft p-5 self-start">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
             Recommended for you
           </h2>
