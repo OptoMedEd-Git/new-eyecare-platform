@@ -51,16 +51,16 @@ export function FAQ() {
 
   return (
     <section
-      className="w-full overflow-hidden bg-white dark:bg-gray-950"
+      className="w-full overflow-hidden bg-bg-primary-soft dark:bg-gray-950"
       aria-labelledby="faq-heading"
     >
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:py-24">
         <div className="grid grid-cols-1 items-start gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="relative overflow-hidden rounded-2xl bg-secondary p-8 lg:p-12">
+          <div className="relative overflow-hidden rounded-base bg-bg-secondary-soft p-8 lg:p-12">
             <header className="relative z-10 flex max-w-xl flex-col gap-6">
               <h2
                 id="faq-heading"
-                className="text-3xl font-semibold leading-tight tracking-tight text-[#101828] sm:text-4xl sm:leading-tight dark:text-white"
+                className="text-3xl font-bold leading-tight tracking-tight text-text-heading sm:text-4xl sm:leading-tight dark:text-white"
               >
                 Frequently asked questions
               </h2>
@@ -71,7 +71,7 @@ export function FAQ() {
               </p>
               <Link
                 href="/contact"
-                className="inline-flex w-fit items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium leading-5 text-text-body shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-950"
+                className="inline-flex w-fit items-center justify-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium leading-5 text-text-body shadow-[0_1px_0.5px_0_rgba(29,41,61,0.02)] transition-all duration-200 hover:border-border-default-medium hover:bg-bg-secondary-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-500 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-950"
               >
                 <MessageSquare
                   className="size-4 shrink-0 text-text-body transition-colors duration-200"
@@ -90,7 +90,7 @@ export function FAQ() {
               return (
                 <div
                   key={index}
-                  className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900"
+                  className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft shadow-sm dark:border-gray-700 dark:bg-gray-900"
                 >
                   <button
                     type="button"
@@ -101,19 +101,19 @@ export function FAQ() {
                     className={`flex w-full items-center justify-between gap-4 px-5 py-5 text-left transition-all duration-200 sm:px-6 ${
                       isOpen
                         ? "bg-gray-100 dark:bg-gray-800"
-                        : "bg-white hover:bg-gray-50 dark:bg-gray-900 dark:hover:bg-gray-800/80"
+                        : "bg-bg-primary-soft hover:bg-bg-secondary-soft dark:bg-gray-900 dark:hover:bg-gray-800/80"
                     }`}
                   >
                     <span className="flex min-w-0 flex-1 items-start gap-2 sm:items-center sm:gap-3">
                       <HelpCircle
-                        className="mt-0.5 size-5 shrink-0 text-gray-500 transition-colors duration-200 sm:mt-0 dark:text-gray-400"
+                        className="mt-0.5 size-5 shrink-0 text-text-muted transition-colors duration-200 sm:mt-0 dark:text-gray-400"
                         aria-hidden
                         strokeWidth={1.75}
                       />
                       <span
                         className={`text-base font-medium leading-6 ${
                           isOpen
-                            ? "text-[#101828] dark:text-white"
+                            ? "text-text-heading dark:text-white"
                             : "text-text-body dark:text-gray-300"
                         }`}
                       >
@@ -121,7 +121,7 @@ export function FAQ() {
                       </span>
                     </span>
                     <ChevronDown
-                      className={`size-5 shrink-0 text-gray-500 transition-transform duration-200 dark:text-gray-400 ${
+                      className={`size-5 shrink-0 text-text-muted transition-transform duration-200 dark:text-gray-400 ${
                         isOpen ? "rotate-180" : ""
                       }`}
                       aria-hidden
@@ -138,7 +138,7 @@ export function FAQ() {
                         id={panelId}
                         role="region"
                         aria-labelledby={`faq-trigger-${index}`}
-                        className="border-t border-gray-200 bg-white px-5 pb-5 pt-4 dark:border-gray-700 dark:bg-gray-900"
+                        className="border-t border-border-default bg-bg-primary-soft px-5 pb-5 pt-4 dark:border-gray-700 dark:bg-gray-900"
                       >
                         <p className="text-base font-normal leading-6 text-text-body dark:text-gray-300">
                           {faq.answer}

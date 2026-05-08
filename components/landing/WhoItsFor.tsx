@@ -79,13 +79,13 @@ const PERSONAS: readonly Persona[] = [
 function PersonaCard({ persona }: { persona: Persona }) {
   const { Icon, title, description } = persona;
   return (
-    <article className="group flex h-full min-w-0 flex-col rounded-xl border border-gray-200 bg-secondary p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-900/60 dark:hover:border-gray-600">
+    <article className="group flex h-full min-w-0 flex-col rounded-base border border-border-default bg-bg-secondary-soft p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-border-default-medium hover:shadow-md dark:border-gray-700 dark:bg-gray-900/60 dark:hover:border-gray-600">
       <div className="flex min-h-0 flex-1 gap-2">
-        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 transition-colors duration-200 group-hover:text-brand dark:bg-blue-950/50 dark:text-blue-400 dark:group-hover:text-brand">
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-text-fg-brand-strong transition-colors duration-200 group-hover:text-brand dark:bg-blue-950/50 dark:text-blue-400 dark:group-hover:text-brand">
           <Icon className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
         </div>
-        <div className="min-w-0 flex-1 border-l border-gray-200 pl-3.5 dark:border-gray-600">
-          <h3 className="text-xl font-bold leading-none text-[#101828] dark:text-white">
+        <div className="min-w-0 flex-1 border-l border-border-default pl-3.5 dark:border-gray-600">
+          <h3 className="text-xl font-bold leading-none text-text-heading dark:text-white">
             {title}
           </h3>
           <p className="mt-2.5 text-sm font-normal leading-5 text-text-body dark:text-gray-300">
@@ -100,14 +100,14 @@ function PersonaCard({ persona }: { persona: Persona }) {
 export function WhoItsFor() {
   return (
     <section
-      className="w-full overflow-hidden border-y border-gray-100 bg-white dark:border-gray-800 dark:bg-gray-950"
+      className="w-full overflow-hidden border-y border-border-divider bg-bg-primary-soft dark:border-gray-800 dark:bg-gray-950"
       aria-labelledby="who-its-for-heading"
     >
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8">
+      <div className="mx-auto w-full max-w-7xl px-6 py-16 lg:py-24">
         <header className="mb-8 flex flex-col gap-3">
           <h2
             id="who-its-for-heading"
-            className="text-3xl font-semibold leading-9 text-[#101828] sm:text-4xl dark:text-white"
+            className="text-3xl font-bold leading-9 text-text-heading sm:text-4xl dark:text-white"
           >
             Who it&apos;s for
           </h2>

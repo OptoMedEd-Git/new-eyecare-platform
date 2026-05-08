@@ -29,17 +29,17 @@ export function FinalCTA() {
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
           <h2
             id="final-cta-heading"
-            className="text-4xl font-extrabold leading-none tracking-[-0.6px] text-white sm:text-5xl lg:text-[60px] lg:leading-[60px]"
+            className="text-4xl font-extrabold leading-none tracking-[-0.6px] text-text-inverse sm:text-5xl lg:text-[60px] lg:leading-[60px]"
           >
             Ready to advance your eye care education?
           </h2>
-          <p className="max-w-3xl text-lg font-normal leading-normal text-gray-400 sm:text-xl">
+          <p className="max-w-3xl text-lg font-normal leading-normal text-text-muted sm:text-xl">
             Join eye care professionals already learning with OptoMedEd. Free to
             start, free to keep using.
           </p>
           <Link
             href="/signup"
-            className="inline-flex min-h-11 min-w-44 items-center justify-center gap-2 self-center rounded-lg bg-brand px-5 py-3 text-base font-medium leading-normal text-brand-foreground shadow-sm transition-all duration-200 hover:bg-blue-700 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(17,25,40,0.85)]"
+            className="inline-flex min-h-11 min-w-44 items-center justify-center gap-2 self-center rounded-base bg-bg-brand px-5 py-3 text-base font-medium leading-normal text-text-on-brand shadow-sm transition-all duration-200 hover:bg-bg-brand-medium hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(17,25,40,0.85)]"
           >
             Get started
             <ArrowRight className="size-4 shrink-0 transition-colors duration-200" aria-hidden />
