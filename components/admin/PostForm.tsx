@@ -8,7 +8,7 @@ import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import type { AdminTag } from "@/lib/blog/admin-tags-queries";
-import { slugify } from "@/lib/blog/slugify";
+import { slugify, slugifyShort } from "@/lib/blog/slugify";
 import { PostEditor, type PostEditorHandle } from "@/components/admin/PostEditor";
 import { ArrowLeft, RefreshCw, Save } from "lucide-react";
 import Link from "next/link";
@@ -68,7 +68,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
 
   const tagPickerTags = useMemo(() => availableTags.map(({ id, name }) => ({ id, name })), [availableTags]);
 
-  const slug = isEdit ? editedSlug : slugify(title);
+  const slug = isEdit ? editedSlug : slugifyShort(title);
 
   useEffect(() => {
     if (!dirty) return;
