@@ -4,7 +4,7 @@ import { createPost, createTagAction, publishPost, publishPostWithChanges, updat
 import { HelpTooltip } from "@/components/admin/HelpTooltip";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusDisplay } from "@/components/admin/PostStatusDisplay";
-import { ReferencesEditor } from "@/components/admin/ReferencesEditor";
+import { ReferencesEditor, type ReferencesEditorHandle } from "@/components/admin/ReferencesEditor";
 import { TagsCombobox } from "@/components/admin/TagsCombobox";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
@@ -84,6 +84,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const editorRef = useRef<PostEditorHandle>(null);
+  const referencesEditorRef = useRef<ReferencesEditorHandle>(null);
   const isEdit = Boolean(initialPost);
   const isPublished = initialPost?.status === "published";
 
@@ -155,7 +156,9 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
-      fd.set("references", JSON.stringify(references));
+      const finalizedReferences = referencesEditorRef.current?.finalizeAll() ?? references;
+      setReferences(finalizedReferences);
+      fd.set("references", JSON.stringify(finalizedReferences));
 
       let result: Awaited<ReturnType<typeof createPost>> | Awaited<ReturnType<typeof updatePost>>;
       if (isEdit) {
@@ -222,7 +225,9 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
-      fd.set("references", JSON.stringify(references));
+      const finalizedReferences = referencesEditorRef.current?.finalizeAll() ?? references;
+      setReferences(finalizedReferences);
+      fd.set("references", JSON.stringify(finalizedReferences));
 
       const result = await publishPostWithChanges(fd);
       if (!result.ok) {
@@ -448,6 +453,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
         <div className="mt-8 w-full border-t border-border-default pt-8">
           <ReferencesEditor
+            ref={referencesEditorRef}
             value={references}
             onChange={(next) => {
               setReferences(next);
