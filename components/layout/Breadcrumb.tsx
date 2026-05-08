@@ -8,12 +8,14 @@ export type BreadcrumbItem = {
 
 type BreadcrumbProps = {
   items: readonly BreadcrumbItem[];
+  /** Whether to show the Home icon on the first item (only when label is "Home"). Defaults to true. */
+  showHomeIcon?: boolean;
 };
 
 const linkClass =
   "inline-flex items-center gap-1 text-text-muted transition-colors duration-200 hover:text-text-fg-brand dark:text-text-placeholder dark:hover:text-text-fg-brand";
 
-export function Breadcrumb({ items }: BreadcrumbProps) {
+export function Breadcrumb({ items, showHomeIcon = true }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className="text-sm">
       <ol className="flex flex-wrap items-center gap-1.5">
@@ -25,7 +27,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
               ) : null}
               {item.href ? (
                 <Link href={item.href} className={linkClass}>
-                  {index === 0 ? (
+                  {index === 0 && showHomeIcon && item.label === "Home" ? (
                     <>
                       <Home className="size-4 shrink-0" aria-hidden strokeWidth={2} />
                       <span>{item.label}</span>

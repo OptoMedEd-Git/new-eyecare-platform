@@ -1,6 +1,7 @@
 "use client";
 
 import { createPost, createTagAction, publishPost, publishPostWithChanges, updatePost } from "@/app/(admin)/admin/blog/actions";
+import { HelpTooltip } from "@/components/admin/HelpTooltip";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusDisplay } from "@/components/admin/PostStatusDisplay";
 import { TagsCombobox } from "@/components/admin/TagsCombobox";
@@ -298,16 +299,15 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
           </div>
 
           <div>
-            <label className="mb-2.5 block text-sm font-medium text-text-heading">Author</label>
-            <p id="author-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-              Author is set automatically from your account.
-            </p>
+            <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+              Author
+              <HelpTooltip content="Author is set automatically from your account." />
+            </label>
             <input
               type="text"
               value={authorNameValue}
               readOnly
               disabled
-              aria-describedby="author-helper"
               className="w-full cursor-not-allowed rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
             />
           </div>
@@ -328,12 +328,10 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
         </div>
 
         <div className="w-full">
-          <label htmlFor="description" className="mb-2.5 block text-sm font-medium text-text-heading">
+          <label htmlFor="description" className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
             Description <span className="text-text-fg-danger">*</span>
+            <HelpTooltip content="Required to publish. Shown beneath the title on the blog index." />
           </label>
-          <p id="description-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-            Required to publish. Shown beneath the title on the blog index.
-          </p>
           <input
             id="description"
             name="description"
@@ -344,18 +342,15 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
               setDirty(true);
             }}
             placeholder="A brief summary shown on the blog index"
-            aria-describedby="description-helper"
             className="h-[42px] w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
           />
         </div>
 
         <div className="w-full">
-          <label className="mb-2.5 block text-sm font-medium text-text-heading">
+          <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
             Cover image <span className="text-text-fg-danger">*</span>
+            <HelpTooltip content="Required to publish. JPEG, PNG, or WebP — max 5MB." placement="bottom" />
           </label>
-          <p id="cover-image-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-            Required to publish. JPEG, PNG, or WebP — max 5MB.
-          </p>
           <ImageUpload
             currentImageUrl={coverImage.url}
             currentImagePath={coverImage.path}
@@ -371,15 +366,13 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
         <div className="w-full">
           <label
             htmlFor="cover_image_attribution"
-            className="mb-2.5 block text-sm font-medium text-text-heading"
+            className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading"
           >
             Image attribution <span className="text-text-fg-danger">*</span>
+            <HelpTooltip
+              content="Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or similar. For sourced images, include the title, author/photographer, source publication, and a link to the original where possible. Make sure you have rights to use any sourced image."
+            />
           </label>
-          <p id="cover-image-attribution-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-            Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or
-            similar. For sourced images, include the title, author/photographer, source publication, and a link to the
-            original where possible. Make sure you have rights to use any sourced image.
-          </p>
           <textarea
             id="cover_image_attribution"
             name="cover_image_attribution"
@@ -390,7 +383,6 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             }}
             rows={2}
             placeholder='e.g., Photo: Jane Smith. Or: Image “Diabetic retinopathy fundus” by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
-            aria-describedby="cover-image-attribution-helper"
             className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
           />
 
@@ -408,12 +400,10 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
         </div>
 
         <div className="w-full">
-          <label className="mb-2.5 block text-sm font-medium text-text-heading">
+          <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
             Content <span className="text-text-fg-danger">*</span>
+            <HelpTooltip content="Write your post content. Use the toolbar for formatting, links, and images." />
           </label>
-          <p id="content-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-            Write your post content. Use the toolbar for formatting, links, and images.
-          </p>
           <PostEditor
             ref={editorRef}
             initialContent={initialPost?.content ?? ""}
@@ -458,12 +448,11 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             </div>
 
             <div>
-              <label className="mb-2.5 block text-sm font-medium text-text-heading">Estimated reading time</label>
-              <p id="reading-time-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
-                Calculated from content (~{WORDS_PER_MINUTE} words per minute). Updates as you type.
-              </p>
+              <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+                Estimated reading time
+                <HelpTooltip content={`Calculated from content (~${WORDS_PER_MINUTE} words per minute). Updates as you type.`} />
+              </label>
               <div
-                aria-describedby="reading-time-helper"
                 className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
               >
                 {readingTimeMinutes} min read{wordCount > 0 ? ` · ${wordCount.toLocaleString()} words` : ""}
@@ -493,7 +482,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
       <div className="flex items-center justify-between gap-4 border-t border-border-default pt-8">
         <Link
           href="/admin/blog"
-          className="inline-flex items-center gap-1.5 rounded-base border border-border-default-medium bg-bg-secondary-medium px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-tertiary"
+          className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Back to posts

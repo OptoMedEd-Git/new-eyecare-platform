@@ -35,10 +35,17 @@ export default async function NewPostPage() {
   return (
     <>
       <div className="mx-auto w-full max-w-5xl px-6 pt-6">
-        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Posts", href: "/admin/blog" }, { label: "New post" }]} />
+        <Breadcrumb
+          showHomeIcon={false}
+          items={[
+            { label: "Admin" },
+            { label: "Posts", href: "/admin/blog" },
+            { label: "New post" },
+          ]}
+        />
         <Link
           href="/admin/blog"
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong hover:underline"
+          className="mt-4 inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Back to posts

@@ -48,14 +48,25 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
   const authorName =
     [post.author?.first_name, post.author?.last_name].filter(Boolean).join(" ") || "Unknown author";
+  const crumbTitle = (() => {
+    const t = (post.title || "Edit post").trim();
+    return t.length > 50 ? `${t.slice(0, 47).trimEnd()}…` : t;
+  })();
 
   return (
     <>
       <div className="mx-auto w-full max-w-5xl px-6 pt-6">
-        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Posts", href: "/admin/blog" }, { label: post.title || "Edit post" }]} />
+        <Breadcrumb
+          showHomeIcon={false}
+          items={[
+            { label: "Admin" },
+            { label: "Posts", href: "/admin/blog" },
+            { label: crumbTitle },
+          ]}
+        />
         <Link
           href="/admin/blog"
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong hover:underline"
+          className="mt-4 inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Back to posts
