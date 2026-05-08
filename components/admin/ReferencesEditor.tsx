@@ -55,47 +55,10 @@ export const ReferencesEditor = forwardRef<ReferencesEditorHandle, Props>(functi
 
   const [rowStates, setRowStates] = useState<InternalRowState[]>(initialStates);
 
-  // Keep rowStates aligned with the controlled value length/content.
-  // We assume value reflects confirmed references only; drafts are local.
-  useEffect(() => {
-    setRowStates((prev) => {
-      if (prev.length !== value.length) {
-        const next: InternalRowState[] = value.map((r, i) => {
-          const existing = prev[i];
-          // Preserve local editing/draft state when possible; otherwise init confirmed.
-          if (existing) {
-            return existing.editing
-              ? existing
-              : {
-                  editing: false,
-                  hasBeenConfirmed: true,
-                  snapshot: undefined,
-                  draft: normalizeReference(r),
-                };
-          }
-          return {
-            editing: false,
-            hasBeenConfirmed: true,
-            snapshot: undefined,
-            draft: normalizeReference(r),
-          };
-        });
-        return next;
-      }
-
-      // If lengths match, refresh drafts for confirmed rows (keeps display accurate if parent updates).
-      return prev.map((s, i) =>
-        s.editing
-          ? s
-          : {
-              editing: false,
-              hasBeenConfirmed: true,
-              snapshot: undefined,
-              draft: normalizeReference(value[i]),
-            }
-      );
-    });
-  }, [value]);
+  // Note: we intentionally avoid syncing rowStates via useEffect() + setState(),
+  // since this repo treats that as a build-breaking lint error. Instead, we keep
+  // rowStates aligned through our own add/remove/move/commit/finalize handlers,
+  // and fall back to safe defaults at render time if lengths ever diverge.
 
   function addReference() {
     onChange([...value, { text: "", url: "" }]);
@@ -469,12 +432,14 @@ function ReferenceConfirmedRow({
   return (
     <li className="rounded-base border border-border-default bg-bg-primary-soft p-4">
       <div className="flex items-start gap-3">
-        <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
-          {index + 1}
+        <span className="flex h-5 shrink-0 items-center">
+          <span className="flex size-6 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
+            {index + 1}
+          </span>
         </span>
 
         <div className="min-w-0 flex-1 space-y-1">
-          <p className="text-sm leading-relaxed text-text-heading">{reference.text}</p>
+          <p className="text-sm leading-snug text-text-heading">{reference.text}</p>
           {reference.url ? (
             <a
               href={reference.url}
@@ -488,7 +453,7 @@ function ReferenceConfirmedRow({
           ) : null}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex h-5 shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={onMoveUp}
