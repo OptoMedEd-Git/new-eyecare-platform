@@ -55,8 +55,8 @@ export function PathwayBrowser({ pathways }: Props) {
   }, [pathways]);
 
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<PathwayCategory | "">("");
-  const [audience, setAudience] = useState<PathwayAudience | "">("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
   const [sort, setSort] = useState<SortOption>("recommended");
 
   const filtered = useMemo(() => {
@@ -67,12 +67,12 @@ export function PathwayBrowser({ pathways }: Props) {
       list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
     }
 
-    if (category) {
-      list = list.filter((p) => p.category === category);
+    if (selectedCategories.length > 0) {
+      list = list.filter((p) => selectedCategories.includes(p.category));
     }
 
-    if (audience) {
-      list = list.filter((p) => p.audience === audience);
+    if (selectedAudiences.length > 0) {
+      list = list.filter((p) => selectedAudiences.includes(p.audience));
     }
 
     const sorted = [...list];
@@ -84,9 +84,11 @@ export function PathwayBrowser({ pathways }: Props) {
       sorted.sort((a, b) => b.estimated_minutes - a.estimated_minutes);
     }
     return sorted;
-  }, [pathways, search, category, audience, sort]);
+  }, [pathways, search, selectedCategories, selectedAudiences, sort]);
 
-  const hasFilters = Boolean(search || category || audience || sort !== "recommended");
+  const hasFilters = Boolean(
+    search || selectedCategories.length > 0 || selectedAudiences.length > 0 || sort !== "recommended",
+  );
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
@@ -95,15 +97,15 @@ export function PathwayBrowser({ pathways }: Props) {
         onSearchChange={setSearch}
         searchPlaceholder="Search pathways"
         categories={categoryOptions}
-        selectedCategories={category ? [category] : []}
-        onCategoriesChange={(selected) => setCategory((selected[0] as PathwayCategory | undefined) ?? "")}
+        selectedCategories={selectedCategories}
+        onCategoriesChange={setSelectedCategories}
         audiences={audienceOptions}
-        selectedAudiences={audience ? [audience] : []}
-        onAudiencesChange={(selected) => setAudience((selected[0] as PathwayAudience | undefined) ?? "")}
+        selectedAudiences={selectedAudiences}
+        onAudiencesChange={setSelectedAudiences}
         onReset={() => {
           setSearch("");
-          setCategory("");
-          setAudience("");
+          setSelectedCategories([]);
+          setSelectedAudiences([]);
           setSort("recommended");
         }}
         hasActiveFilters={hasFilters}
@@ -148,8 +150,8 @@ export function PathwayBrowser({ pathways }: Props) {
                 type="button"
                 onClick={() => {
                   setSearch("");
-                  setCategory("");
-                  setAudience("");
+                  setSelectedCategories([]);
+                  setSelectedAudiences([]);
                   setSort("recommended");
                 }}
                 className="mt-4 inline-flex items-center rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft"

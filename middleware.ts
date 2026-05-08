@@ -1,9 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
-import { type NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+function withPathnameHeader(req: NextRequest): NextRequest {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", req.nextUrl.pathname);
+  return new NextRequest(req.url, { headers: requestHeaders });
+}
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
-    request,
+    request: withPathnameHeader(request),
   });
 
   const supabase = createServerClient(
@@ -19,7 +25,7 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(name, value);
           });
           supabaseResponse = NextResponse.next({
-            request,
+            request: withPathnameHeader(request),
           });
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);

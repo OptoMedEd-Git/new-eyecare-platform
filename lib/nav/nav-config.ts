@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Mail,
+  Newspaper,
   Route,
   Shield,
   Stethoscope,
@@ -36,6 +37,7 @@ export type NavItem = {
 export const MEMBER_NAV_PRIMARY: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
   { id: "pathways", label: "Pathways", icon: Route, href: "/pathways" },
+  { id: "blog", label: "Blog", icon: Newspaper, href: "/blog" },
   { id: "courses", label: "Courses", icon: GraduationCap, href: "/courses" },
   { id: "quiz-bank", label: "Quiz Bank", icon: ClipboardList, href: "/quiz-bank" },
   { id: "flashcards", label: "Flashcards", icon: Layers, href: "/flashcards" },
