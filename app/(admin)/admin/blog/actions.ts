@@ -193,6 +193,10 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
     const contentRaw = getString(formData, "content");
     const coverImageUrl = getNullableString(formData, "cover_image_url");
     const coverImagePath = getNullableString(formData, "cover_image_path");
+    const coverImageAttribution = formData.get("cover_image_attribution");
+    const coverImageAttributionValue = isNonEmptyString(coverImageAttribution)
+      ? coverImageAttribution.trim()
+      : null;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -240,6 +244,7 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
         published_at: null,
         cover_image_url: coverImageUrl,
         cover_image_path: coverImagePath,
+        cover_image_attribution: coverImageAttributionValue,
       })
       .select("id")
       .maybeSingle<{ id: string }>();
@@ -288,6 +293,10 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     const contentRaw = getString(formData, "content");
     const coverImageUrl = getNullableString(formData, "cover_image_url");
     const coverImagePath = getNullableString(formData, "cover_image_path");
+    const coverImageAttribution = formData.get("cover_image_attribution");
+    const coverImageAttributionValue = isNonEmptyString(coverImageAttribution)
+      ? coverImageAttribution.trim()
+      : null;
     const slugOverrideRaw = getString(formData, "slug");
 
     const fieldErrors: Record<string, string> = {};
@@ -350,6 +359,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
       ...(category_id !== undefined ? { category_id } : {}),
       cover_image_url,
       cover_image_path,
+      cover_image_attribution: coverImageAttributionValue,
       ...(nextSlug ? { slug: nextSlug } : {}),
     };
 
@@ -360,6 +370,9 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     }
     if (!formData.has("cover_image_path")) {
       delete updatePayload.cover_image_path;
+    }
+    if (!formData.has("cover_image_attribution")) {
+      delete updatePayload.cover_image_attribution;
     }
 
     const oldCoverPath = existing.cover_image_path;
@@ -415,7 +428,7 @@ export async function publishPost(postId: string): Promise<ActionResult> {
 
     const { data: post, error } = await ctx.supabase
       .from("blog_posts")
-      .select("id, slug, title, description, content, category_id, cover_image_url")
+      .select("id, slug, title, description, content, category_id, cover_image_url, cover_image_attribution")
       .eq("id", postId)
       .maybeSingle<{
         id: string;
@@ -425,6 +438,7 @@ export async function publishPost(postId: string): Promise<ActionResult> {
         content: unknown;
         category_id: string;
         cover_image_url: string | null;
+        cover_image_attribution: string | null;
       }>();
 
     if (error || !post) throw new Error("Post not found");
@@ -434,6 +448,7 @@ export async function publishPost(postId: string): Promise<ActionResult> {
     if (!post.description?.trim()) missing.push("description");
     if (!post.category_id) missing.push("category");
     if (!post.cover_image_url) missing.push("cover image");
+    if (!post.cover_image_attribution?.trim()) missing.push("image attribution");
     if (post.content == null) missing.push("content");
 
     if (missing.length > 0) {

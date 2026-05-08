@@ -101,14 +101,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </div>
 
           {post.cover_image_url ? (
-            <div className="mt-8 overflow-hidden rounded-base border border-border-default bg-bg-secondary-soft shadow-xs">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.cover_image_url}
-                alt=""
-                className="mx-auto max-h-[min(520px,70vh)] w-full object-contain"
-              />
-            </div>
+            <figure className="mt-8">
+              <div className="overflow-hidden rounded-base border border-border-default bg-bg-secondary-soft shadow-xs">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.cover_image_url}
+                  alt=""
+                  className="mx-auto max-h-[min(520px,70vh)] w-full object-contain"
+                />
+              </div>
+              {post.cover_image_attribution ? (
+                <figcaption className="mt-2 text-xs italic text-text-muted">
+                  {post.cover_image_attribution}
+                </figcaption>
+              ) : null}
+            </figure>
           ) : null}
 
           <div

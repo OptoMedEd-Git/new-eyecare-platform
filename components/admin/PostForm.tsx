@@ -27,6 +27,7 @@ export type PostFormProps = {
     category_id: string | null;
     cover_image_url: string | null;
     cover_image_path: string | null;
+    cover_image_attribution: string | null;
     tag_ids: string[];
     status: "draft" | "published";
     published_at: string | null;
@@ -50,6 +51,9 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
     url: initialPost?.cover_image_url ?? null,
     path: initialPost?.cover_image_path ?? null,
   });
+  const [coverImageAttribution, setCoverImageAttribution] = useState(
+    initialPost?.cover_image_attribution ?? ""
+  );
   const [tagIds, setTagIds] = useState<string[]>(initialPost?.tag_ids ?? []);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -94,6 +98,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
       const fd = new FormData(form);
       fd.set("cover_image_url", coverImage.url ?? "");
       fd.set("cover_image_path", coverImage.path ?? "");
+      fd.set("cover_image_attribution", coverImageAttribution);
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
@@ -261,6 +266,45 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
             disabled={saving || publishing}
           />
           <p className="mt-1.5 text-xs text-text-muted">Required to publish. JPEG, PNG, or WebP — max 5MB.</p>
+        </div>
+
+        {/* Image attribution — required at publish */}
+        <div className="w-full">
+          <label
+            htmlFor="cover_image_attribution"
+            className="mb-2.5 block text-sm font-medium text-text-heading"
+          >
+            Image attribution <span className="text-text-fg-danger">*</span>
+          </label>
+          <textarea
+            id="cover_image_attribution"
+            name="cover_image_attribution"
+            value={coverImageAttribution}
+            onChange={(e) => {
+              setCoverImageAttribution(e.target.value);
+              setDirty(true);
+            }}
+            rows={2}
+            placeholder='e.g., Photo: Jane Smith. Or: Image “Diabetic retinopathy fundus” by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
+            className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          />
+          <p className="mt-1.5 text-xs text-text-muted">
+            Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or
+            similar. For sourced images, include the title, author/photographer, source publication, and a link to the
+            original where possible. Make sure you have rights to use any sourced image.
+          </p>
+
+          {/* TODO (future): replace this free-form text input with a structured
+              attribution flow:
+              - Required radio: "Original work" or "Sourced"
+              - Original: auto-populate "Photo: {currentUser.fullName} / OptoMedEd"
+              - Sourced: URL input → server-side fetch of the URL → parse OG tags,
+                Twitter cards, JSON-LD, oEmbed for title/author/publisher/date →
+                auto-generate citation in editorial format. Manual fallback fields
+                for missing metadata.
+              Server-side URL parsing endpoint required, plus structured DB columns
+              (type/author/title/source_url/publisher/date) replacing this single
+              text column. See conversation history for the full design discussion. */}
         </div>
 
         <div className="w-full">
