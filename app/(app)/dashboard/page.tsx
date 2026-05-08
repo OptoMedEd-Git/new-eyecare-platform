@@ -12,12 +12,14 @@ import { SkillMasteryChart } from "@/components/dashboard/SkillMasteryChart";
 import { MonthlyProgressChart } from "@/components/dashboard/MonthlyProgressChart";
 import { AchievementsCard } from "@/components/dashboard/AchievementsCard";
 import { RecentActivityTimeline } from "@/components/dashboard/RecentActivityTimeline";
+import { PerformanceBreakdownChart } from "@/components/dashboard/PerformanceBreakdownChart";
 import { HomeBlogPostCard } from "@/components/blog/HomeBlogPostCard";
 
 import { getFeaturedPosts } from "@/lib/blog/queries";
 import {
   SAMPLE_CONTINUE_LEARNING,
   SAMPLE_BADGES,
+  SAMPLE_CATEGORY_PERFORMANCE,
   SAMPLE_MONTHLY_PROGRESS,
   SAMPLE_RECOMMENDATIONS,
   SAMPLE_RECENT_ACTIVITY,
@@ -78,8 +80,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Main split: Continue Learning + Recommended for You */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {/* Continue Learning + Performance Breakdown — 2 equal columns */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-text-heading">Continue learning</h2>
@@ -92,18 +94,7 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <RecentActivityTimeline activities={SAMPLE_RECENT_ACTIVITY} />
-
-        <aside className="rounded-base border border-border-default bg-bg-secondary-soft p-5 self-start">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-            Recommended for you
-          </h2>
-          <div className="mt-4 flex flex-col gap-2">
-            {SAMPLE_RECOMMENDATIONS.map((item) => (
-              <RecommendedItem key={item.id} item={item} />
-            ))}
-          </div>
-        </aside>
+        <PerformanceBreakdownChart data={SAMPLE_CATEGORY_PERFORMANCE} />
       </div>
 
       {/* Charts row: Learning Activity (2/3) + Skill mastery (1/3) */}
@@ -116,9 +107,30 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Monthly progress chart — SAMPLE */}
-      <div className="mt-6">
+      {/* Monthly Progress + Recent Activity — 2 equal columns */}
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <MonthlyProgressChart data={SAMPLE_MONTHLY_PROGRESS} />
+        <RecentActivityTimeline activities={SAMPLE_RECENT_ACTIVITY} />
+      </div>
+
+      {/* Recommended for You — full-width horizontal carousel */}
+      <div className="mt-12">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-text-heading">Recommended for you</h2>
+            <p className="mt-1 text-sm text-text-body">Suggested next steps based on your activity</p>
+          </div>
+        </div>
+        <div
+          className="mt-6 flex gap-4 overflow-x-auto pb-4 [scroll-snap-type:x_mandatory] [&>*]:flex-shrink-0 [&>*]:[scroll-snap-align:start]"
+          style={{ scrollbarWidth: "thin" }}
+        >
+          {SAMPLE_RECOMMENDATIONS.map((item) => (
+            <div key={item.id} className="w-[300px] sm:w-[340px]">
+              <RecommendedItem item={item} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Achievements / badges — SAMPLE placeholder */}

@@ -37,6 +37,11 @@ export type SampleActivity = {
   reviewHref: string; // placeholder route for "Review" link
 };
 
+export type CategoryPerformance = {
+  category: string;
+  percentage: number; // 0-100, percent correct
+};
+
 export type DailyActivity = {
   day: string; // "Mon", "Tue", etc.
   questions: number;
@@ -227,6 +232,20 @@ export const SAMPLE_RECENT_ACTIVITY: SampleActivity[] = [
     detail: "Lesson 3 of 8",
     reviewHref: "#",
   },
+];
+
+// Sample category performance — sorted by percentage descending for visual clarity in the chart
+export const SAMPLE_CATEGORY_PERFORMANCE: CategoryPerformance[] = [
+  { category: "Glaucoma", percentage: 92 },
+  { category: "Anterior Segment", percentage: 87 },
+  { category: "Diagnostic Imaging", percentage: 81 },
+  { category: "Posterior Segment", percentage: 76 },
+  { category: "Pediatric Optometry", percentage: 68 },
+  { category: "Neuro-ophthalmology", percentage: 54 },
+  { category: "Contact Lenses", percentage: 49 },
+  { category: "Low Vision", percentage: 42 },
+  { category: "Binocular Vision", percentage: 38 },
+  { category: "Ocular Pharmacology", percentage: 31 },
 ];
 
 // 7 days of mock activity data, ordered Mon → Sun
