@@ -23,12 +23,18 @@ export type BlogAuthor = {
 
 export type TargetAudience = "student" | "resident" | "practicing" | "all";
 
+export type Reference = {
+  text: string;
+  url?: string;
+};
+
 export type BlogPost = {
   id: string;
   slug: string;
   title: string;
   description: string;
   content: unknown;
+  references: Reference[];
   cover_image_url: string | null;
   cover_image_path: string | null;
   cover_image_attribution: string | null;

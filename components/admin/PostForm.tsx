@@ -4,6 +4,7 @@ import { createPost, createTagAction, publishPost, publishPostWithChanges, updat
 import { HelpTooltip } from "@/components/admin/HelpTooltip";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusDisplay } from "@/components/admin/PostStatusDisplay";
+import { ReferencesEditor } from "@/components/admin/ReferencesEditor";
 import { TagsCombobox } from "@/components/admin/TagsCombobox";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
@@ -12,6 +13,7 @@ import { FormSelect } from "@/components/forms/FormSelect";
 import type { AdminTag } from "@/lib/blog/admin-tags-queries";
 import { countWords } from "@/lib/blog/utils";
 import { slugify, slugifyShort } from "@/lib/blog/slugify";
+import type { Reference } from "@/lib/blog/types";
 import { PostEditor, type PostEditorHandle } from "@/components/admin/PostEditor";
 import { ArrowLeft, RefreshCw, Save } from "lucide-react";
 import Link from "next/link";
@@ -31,6 +33,7 @@ export type PostFormProps = {
     cover_image_url: string | null;
     cover_image_path: string | null;
     cover_image_attribution: string | null;
+    references: Reference[];
     target_audience: "student" | "resident" | "practicing" | "all" | null;
     author: { id: string; first_name: string | null; last_name: string | null } | null;
     tag_ids: string[];
@@ -102,6 +105,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [references, setReferences] = useState<Reference[]>(initialPost?.references ?? []);
 
   const categoryOptions = useMemo(
     () => [
@@ -151,6 +155,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
+      fd.set("references", JSON.stringify(references));
 
       let result: Awaited<ReturnType<typeof createPost>> | Awaited<ReturnType<typeof updatePost>>;
       if (isEdit) {
@@ -217,6 +222,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
+      fd.set("references", JSON.stringify(references));
 
       const result = await publishPostWithChanges(fd);
       if (!result.ok) {
@@ -440,8 +446,18 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
           />
         </div>
 
+        <div className="mt-8 w-full border-t border-border-default pt-8">
+          <ReferencesEditor
+            value={references}
+            onChange={(next) => {
+              setReferences(next);
+              setDirty(true);
+            }}
+          />
+        </div>
+
         {/* Article metadata */}
-        <div className="mt-2 w-full">
+        <div className="mt-8 w-full border-t border-border-default pt-8">
           <h2 className="text-lg font-bold text-text-heading">Article metadata</h2>
           <p className="mt-1 text-sm text-text-body">
             Additional information to help readers find and contextualize your article.

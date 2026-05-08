@@ -13,6 +13,7 @@ const POST_SELECT = `
   title,
   description,
   content,
+  "references",
   cover_image_url,
   cover_image_attribution,
   target_audience,
@@ -30,10 +31,12 @@ const POST_SELECT = `
 
 function mapPost(row: unknown): BlogPost {
   const r = row as BlogPost;
+  const rawReferences = (r as unknown as { references: unknown }).references;
   return {
     ...r,
     author: single(r.author),
     category: single(r.category) as BlogPost["category"],
+    references: Array.isArray(rawReferences) ? (rawReferences as BlogPost["references"]) : [],
   };
 }
 

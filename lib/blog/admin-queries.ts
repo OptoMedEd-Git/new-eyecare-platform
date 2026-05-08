@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Reference } from "./types";
 
 export type AdminBlogPost = {
   id: string;
@@ -92,6 +93,7 @@ export type AdminPostForEdit = {
   slug: string;
   description: string;
   content: string;
+  references: Reference[];
   category_id: string | null;
   cover_image_url: string | null;
   cover_image_path: string | null;
@@ -129,7 +131,7 @@ export async function getAdminPostForEdit({
   const { data: post, error } = await supabase
     .from("blog_posts")
     .select(
-      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, target_audience, author:profiles!blog_posts_author_id_fkey(id, first_name, last_name), author_id, status, published_at, created_at, updated_at"
+      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, target_audience, author:profiles!blog_posts_author_id_fkey(id, first_name, last_name), author_id, status, published_at, created_at, updated_at, \"references\""
     )
     .eq("id", id)
     .maybeSingle<{
@@ -149,6 +151,7 @@ export async function getAdminPostForEdit({
       published_at: string | null;
       created_at: string;
       updated_at: string;
+      references: Reference[] | null;
     }>();
 
   if (error || !post) return null;
@@ -181,6 +184,7 @@ export async function getAdminPostForEdit({
     target_audience: post.target_audience ?? null,
     author: post.author ?? null,
     tag_ids,
+    references: Array.isArray(post.references) ? post.references : [],
     status,
     published_at: post.published_at,
     created_at: post.created_at,

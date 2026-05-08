@@ -8,6 +8,7 @@ import { ReadNext } from "@/components/blog/ReadNext";
 import { getPostBySlug, getRelatedPosts } from "@/lib/blog/queries";
 import { renderContent } from "@/lib/blog/render-content";
 import { calculateReadTime, formatPostDate, formatRelativeTime } from "@/lib/blog/utils";
+import { ExternalLink } from "lucide-react";
 
 type BlogPostPageProps = {
   params: Promise<{ slug: string }>;
@@ -122,6 +123,30 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             className="blog-content mt-8 prose prose-lg max-w-none text-text-body prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-gray-900 prose-p:leading-relaxed prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-blockquote:border-brand prose-blockquote:text-text-body prose-strong:text-gray-900 prose-code:rounded-md prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:text-gray-800 prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-img:rounded-lg prose-img:shadow-md dark:prose-invert dark:prose-headings:text-white dark:prose-blockquote:text-gray-300 dark:prose-code:bg-gray-800 dark:prose-code:text-gray-100"
             dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
           />
+
+          {post.references && post.references.length > 0 ? (
+            <section className="mt-12 border-t border-border-default pt-8">
+              <h2 className="text-xl font-bold text-text-heading">References</h2>
+              <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm leading-relaxed text-text-body">
+                {post.references.map((ref, index) => (
+                  <li key={index} className="pl-2">
+                    <span>{ref.text}</span>
+                    {ref.url ? (
+                      <a
+                        href={ref.url}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="inline-flex items-center gap-1 text-text-fg-brand-strong underline decoration-text-fg-brand/40 underline-offset-2 transition-colors hover:text-text-fg-brand hover:decoration-text-fg-brand-strong"
+                      >
+                        Source
+                        <ExternalLink className="size-3" aria-hidden />
+                      </a>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
         </article>
 
         <aside className="mt-12 flex flex-col gap-6 lg:mt-0">

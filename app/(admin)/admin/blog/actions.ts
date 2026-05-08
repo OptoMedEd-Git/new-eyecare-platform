@@ -6,6 +6,7 @@ import { ensureUniqueSlug, slugify } from "@/lib/blog/slugify";
 import { findSimilarTags, normalizeTagName, type SimilarityMatch } from "@/lib/blog/tag-similarity";
 import { deleteBlogImage } from "@/lib/blog/upload-image";
 import { createClient } from "@/lib/supabase/server";
+import type { Reference } from "@/lib/blog/types";
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -116,6 +117,40 @@ function parseContentJson(contentRaw: string): unknown {
   } catch {
     throw new Error("Content must be valid JSON");
   }
+}
+
+function parseReferences(raw: FormDataEntryValue | null): Reference[] {
+  if (raw == null) return [];
+  if (typeof raw !== "string") return [];
+
+  const trimmed = raw.trim();
+  if (trimmed === "") return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return [];
+  }
+
+  if (!Array.isArray(parsed)) return [];
+
+  // Sanitize each reference: trim text and url, drop entries with empty text
+  const cleaned: Reference[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== "object") continue;
+
+    const i = item as Record<string, unknown>;
+    const textRaw = i.text;
+    const text = typeof textRaw === "string" ? textRaw.trim() : "";
+    if (!text) continue; // drop empty text entries (user added a row but didn't fill it)
+
+    const urlRaw = i.url;
+    const url = typeof urlRaw === "string" ? urlRaw.trim() : "";
+    cleaned.push(url ? { text, url } : { text });
+  }
+
+  return cleaned;
 }
 
 async function getCurrentUserAndRole(): Promise<AuthedContext> {
@@ -274,6 +309,7 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
       (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
         ? (targetAudience as TargetAudience)
         : null;
+    const references = parseReferences(formData.get("references"));
 
     const fieldErrors: Record<string, string> = {};
 
@@ -323,6 +359,7 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
         cover_image_path: coverImagePath,
         cover_image_attribution: coverImageAttributionValue,
         target_audience: targetAudienceValue,
+        references,
       })
       .select("id")
       .maybeSingle<{ id: string }>();
@@ -382,6 +419,8 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
       (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
         ? (targetAudience as TargetAudience)
         : null;
+    const hasReferencesField = formData.has("references");
+    const references = parseReferences(formData.get("references"));
 
     const fieldErrors: Record<string, string> = {};
 
@@ -445,6 +484,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
       cover_image_path,
       cover_image_attribution: coverImageAttributionValue,
       target_audience: targetAudienceValue,
+      ...(hasReferencesField ? { references } : {}),
       ...(nextSlug ? { slug: nextSlug } : {}),
     };
 
@@ -461,6 +501,9 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     }
     if (!formData.has("target_audience")) {
       delete updatePayload.target_audience;
+    }
+    if (!formData.has("references")) {
+      delete updatePayload.references;
     }
 
     const oldCoverPath = existing.cover_image_path;
@@ -547,6 +590,8 @@ export async function publishPostWithChanges(
       (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
         ? (targetAudience as TargetAudience)
         : null;
+    const hasReferencesField = formData.has("references");
+    const references = parseReferences(formData.get("references"));
 
     const fieldErrors: Record<string, string> = {};
 
@@ -612,6 +657,7 @@ export async function publishPostWithChanges(
       cover_image_path: coverImagePath,
       cover_image_attribution: coverImageAttributionValue,
       target_audience: targetAudienceValue,
+      ...(hasReferencesField ? { references } : {}),
       status: "published",
       published_at: publishedAt,
     };
