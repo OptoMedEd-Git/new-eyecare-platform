@@ -28,6 +28,15 @@ export type SampleRecommendation = {
   seeMoreHref: string;
 };
 
+export type SampleActivity = {
+  id: string;
+  title: string;
+  type: "Course" | "Quiz" | "Case" | "Pathway" | "Flashcards";
+  completedAt: string; // ISO date string, e.g. "2026-05-06"
+  detail: string; // brief secondary line (e.g., "Score: 92%", "Lesson 4 of 8")
+  reviewHref: string; // placeholder route for "Review" link
+};
+
 export type DailyActivity = {
   day: string; // "Mon", "Tue", etc.
   questions: number;
@@ -174,6 +183,49 @@ export const SAMPLE_RECOMMENDATIONS: SampleRecommendation[] = [
     type: "Case",
     estimatedMinutes: 20,
     seeMoreHref: "/cases",
+  },
+];
+
+export const SAMPLE_RECENT_ACTIVITY: SampleActivity[] = [
+  {
+    id: "a1",
+    title: "Diabetic retinopathy staging",
+    type: "Quiz",
+    completedAt: "2026-05-06",
+    detail: "Score: 92%",
+    reviewHref: "#",
+  },
+  {
+    id: "a2",
+    title: "Acute angle closure: emergency triage",
+    type: "Case",
+    completedAt: "2026-05-05",
+    detail: "12 minutes",
+    reviewHref: "#",
+  },
+  {
+    id: "a3",
+    title: "OCT artifact recognition",
+    type: "Course",
+    completedAt: "2026-05-04",
+    detail: "Lesson 4 of 8",
+    reviewHref: "#",
+  },
+  {
+    id: "a4",
+    title: "Anterior segment anatomy review",
+    type: "Flashcards",
+    completedAt: "2026-05-03",
+    detail: "24 cards reviewed",
+    reviewHref: "#",
+  },
+  {
+    id: "a5",
+    title: "Pediatric vision screening fundamentals",
+    type: "Course",
+    completedAt: "2026-05-02",
+    detail: "Lesson 3 of 8",
+    reviewHref: "#",
   },
 ];
 

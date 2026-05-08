@@ -11,6 +11,7 @@ import { LearningActivityChart } from "@/components/dashboard/LearningActivityCh
 import { SkillMasteryChart } from "@/components/dashboard/SkillMasteryChart";
 import { MonthlyProgressChart } from "@/components/dashboard/MonthlyProgressChart";
 import { AchievementsCard } from "@/components/dashboard/AchievementsCard";
+import { RecentActivityTimeline } from "@/components/dashboard/RecentActivityTimeline";
 import { HomeBlogPostCard } from "@/components/blog/HomeBlogPostCard";
 
 import { getFeaturedPosts } from "@/lib/blog/queries";
@@ -19,6 +20,7 @@ import {
   SAMPLE_BADGES,
   SAMPLE_MONTHLY_PROGRESS,
   SAMPLE_RECOMMENDATIONS,
+  SAMPLE_RECENT_ACTIVITY,
   SAMPLE_SKILL_MASTERY,
   SAMPLE_STATS,
   SAMPLE_WEEKLY_ACTIVITY,
@@ -78,7 +80,7 @@ export default async function DashboardPage() {
 
       {/* Main split: Continue Learning + Recommended for You */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-text-heading">Continue learning</h2>
             <Link href="#" className="text-sm font-medium text-text-fg-brand-strong hover:underline">
@@ -89,6 +91,8 @@ export default async function DashboardPage() {
             <ContinueLearningCard key={course.id} course={course} />
           ))}
         </div>
+
+        <RecentActivityTimeline activities={SAMPLE_RECENT_ACTIVITY} />
 
         <aside className="rounded-base border border-border-default bg-bg-secondary-soft p-5 self-start">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
