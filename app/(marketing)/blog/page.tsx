@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 
 import { BlogBreadcrumb } from "@/components/blog/BlogBreadcrumb";
-import { BlogPostCardSmall } from "@/components/blog/BlogPostCardSmall";
-import { BlogPostFeatured } from "@/components/blog/BlogPostFeatured";
-import { CategoryAndPostsSection } from "@/components/blog/CategoryAndPostsSection";
-import { getCategories, getFeaturedPosts, getPublishedPosts } from "@/lib/blog/queries";
+import { BlogBrowser } from "@/components/blog/BlogBrowser";
+import { getAllUsedTags, getCategories, getPublishedPostsForIndex } from "@/lib/blog/queries";
 
 export const metadata: Metadata = {
   title: "Our Blog | OptoMedEd",
@@ -13,50 +11,26 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogPage() {
-  const [posts, categories, featuredPosts] = await Promise.all([
-    getPublishedPosts(),
+  const [posts, categories, allTags] = await Promise.all([
+    getPublishedPostsForIndex(),
     getCategories(),
-    getFeaturedPosts(4),
+    getAllUsedTags(),
   ]);
 
-  const [primary, ...restFeatured] = featuredPosts;
-  const sidebarPosts = restFeatured.slice(0, 3);
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+    <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
       <BlogBreadcrumb items={[{ label: "Home", href: "/" }, { label: "Blog" }]} />
 
-      <header className="mx-auto mt-8 max-w-3xl text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl">
-          Our Blog
-        </h1>
-        <p className="mt-4 text-lg leading-relaxed text-text-body dark:text-gray-400">
-          Expert-written articles on eye care, clinical reasoning, and education — crafted for students,
-          residents, and practicing clinicians.
+      <header className="mt-8">
+        <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">Blog</h1>
+        <p className="mt-2 max-w-2xl text-base text-text-body">
+          Practical clinical reading for eye care professionals at every career stage.
         </p>
       </header>
 
-      {primary ? (
-        <section className="mt-14" aria-labelledby="featured-heading">
-          <h2 id="featured-heading" className="sr-only">
-            Featured posts
-          </h2>
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1.5fr_1fr] lg:gap-12">
-            <div>
-              <BlogPostFeatured post={primary} />
-            </div>
-            {sidebarPosts.length > 0 ? (
-              <div className="flex flex-col gap-8 lg:gap-10">
-                {sidebarPosts.map((post) => (
-                  <BlogPostCardSmall key={post.id} post={post} />
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
-
-      <CategoryAndPostsSection categories={categories} allPosts={posts} />
+      <div className="mt-8">
+        <BlogBrowser posts={posts} categories={categories} allTags={allTags} />
+      </div>
     </div>
   );
 }

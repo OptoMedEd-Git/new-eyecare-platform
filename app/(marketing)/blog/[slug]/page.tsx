@@ -5,9 +5,10 @@ import { BlogBreadcrumb } from "@/components/blog/BlogBreadcrumb";
 import { EditorsPicksCard } from "@/components/blog/EditorsPicksCard";
 import { NewsletterSignupCard } from "@/components/blog/NewsletterSignupCard";
 import { ReadNext } from "@/components/blog/ReadNext";
-import { getPostBySlug, getRelatedPosts } from "@/lib/blog/queries";
+import { getPostBySlug, getRelatedPosts, incrementPostViewCount } from "@/lib/blog/queries";
 import { renderContent } from "@/lib/blog/render-content";
 import { calculateReadTime, formatPostDate, formatRelativeTime } from "@/lib/blog/utils";
+import { createClient } from "@/lib/supabase/server";
 import { ExternalLink } from "lucide-react";
 
 type BlogPostPageProps = {
@@ -54,6 +55,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
 
   if (!post) {
     notFound();
+  }
+
+  // View count tracking — skip for the post's author (best-effort, don't block render)
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const isAuthor = user?.id && post.author_id && user.id === post.author_id;
+    if (!isAuthor) {
+      void incrementPostViewCount(post.id);
+    }
+  } catch {
+    // ignore
   }
 
   const related = await getRelatedPosts(post.id, 3);

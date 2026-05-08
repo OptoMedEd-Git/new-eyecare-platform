@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-import type { BlogCategory, BlogPost } from "./types";
+import type { BlogCategory, BlogPost, BlogPostForIndex, BlogTag } from "./types";
 
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
@@ -88,6 +88,70 @@ export async function getPostBySlug(slug: string): Promise<BlogPost | null> {
     return null;
   }
   return data ? mapPost(data) : null;
+}
+
+export async function incrementPostViewCount(postId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("increment_blog_post_view_count", {
+    post_id: postId,
+  });
+  if (error) {
+    console.error("[blog] incrementPostViewCount", error.message ?? error);
+  }
+}
+
+export async function getPublishedPostsForIndex(): Promise<BlogPostForIndex[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select(
+      `
+      ${POST_SELECT},
+      tags:blog_post_tags(tag:blog_tags(id, slug, name, name_lower, created_at))
+    `
+    )
+    .eq("status", "published")
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    console.error("[blog] getPublishedPostsForIndex", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => {
+    const base = mapPost(row) as BlogPostForIndex;
+    const tagsRel = (row as unknown as { tags: { tag: BlogTag | BlogTag[] | null }[] | null }).tags ?? [];
+    const tags = tagsRel
+      .map((t) => single(t.tag))
+      .filter(Boolean) as BlogTag[];
+    return { ...base, tags };
+  });
+}
+
+export async function getAllUsedTags(): Promise<Pick<BlogTag, "id" | "name">[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("blog_tags")
+    .select("id, name, blog_post_tags!inner(post:blog_posts!inner(status))")
+    .eq("blog_post_tags.post.status", "published");
+
+  if (error) {
+    console.error("[blog] getAllUsedTags", error.message);
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const result: { id: string; name: string }[] = [];
+  for (const row of data ?? []) {
+    const r = row as unknown as { id: string; name: string };
+    if (!r?.id || !r?.name) continue;
+    if (seen.has(r.id)) continue;
+    seen.add(r.id);
+    result.push({ id: r.id, name: r.name });
+  }
+  result.sort((a, b) => a.name.localeCompare(b.name));
+  return result;
 }
 
 export async function getRelatedPosts(currentPostId: string, count = 3): Promise<BlogPost[]> {

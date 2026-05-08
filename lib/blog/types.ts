@@ -51,6 +51,10 @@ export type BlogPost = {
   category: Pick<BlogCategory, "id" | "slug" | "name">;
 };
 
+export type BlogPostForIndex = BlogPost & {
+  tags: BlogTag[];
+};
+
 // Storage-related types for image uploads
 export type BlogImageUploadResult = {
   url: string;
