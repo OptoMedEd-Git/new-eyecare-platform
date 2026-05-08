@@ -478,6 +478,29 @@ body {
   border-radius: 8px;
 }
 
+/* In-content figure (image with attribution caption) */
+.prose-editor figure.blog-content-figure,
+.blog-content figure.blog-content-figure {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.prose-editor .blog-content-figure img,
+.blog-content .blog-content-figure img {
+  display: block;
+  margin: 0; /* figure handles spacing */
+}
+
+.prose-editor .blog-content-caption,
+.blog-content .blog-content-caption {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* Editor-only: focus reset and empty placeholder */
 .prose-editor:focus {
   outline: none;

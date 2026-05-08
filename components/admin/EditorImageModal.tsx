@@ -8,16 +8,18 @@ import { ImageUpload } from "./ImageUpload";
 type EditorImageModalProps = {
   open: boolean;
   onClose: () => void;
-  onInsert: (url: string) => void;
+  onInsert: (url: string, caption: string) => void;
 };
 
 export function EditorImageModal({ open, onClose, onInsert }: EditorImageModalProps) {
   const [pendingUrl, setPendingUrl] = useState<string | null>(null);
   const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const [attribution, setAttribution] = useState("");
 
   const handleClose = useCallback(() => {
     setPendingUrl(null);
     setPendingPath(null);
+    setAttribution("");
     onClose();
   }, [onClose]);
 
@@ -39,8 +41,11 @@ export function EditorImageModal({ open, onClose, onInsert }: EditorImageModalPr
 
   function handleInsert() {
     if (!pendingUrl) return;
-    onInsert(pendingUrl);
+    if (!attribution.trim()) return;
+    onInsert(pendingUrl, attribution.trim());
   }
+
+  const canInsert = !!pendingUrl && attribution.trim().length > 0;
 
   return (
     <div
@@ -52,7 +57,7 @@ export function EditorImageModal({ open, onClose, onInsert }: EditorImageModalPr
       aria-modal
       aria-labelledby="editor-image-modal-title"
     >
-      <div className="w-full max-w-lg rounded-base bg-bg-primary-soft p-6 shadow-lg">
+      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-base bg-bg-primary-soft p-6 shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <h2 id="editor-image-modal-title" className="text-lg font-semibold text-text-heading">
             Insert image
@@ -79,6 +84,28 @@ export function EditorImageModal({ open, onClose, onInsert }: EditorImageModalPr
           />
         </div>
 
+        <div className="mt-4">
+          <label
+            htmlFor="image-attribution"
+            className="mb-2 block text-sm font-medium text-text-heading"
+          >
+            Image attribution <span className="text-text-fg-danger">*</span>
+          </label>
+          <textarea
+            id="image-attribution"
+            value={attribution}
+            onChange={(e) => setAttribution(e.target.value)}
+            rows={2}
+            placeholder='e.g., Photo: Jane Smith. Or: Image "OCT scan" by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
+            className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          />
+          <p className="mt-1.5 text-xs text-text-muted">
+            Required. Cite the source of this image. For your own original work, write &ldquo;Photo: [Your Name]&rdquo;.
+            For sourced images, include title, author, source, and link where possible. Make sure you have rights to use
+            any sourced image.
+          </p>
+        </div>
+
         <div className="mt-6 flex items-center justify-end gap-3">
           <button
             type="button"
@@ -90,7 +117,7 @@ export function EditorImageModal({ open, onClose, onInsert }: EditorImageModalPr
           <button
             type="button"
             onClick={handleInsert}
-            disabled={!pendingUrl}
+            disabled={!canInsert}
             className="rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             Insert image

@@ -56,9 +56,16 @@ export function EditorToolbar({ editor }: EditorToolbarProps) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   }
 
-  function handleImageInsert(url: string) {
+  function handleImageInsert(url: string, caption: string) {
     if (!url) return;
-    editor.chain().focus().setImage({ src: url, alt: "" }).run();
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: "image",
+        attrs: { src: url, alt: "", caption },
+      })
+      .run();
     setImageModalOpen(false);
   }
 
