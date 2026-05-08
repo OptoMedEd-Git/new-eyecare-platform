@@ -36,6 +36,7 @@ export type PostFormProps = {
     tag_ids: string[];
     status: "draft" | "published";
     published_at: string | null;
+    created_at: string;
     updated_at: string;
   };
   categories: Category[];
@@ -44,6 +45,27 @@ export type PostFormProps = {
 };
 
 const WORDS_PER_MINUTE = 200;
+
+function formatTimestamp(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function hasBeenEdited(createdAt: string | null | undefined, updatedAt: string | null | undefined): boolean {
+  if (!createdAt || !updatedAt) return false;
+  const created = new Date(createdAt).getTime();
+  const updated = new Date(updatedAt).getTime();
+  if (Number.isNaN(created) || Number.isNaN(updated)) return false;
+  return updated - created > 2000;
+}
 
 function parseContentForWordCount(initialPost: PostFormProps["initialPost"]): number {
   if (!initialPost?.content) return 0;
@@ -213,7 +235,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
   return (
     // TODO: beforeunload does not intercept in-app navigations (Next.js <Link />); add route-change guards separately if needed.
-    <form ref={formRef} onSubmit={handleSubmit} className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <form ref={formRef} onSubmit={handleSubmit} className="w-full">
       <UnsavedChangesGuard dirty={dirty && !saving && !publishing} onSave={handleSave} />
 
       <div className="flex items-start justify-between gap-4">
@@ -239,7 +261,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
       {error ? <Alert variant="error" message={error} /> : null}
 
-      <div className="flex flex-col gap-5">
+      <div className="mt-8 flex flex-col gap-5">
         {/* Row 1: Title (full width) */}
         <div className="w-full">
           <FormInput
@@ -346,45 +368,47 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
           />
         </div>
 
-        <div className="w-full">
-          <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
-            Cover image <span className="text-text-fg-danger">*</span>
-            <HelpTooltip content="Required to publish. JPEG, PNG, or WebP — max 5MB." placement="bottom" />
-          </label>
-          <ImageUpload
-            currentImageUrl={coverImage.url}
-            currentImagePath={coverImage.path}
-            onChange={(result) => {
-              setCoverImage(result);
-              setDirty(true);
-            }}
-            disabled={saving || publishing}
-          />
-        </div>
-
-        {/* Image attribution — required at publish */}
-        <div className="w-full">
-          <label
-            htmlFor="cover_image_attribution"
-            className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading"
-          >
-            Image attribution <span className="text-text-fg-danger">*</span>
-            <HelpTooltip
-              content="Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or similar. For sourced images, include the title, author/photographer, source publication, and a link to the original where possible. Make sure you have rights to use any sourced image."
+        {/* Cover image + Image attribution */}
+        <div className="mt-1 grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div>
+            <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+              Cover image <span className="text-text-fg-danger">*</span>
+              <HelpTooltip content="Required to publish. JPEG, PNG, or WebP — max 5MB." placement="bottom" />
+            </label>
+            <ImageUpload
+              currentImageUrl={coverImage.url}
+              currentImagePath={coverImage.path}
+              onChange={(result) => {
+                setCoverImage(result);
+                setDirty(true);
+              }}
+              disabled={saving || publishing}
             />
-          </label>
-          <textarea
-            id="cover_image_attribution"
-            name="cover_image_attribution"
-            value={coverImageAttribution}
-            onChange={(e) => {
-              setCoverImageAttribution(e.target.value);
-              setDirty(true);
-            }}
-            rows={2}
-            placeholder='e.g., Photo: Jane Smith. Or: Image “Diabetic retinopathy fundus” by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
-            className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
-          />
+          </div>
+
+          <div>
+            <label
+              htmlFor="cover_image_attribution"
+              className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading"
+            >
+              Image attribution <span className="text-text-fg-danger">*</span>
+              <HelpTooltip
+                content="Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or similar. For sourced images, include the title, author/photographer, source publication, and a link to the original where possible. Make sure you have rights to use any sourced image."
+              />
+            </label>
+            <textarea
+              id="cover_image_attribution"
+              name="cover_image_attribution"
+              value={coverImageAttribution}
+              onChange={(e) => {
+                setCoverImageAttribution(e.target.value);
+                setDirty(true);
+              }}
+              rows={6}
+              placeholder='e.g., Photo: Jane Smith. Or: Image “Diabetic retinopathy fundus” by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
+              className="min-h-[180px] w-full resize-none rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+            />
+          </div>
 
           {/* TODO (future): replace this free-form text input with a structured
               attribution flow:
@@ -460,6 +484,32 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             </div>
           </div>
 
+          {initialPost ? (
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+                  Created
+                  <HelpTooltip content="Timestamp when this post was first created. Cannot be edited." />
+                </label>
+                <div className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted">
+                  {formatTimestamp(initialPost.created_at)}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+                  Last updated
+                  <HelpTooltip content="Timestamp of the most recent edit. Empty if the post has not been edited since creation." />
+                </label>
+                <div className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted">
+                  {hasBeenEdited(initialPost.created_at, initialPost.updated_at)
+                    ? formatTimestamp(initialPost.updated_at)
+                    : "Never edited"}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-4">
             <label className="mb-2.5 block text-sm font-medium text-text-heading">
               Tags <span className="font-normal text-text-muted">(optional)</span>
@@ -479,10 +529,10 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4 border-t border-border-default pt-8">
+      <div className="mt-8 flex items-center justify-between gap-4 border-t border-border-default pt-8">
         <Link
           href="/admin/blog"
-          className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong transition-colors hover:text-text-fg-brand"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Back to posts

@@ -54,27 +54,28 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   })();
 
   return (
-    <>
-      <div className="mx-auto w-full max-w-5xl px-6 pt-6">
-        <Breadcrumb
-          showHomeIcon={false}
-          items={[
-            { label: "Admin" },
-            { label: "Posts", href: "/admin/blog" },
-            { label: crumbTitle },
-          ]}
-        />
-        <Link
-          href="/admin/blog"
-          className="mt-4 inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          Back to posts
-        </Link>
-      </div>
+    <div className="mx-auto w-full max-w-5xl px-6 py-8">
+      <Breadcrumb
+        showHomeIcon={false}
+        items={[
+          { label: "Admin" },
+          { label: "Posts", href: "/admin/blog" },
+          { label: crumbTitle },
+        ]}
+      />
 
-      <PostForm initialPost={post} categories={categories} availableTags={availableTags} authorName={authorName} />
-    </>
+      <Link
+        href="/admin/blog"
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong transition-colors hover:text-text-fg-brand"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to posts
+      </Link>
+
+      <div className="mt-8">
+        <PostForm initialPost={post} categories={categories} availableTags={availableTags} authorName={authorName} />
+      </div>
+    </div>
   );
 }
 

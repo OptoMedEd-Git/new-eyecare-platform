@@ -101,6 +101,7 @@ export type AdminPostForEdit = {
   tag_ids: string[];
   status: "draft" | "published";
   published_at: string | null;
+  created_at: string;
   updated_at: string;
 };
 
@@ -128,7 +129,7 @@ export async function getAdminPostForEdit({
   const { data: post, error } = await supabase
     .from("blog_posts")
     .select(
-      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, target_audience, author:profiles!blog_posts_author_id_fkey(id, first_name, last_name), author_id, status, published_at, updated_at"
+      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, target_audience, author:profiles!blog_posts_author_id_fkey(id, first_name, last_name), author_id, status, published_at, created_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle<{
@@ -146,6 +147,7 @@ export async function getAdminPostForEdit({
       author_id: string | null;
       status: "draft" | "published" | "archived";
       published_at: string | null;
+      created_at: string;
       updated_at: string;
     }>();
 
@@ -181,6 +183,7 @@ export async function getAdminPostForEdit({
     tag_ids,
     status,
     published_at: post.published_at,
+    created_at: post.created_at,
     updated_at: post.updated_at,
   };
 }
