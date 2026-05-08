@@ -1,6 +1,6 @@
 "use client";
 
-import { createPost, publishPost, updatePost } from "@/app/(admin)/admin/blog/actions";
+import { createPost, createTagAction, publishPost, updatePost } from "@/app/(admin)/admin/blog/actions";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusDisplay } from "@/components/admin/PostStatusDisplay";
 import { TagsCombobox } from "@/components/admin/TagsCombobox";
@@ -88,7 +88,10 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
   const categorySelectKey = isEdit ? `${initialPost!.id}-${initialPost!.updated_at}` : "category-select-new";
 
-  const tagPickerTags = useMemo(() => availableTags.map(({ id, name }) => ({ id, name })), [availableTags]);
+  const tagPickerTags = useMemo(
+    () => availableTags.map(({ id, name, name_lower }) => ({ id, name, name_lower })),
+    [availableTags]
+  );
 
   const slug = isEdit ? editedSlug : slugifyShort(title);
   const readingTimeMinutes = Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
@@ -416,6 +419,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
                 setTagIds(ids);
                 setDirty(true);
               }}
+              createTag={createTagAction}
               maxTags={10}
               disabled={saving || publishing}
             />

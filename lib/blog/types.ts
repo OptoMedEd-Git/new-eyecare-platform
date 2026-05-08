@@ -11,6 +11,7 @@ export type BlogTag = {
   id: string;
   slug: string;
   name: string;
+  name_lower: string;
   created_at: string;
 };
 

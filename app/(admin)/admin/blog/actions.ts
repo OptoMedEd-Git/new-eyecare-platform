@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ensureUniqueSlug, slugify } from "@/lib/blog/slugify";
+import { findSimilarTags, normalizeTagName, type SimilarityMatch } from "@/lib/blog/tag-similarity";
 import { deleteBlogImage } from "@/lib/blog/upload-image";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,6 +14,12 @@ type ActionResult<T = void> =
 type AuthoringRole = "admin" | "contributor";
 
 type TargetAudience = "student" | "resident" | "practicing" | "all";
+
+type TagRow = {
+  id: string;
+  name: string;
+  name_lower: string;
+};
 
 type ProfileRoleRow = {
   role: "admin" | "contributor" | "member";
@@ -175,6 +182,68 @@ function mapPostgresUniqueViolationToMessage(err: unknown, fallback: string): st
     if (code === "23505") return "A post with this slug already exists.";
   }
   return fallback;
+}
+
+export async function createTagAction(
+  name: string
+): Promise<{ id: string; similar?: SimilarityMatch[] } | { error: string; similar?: SimilarityMatch[] }> {
+  try {
+    const ctx = await getCurrentUserAndRole();
+
+    const trimmed = name.trim();
+    const normalized = normalizeTagName(name);
+    if (!normalized) return { error: "Tag name cannot be empty." };
+    if (trimmed.length > 30) {
+      return { error: `Tag "${name}" exceeds 30 character limit.` };
+    }
+
+    const { data: existingTags, error: existingError } = await ctx.supabase
+      .from("blog_tags")
+      .select("id, name, name_lower")
+      .order("name", { ascending: true })
+      .returns<TagRow[]>();
+
+    if (existingError) {
+      return { error: existingError.message ?? "Failed to load existing tags." };
+    }
+
+    const exact = (existingTags ?? []).find((t) => t.name_lower === normalized);
+    if (exact) {
+      const similar = findSimilarTags(name, existingTags ?? []);
+      return { id: exact.id, similar };
+    }
+
+    const similar = normalized.length >= 3 ? findSimilarTags(name, existingTags ?? []) : [];
+
+    const slug = normalized.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+    const { data: created, error: createError } = await ctx.supabase
+      .from("blog_tags")
+      .insert({ name: trimmed, slug })
+      .select("id")
+      .maybeSingle<{ id: string }>();
+
+    if (createError || !created) {
+      const code = (createError as { code?: unknown } | null)?.code;
+      // If unique constraint on name_lower races, return canonical.
+      if (code === "23505") {
+        const { data: raced } = await ctx.supabase
+          .from("blog_tags")
+          .select("id")
+          .eq("name_lower", normalized)
+          .maybeSingle<{ id: string }>();
+        if (raced?.id) return { id: raced.id, similar };
+      }
+
+      return { error: createError?.message ?? `Failed to create tag "${trimmed}".`, similar };
+    }
+
+    // TODO (Prompt B): build /admin/tags management page (rename/merge/delete, usage).
+    return { id: created.id, similar };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create tag";
+    return { error: message };
+  }
 }
 
 export async function createPost(formData: FormData): Promise<ActionResult<{ postId: string }>> {
