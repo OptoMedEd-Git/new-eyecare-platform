@@ -80,8 +80,8 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Continue Learning + Performance Breakdown — 2 equal columns */}
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Continue Learning (1/3) + Performance Breakdown (2/3) */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-xl font-bold text-text-heading">Continue learning</h2>
@@ -94,7 +94,9 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        <PerformanceBreakdownChart data={SAMPLE_CATEGORY_PERFORMANCE} />
+        <div className="lg:col-span-2">
+          <PerformanceBreakdownChart data={SAMPLE_CATEGORY_PERFORMANCE} />
+        </div>
       </div>
 
       {/* Charts row: Learning Activity (2/3) + Skill mastery (1/3) */}

@@ -13,7 +13,9 @@ const COLOR_GRID = "#e5e7eb"; // grid line color
 const PERIODS = ["All time", "Last 30 days", "Last 7 days"] as const;
 type Period = (typeof PERIODS)[number];
 
-const COLLAPSED_COUNT = 5;
+type SortOrder = "best" | "worst";
+
+const COLLAPSED_COUNT = 7;
 
 type Props = {
   data: CategoryPerformance[];
@@ -21,9 +23,16 @@ type Props = {
 
 export function PerformanceBreakdownChart({ data }: Props) {
   const [period, setPeriod] = useState<Period>("Last 30 days");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("best");
   const [expanded, setExpanded] = useState(false);
 
-  const sorted = useMemo(() => [...data].sort((a, b) => b.percentage - a.percentage), [data]);
+  const sorted = useMemo(
+    () =>
+      [...data].sort((a, b) =>
+        sortOrder === "best" ? b.percentage - a.percentage : a.percentage - b.percentage,
+      ),
+    [data, sortOrder],
+  );
   const visible = expanded ? sorted : sorted.slice(0, COLLAPSED_COUNT);
   const hasMore = sorted.length > COLLAPSED_COUNT;
 
@@ -45,38 +54,54 @@ export function PerformanceBreakdownChart({ data }: Props) {
           <p className="mt-1 text-sm text-text-body">Your accuracy across specialty areas</p>
         </div>
 
-        <div className="inline-flex items-center rounded-base border border-border-default p-0.5">
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={[
-                "rounded-sm px-3 py-1 text-xs font-medium transition-colors",
-                period === p
-                  ? "bg-bg-brand-softer text-text-fg-brand-strong"
-                  : "text-text-body hover:bg-bg-secondary-soft",
-              ].join(" ")}
-            >
-              {p}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center rounded-base border border-border-default p-0.5">
+            {(["best", "worst"] as const).map((order) => (
+              <button
+                key={order}
+                type="button"
+                onClick={() => setSortOrder(order)}
+                className={[
+                  "rounded-sm px-3 py-1 text-xs font-medium transition-colors",
+                  sortOrder === order
+                    ? "bg-bg-brand-softer text-text-fg-brand-strong"
+                    : "text-text-body hover:bg-bg-secondary-soft",
+                ].join(" ")}
+              >
+                {order === "best" ? "Best" : "Worst"}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex items-center rounded-base border border-border-default p-0.5">
+            {PERIODS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className={[
+                  "rounded-sm px-3 py-1 text-xs font-medium transition-colors",
+                  period === p
+                    ? "bg-bg-brand-softer text-text-fg-brand-strong"
+                    : "text-text-body hover:bg-bg-secondary-soft",
+                ].join(" ")}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div
-        className="mt-6 w-full flex-1"
-        style={{ minHeight: `${Math.max(chartData.length * 44, 220)}px` }}
-      >
+      <div className="mt-6 h-[360px] w-full flex-1">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            layout="vertical"
-            margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
-            barCategoryGap="30%"
+            margin={{ top: 10, right: 10, left: 0, bottom: 70 }}
+            barCategoryGap="20%"
           >
-            <CartesianGrid strokeDasharray="3 3" stroke={COLOR_GRID} horizontal={false} />
-            <XAxis
+            <CartesianGrid strokeDasharray="3 3" stroke={COLOR_GRID} vertical={false} />
+            <YAxis
               type="number"
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
@@ -86,14 +111,17 @@ export function PerformanceBreakdownChart({ data }: Props) {
               tickLine={false}
               axisLine={false}
             />
-            <YAxis
+            <XAxis
               dataKey="category"
               type="category"
               stroke={COLOR_AXIS}
-              fontSize={12}
+              fontSize={11}
               tickLine={false}
               axisLine={false}
-              width={140}
+              angle={-35}
+              textAnchor="end"
+              interval={0}
+              height={80}
             />
             <Tooltip
               cursor={{ fill: "transparent" }}
@@ -109,8 +137,8 @@ export function PerformanceBreakdownChart({ data }: Props) {
               }}
             />
 
-            <Bar dataKey="percentage" stackId="a" fill={COLOR_FILL} radius={[4, 0, 0, 4]} />
-            <Bar dataKey="remainder" stackId="a" fill={COLOR_TRACK} radius={[0, 4, 4, 0]} />
+            <Bar dataKey="percentage" stackId="a" fill={COLOR_FILL} radius={[0, 0, 0, 0]} />
+            <Bar dataKey="remainder" stackId="a" fill={COLOR_TRACK} radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
