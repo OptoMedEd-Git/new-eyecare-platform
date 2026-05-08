@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import { PostForm } from "@/components/admin/PostForm";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getAdminPostForEdit } from "@/lib/blog/admin-queries";
 import { getAllTags } from "@/lib/blog/admin-tags-queries";
 import { getCategories } from "@/lib/blog/queries";
@@ -46,6 +49,21 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
   const authorName =
     [post.author?.first_name, post.author?.last_name].filter(Boolean).join(" ") || "Unknown author";
 
-  return <PostForm initialPost={post} categories={categories} availableTags={availableTags} authorName={authorName} />;
+  return (
+    <>
+      <div className="mx-auto w-full max-w-5xl px-6 pt-6">
+        <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Posts", href: "/admin/blog" }, { label: post.title || "Edit post" }]} />
+        <Link
+          href="/admin/blog"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong hover:underline"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Back to posts
+        </Link>
+      </div>
+
+      <PostForm initialPost={post} categories={categories} availableTags={availableTags} authorName={authorName} />
+    </>
+  );
 }
 

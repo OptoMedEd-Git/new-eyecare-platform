@@ -1,9 +1,10 @@
 "use client";
 
-import { createPost, createTagAction, publishPost, updatePost } from "@/app/(admin)/admin/blog/actions";
+import { createPost, createTagAction, publishPost, publishPostWithChanges, updatePost } from "@/app/(admin)/admin/blog/actions";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusDisplay } from "@/components/admin/PostStatusDisplay";
 import { TagsCombobox } from "@/components/admin/TagsCombobox";
+import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
@@ -58,6 +59,7 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
   const formRef = useRef<HTMLFormElement>(null);
   const editorRef = useRef<PostEditorHandle>(null);
   const isEdit = Boolean(initialPost);
+  const isPublished = initialPost?.status === "published";
 
   const [title, setTitle] = useState(initialPost?.title ?? "");
   /** Only used in edit mode; create mode derives slug from title during render. */
@@ -173,19 +175,64 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
     }
   }
 
+  async function handlePublishChanges() {
+    if (!initialPost) return;
+    if (!dirty) return;
+
+    const form = formRef.current;
+    if (!form) return;
+
+    setError(null);
+    setPublishing(true);
+    try {
+      const fd = new FormData(form);
+      fd.set("id", initialPost.id);
+      fd.set("cover_image_url", coverImage.url ?? "");
+      fd.set("cover_image_path", coverImage.path ?? "");
+      fd.set("cover_image_attribution", coverImageAttribution);
+      fd.set("target_audience", targetAudience);
+      fd.set("tag_ids", JSON.stringify(tagIds));
+      const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
+      fd.set("content", JSON.stringify(editorJSON));
+
+      const result = await publishPostWithChanges(fd);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      setDirty(false);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Publish failed");
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   return (
     // TODO: beforeunload does not intercept in-app navigations (Next.js <Link />); add route-change guards separately if needed.
     <form ref={formRef} onSubmit={handleSubmit} className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+      <UnsavedChangesGuard dirty={dirty && !saving && !publishing} onSave={handleSave} />
+
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">{isEdit ? "Edit post" : "New post"}</h1>
         </div>
         {isEdit && initialPost ? (
-          <PostStatusDisplay
-            status={initialPost.status}
-            publishedAt={initialPost.published_at}
-            updatedAt={initialPost.updated_at}
-          />
+          <div className="flex items-start gap-3">
+            <PostStatusDisplay
+              status={initialPost.status}
+              publishedAt={initialPost.published_at}
+              updatedAt={initialPost.updated_at}
+            />
+            {isPublished && dirty ? (
+              <span className="mt-1 inline-flex items-center gap-1.5 rounded-sm bg-bg-warning-softer px-2 py-0.5 text-xs font-medium text-text-fg-warning-strong">
+                <span className="size-1.5 rounded-full bg-text-fg-warning-strong" aria-hidden />
+                Unsaved changes
+              </span>
+            ) : null}
+          </div>
         ) : null}
       </div>
 
@@ -252,14 +299,17 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
           <div>
             <label className="mb-2.5 block text-sm font-medium text-text-heading">Author</label>
+            <p id="author-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
+              Author is set automatically from your account.
+            </p>
             <input
               type="text"
               value={authorNameValue}
               readOnly
               disabled
+              aria-describedby="author-helper"
               className="w-full cursor-not-allowed rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
             />
-            <p className="mt-1.5 text-xs text-text-muted">Author is set automatically from your account.</p>
           </div>
         </div>
 
@@ -278,8 +328,14 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
         </div>
 
         <div className="w-full">
-          <FormInput
-            label="Description"
+          <label htmlFor="description" className="mb-2.5 block text-sm font-medium text-text-heading">
+            Description <span className="text-text-fg-danger">*</span>
+          </label>
+          <p id="description-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
+            Required to publish. Shown beneath the title on the blog index.
+          </p>
+          <input
+            id="description"
             name="description"
             required
             value={description}
@@ -288,14 +344,18 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
               setDirty(true);
             }}
             placeholder="A brief summary shown on the blog index"
+            aria-describedby="description-helper"
+            className="h-[42px] w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
           />
-          <p className="mt-1.5 text-xs text-text-muted">Required to publish. Shown beneath the title on the blog index.</p>
         </div>
 
         <div className="w-full">
           <label className="mb-2.5 block text-sm font-medium text-text-heading">
             Cover image <span className="text-text-fg-danger">*</span>
           </label>
+          <p id="cover-image-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
+            Required to publish. JPEG, PNG, or WebP — max 5MB.
+          </p>
           <ImageUpload
             currentImageUrl={coverImage.url}
             currentImagePath={coverImage.path}
@@ -305,7 +365,6 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             }}
             disabled={saving || publishing}
           />
-          <p className="mt-1.5 text-xs text-text-muted">Required to publish. JPEG, PNG, or WebP — max 5MB.</p>
         </div>
 
         {/* Image attribution — required at publish */}
@@ -316,6 +375,11 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
           >
             Image attribution <span className="text-text-fg-danger">*</span>
           </label>
+          <p id="cover-image-attribution-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
+            Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or
+            similar. For sourced images, include the title, author/photographer, source publication, and a link to the
+            original where possible. Make sure you have rights to use any sourced image.
+          </p>
           <textarea
             id="cover_image_attribution"
             name="cover_image_attribution"
@@ -326,13 +390,9 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             }}
             rows={2}
             placeholder='e.g., Photo: Jane Smith. Or: Image “Diabetic retinopathy fundus” by Dr. John Doe, AAO Image Library (2023). https://example.com/source'
+            aria-describedby="cover-image-attribution-helper"
             className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
           />
-          <p className="mt-1.5 text-xs text-text-muted">
-            Required. Cite the source of the cover image. For your own original work, write “Photo: [Your Name]” or
-            similar. For sourced images, include the title, author/photographer, source publication, and a link to the
-            original where possible. Make sure you have rights to use any sourced image.
-          </p>
 
           {/* TODO (future): replace this free-form text input with a structured
               attribution flow:
@@ -351,6 +411,9 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
           <label className="mb-2.5 block text-sm font-medium text-text-heading">
             Content <span className="text-text-fg-danger">*</span>
           </label>
+          <p id="content-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
+            Write your post content. Use the toolbar for formatting, links, and images.
+          </p>
           <PostEditor
             ref={editorRef}
             initialContent={initialPost?.content ?? ""}
@@ -361,9 +424,6 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
             }}
             disabled={saving || publishing}
           />
-          <p className="mt-1.5 text-xs text-text-muted">
-            Write your post content. Use the toolbar for formatting, links, and images.
-          </p>
         </div>
 
         {/* Article metadata */}
@@ -399,12 +459,15 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
             <div>
               <label className="mb-2.5 block text-sm font-medium text-text-heading">Estimated reading time</label>
-              <div className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted">
-                {readingTimeMinutes} min read{wordCount > 0 ? ` · ${wordCount.toLocaleString()} words` : ""}
-              </div>
-              <p className="mt-1.5 text-xs text-text-muted">
+              <p id="reading-time-helper" className="mb-2 mt-0.5 text-xs text-text-muted">
                 Calculated from content (~{WORDS_PER_MINUTE} words per minute). Updates as you type.
               </p>
+              <div
+                aria-describedby="reading-time-helper"
+                className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
+              >
+                {readingTimeMinutes} min read{wordCount > 0 ? ` · ${wordCount.toLocaleString()} words` : ""}
+              </div>
             </div>
           </div>
 
@@ -449,12 +512,28 @@ export function PostForm({ initialPost, categories, availableTags, authorName }:
 
           <button
             type="button"
-            onClick={handlePublish}
-            disabled={!isEdit || saving || publishing}
-            title={!isEdit ? "Save the post first before publishing" : undefined}
+            onClick={isPublished ? handlePublishChanges : handlePublish}
+            disabled={
+              isPublished ? !dirty || saving || publishing : !isEdit || saving || publishing
+            }
+            title={
+              isPublished
+                ? !dirty
+                  ? "No changes to publish"
+                  : undefined
+                : !isEdit
+                  ? "Save the post first before publishing"
+                  : undefined
+            }
             className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {publishing ? "Publishing…" : initialPost?.status === "published" ? "Update published" : "Publish"}
+            {publishing
+              ? "Publishing…"
+              : isPublished
+                ? "Publish changes"
+                : initialPost?.status === "published"
+                  ? "Update published"
+                  : "Publish"}
           </button>
         </div>
       </div>

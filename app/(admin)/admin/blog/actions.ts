@@ -509,6 +509,155 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
   }
 }
 
+export async function publishPostWithChanges(
+  formData: FormData
+): Promise<ActionResult<{ postId: string; slug: string }>> {
+  try {
+    const ctx = await getCurrentUserAndRole();
+
+    const idRaw = formData.get("id");
+    if (typeof idRaw !== "string" || !isUuid(idRaw)) {
+      return { ok: false, error: "Post ID required" };
+    }
+
+    const existing = await authorizePostAccess(idRaw, ctx);
+
+    let tagIds: string[];
+    try {
+      tagIds = parseTagIds(formData) ?? [];
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Invalid tags";
+      return { ok: false, error: message, fieldErrors: { tag_ids: "Invalid tag selection" } };
+    }
+
+    const titleRaw = getString(formData, "title");
+    const descriptionRaw = getString(formData, "description");
+    const categoryIdRaw = getString(formData, "category_id");
+    const contentRaw = getString(formData, "content");
+    const coverImageUrl = getNullableString(formData, "cover_image_url");
+    const coverImagePath = getNullableString(formData, "cover_image_path");
+    const coverImageAttribution = formData.get("cover_image_attribution");
+    const coverImageAttributionValue = isNonEmptyString(coverImageAttribution)
+      ? coverImageAttribution.trim()
+      : null;
+    const slugOverrideRaw = getString(formData, "slug");
+    const targetAudience = formData.get("target_audience");
+    const targetAudienceValue: TargetAudience | null =
+      isNonEmptyString(targetAudience) &&
+      (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
+        ? (targetAudience as TargetAudience)
+        : null;
+
+    const fieldErrors: Record<string, string> = {};
+
+    if (!isNonEmptyString(titleRaw)) fieldErrors.title = "Title is required";
+    if (typeof titleRaw === "string" && titleRaw.length > 200) fieldErrors.title = "Title too long";
+
+    if (!isNonEmptyString(descriptionRaw)) fieldErrors.description = "Description is required";
+    if (typeof descriptionRaw === "string" && descriptionRaw.length > 500) fieldErrors.description = "Description too long";
+
+    if (!isNonEmptyString(categoryIdRaw) || !isUuid(categoryIdRaw)) fieldErrors.category_id = "Invalid category";
+
+    if (!isNonEmptyString(contentRaw)) {
+      fieldErrors.content = "Content is required";
+    } else {
+      try {
+        parseContentJson(contentRaw);
+      } catch (e) {
+        fieldErrors.content = e instanceof Error ? e.message : "Content must be valid JSON";
+      }
+    }
+
+    if (!isNonEmptyString(coverImageUrl)) fieldErrors.cover_image_url = "Cover image is required";
+    if (!coverImageAttributionValue) fieldErrors.cover_image_attribution = "Image attribution is required";
+
+    if (!isNonEmptyString(slugOverrideRaw)) {
+      fieldErrors.slug = "Slug is required";
+    } else {
+      const s = slugify(slugOverrideRaw);
+      if (!s) fieldErrors.slug = "Slug must be URL-safe";
+    }
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return { ok: false, error: "Validation failed", fieldErrors };
+    }
+
+    if (!isNonEmptyString(slugOverrideRaw)) {
+      return { ok: false, error: "Validation failed", fieldErrors: { slug: "Slug is required" } };
+    }
+
+    const base = slugify(slugOverrideRaw);
+    if (!base) {
+      return { ok: false, error: "Validation failed", fieldErrors: { slug: "Slug must be URL-safe" } };
+    }
+    const nextSlug = await ensureUniqueSlug(base, (s) => slugExists(ctx, s, idRaw));
+
+    const parsedContent = isNonEmptyString(contentRaw) ? parseContentJson(contentRaw) : { type: "doc", content: [] };
+
+    const { data: publishedInfo } = await ctx.supabase
+      .from("blog_posts")
+      .select("published_at")
+      .eq("id", idRaw)
+      .maybeSingle<{ published_at: string | null }>();
+
+    const publishedAt = publishedInfo?.published_at ?? new Date().toISOString();
+
+    const updatePayload: Record<string, unknown> = {
+      title: titleRaw,
+      description: descriptionRaw ?? "",
+      category_id: categoryIdRaw,
+      content: parsedContent,
+      slug: nextSlug,
+      cover_image_url: coverImageUrl,
+      cover_image_path: coverImagePath,
+      cover_image_attribution: coverImageAttributionValue,
+      target_audience: targetAudienceValue,
+      status: "published",
+      published_at: publishedAt,
+    };
+
+    const oldCoverPath = existing.cover_image_path;
+    const coverPathChanged = oldCoverPath && coverImagePath && coverImagePath !== oldCoverPath;
+    const coverPathRemoved = oldCoverPath && !coverImagePath;
+
+    const { data: updated, error: updateError } = await ctx.supabase
+      .from("blog_posts")
+      .update(updatePayload)
+      .eq("id", idRaw)
+      .select("id, slug")
+      .maybeSingle<{ id: string; slug: string }>();
+
+    if (updateError || !updated) {
+      const msg = mapPostgresUniqueViolationToMessage(updateError, updateError?.message ?? "Failed to publish changes");
+      return { ok: false, error: msg };
+    }
+
+    if (coverPathChanged || coverPathRemoved) {
+      try {
+        await deleteBlogImage(oldCoverPath);
+      } catch (cleanupErr) {
+        console.warn("[blog] publishPostWithChanges cover image cleanup failed", cleanupErr);
+      }
+    }
+
+    try {
+      await replacePostTags(ctx, idRaw, tagIds);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to sync tags";
+      return { ok: false, error: message };
+    }
+
+    revalidatePath("/admin/blog");
+    revalidatePath("/blog");
+    revalidatePath(`/blog/${updated.slug}`);
+
+    return { ok: true, data: { postId: updated.id, slug: updated.slug } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to publish changes";
+    return { ok: false, error: message };
+  }
+}
+
 export async function publishPost(postId: string): Promise<ActionResult> {
   try {
     const ctx = await getCurrentUserAndRole();
