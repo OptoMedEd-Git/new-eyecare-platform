@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, Check, ExternalLink, Pencil, Plus, Trash2, X } from "lucide-react";
 import { HelpTooltip } from "./HelpTooltip";
 import type { Reference } from "@/lib/blog/types";
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 
 type Props = {
   value: Reference[];
@@ -293,160 +293,33 @@ export const ReferencesEditor = forwardRef<ReferencesEditorHandle, Props>(functi
             };
 
             if (state.editing) {
-              const canCommit = isNonEmptyText(state.draft);
               return (
-                <li
+                <ReferenceEditingRow
                   key={index}
-                  className="rounded-base border border-border-default bg-bg-primary-soft p-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
-                      {index + 1}
-                    </span>
-
-                    <div className="flex-1 space-y-2">
-                      <textarea
-                        value={state.draft.text}
-                        onChange={(e) => updateReference(index, { text: e.target.value })}
-                        rows={2}
-                        placeholder="e.g., AAO. Primary Open-Angle Glaucoma Preferred Practice Pattern. American Academy of Ophthalmology. 2020."
-                        aria-label={`Reference ${index + 1} citation`}
-                        className="w-full resize-y rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
-                      />
-
-                      <div className="relative">
-                        <ExternalLink
-                          className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
-                          aria-hidden
-                        />
-                        <input
-                          type="url"
-                          value={state.draft.url ?? ""}
-                          onChange={(e) => updateReference(index, { url: e.target.value })}
-                          placeholder="https://example.com/source (optional)"
-                          aria-label={`Reference ${index + 1} URL`}
-                          className="w-full rounded-base border border-border-default bg-bg-primary-soft pl-9 pr-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-end gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => cancelEditingReference(index)}
-                          className="inline-flex items-center gap-1.5 rounded-base px-3 py-1.5 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft"
-                        >
-                          <X className="size-4" aria-hidden />
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => commitReference(index)}
-                          disabled={!canCommit}
-                          className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-3 py-1.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <Check className="size-4" aria-hidden />
-                          {state.hasBeenConfirmed ? "Update reference" : "Add reference"}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => removeReference(index)}
-                        aria-label={`Remove reference ${index + 1}`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-danger-softer hover:text-text-fg-danger"
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveReference(index, -1)}
-                        disabled
-                        aria-label={`Move reference ${index + 1} up`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted opacity-30"
-                      >
-                        <ArrowUp className="size-4" aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveReference(index, 1)}
-                        disabled
-                        aria-label={`Move reference ${index + 1} down`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted opacity-30"
-                      >
-                        <ArrowDown className="size-4" aria-hidden />
-                      </button>
-                    </div>
-                  </div>
-                </li>
+                  index={index}
+                  draft={state.draft}
+                  hasBeenConfirmed={state.hasBeenConfirmed}
+                  onChangeText={(text) => updateReference(index, { text })}
+                  onChangeUrl={(url) => updateReference(index, { url })}
+                  onCancel={() => cancelEditingReference(index)}
+                  onCommit={() => commitReference(index)}
+                  onDelete={() => removeReference(index)}
+                />
               );
             }
 
             return (
-              <li key={index} className="rounded-base border border-border-default bg-bg-primary-soft p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
-                    {index + 1}
-                  </span>
-
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-sm leading-relaxed text-text-heading">{ref.text}</p>
-                    {ref.url ? (
-                      <a
-                        href={ref.url}
-                        target="_blank"
-                        rel="noopener noreferrer nofollow"
-                        className="inline-flex items-center gap-1 text-xs text-text-fg-brand-strong underline decoration-text-fg-brand/40 underline-offset-2 transition-colors hover:text-text-fg-brand hover:decoration-text-fg-brand"
-                      >
-                        <ExternalLink className="size-3" aria-hidden />
-                        {ref.url}
-                      </a>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => startEditingReference(index)}
-                        aria-label={`Edit reference ${index + 1}`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading"
-                      >
-                        <Pencil className="size-4" aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeReference(index)}
-                        aria-label={`Remove reference ${index + 1}`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-danger-softer hover:text-text-fg-danger"
-                      >
-                        <Trash2 className="size-4" aria-hidden />
-                      </button>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => moveReference(index, -1)}
-                        disabled={index === 0}
-                        aria-label={`Move reference ${index + 1} up`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
-                      >
-                        <ArrowUp className="size-4" aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveReference(index, 1)}
-                        disabled={index === value.length - 1}
-                        aria-label={`Move reference ${index + 1} down`}
-                        className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
-                      >
-                        <ArrowDown className="size-4" aria-hidden />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </li>
+              <ReferenceConfirmedRow
+                key={index}
+                index={index}
+                reference={ref}
+                isFirst={index === 0}
+                isLast={index === value.length - 1}
+                onMoveUp={() => moveReference(index, -1)}
+                onMoveDown={() => moveReference(index, 1)}
+                onEdit={() => startEditingReference(index)}
+                onDelete={() => removeReference(index)}
+              />
             );
           })}
         </ol>
@@ -454,4 +327,205 @@ export const ReferencesEditor = forwardRef<ReferencesEditorHandle, Props>(functi
     </div>
   );
 });
+
+type ReferenceEditingRowProps = {
+  index: number;
+  draft: Reference;
+  hasBeenConfirmed: boolean;
+  onChangeText: (text: string) => void;
+  onChangeUrl: (url: string) => void;
+  onCancel: () => void;
+  onCommit: () => void;
+  onDelete: () => void;
+};
+
+function ReferenceEditingRow({
+  index,
+  draft,
+  hasBeenConfirmed,
+  onChangeText,
+  onChangeUrl,
+  onCancel,
+  onCommit,
+  onDelete,
+}: ReferenceEditingRowProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft.text]);
+
+  const canCommit = isNonEmptyText(draft);
+
+  return (
+    <li className="rounded-base border border-border-default bg-bg-primary-soft p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-2 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
+          {index + 1}
+        </span>
+
+        <div className="flex-1 space-y-2">
+          <textarea
+            ref={textareaRef}
+            value={draft.text}
+            onChange={(e) => onChangeText(e.target.value)}
+            rows={1}
+            placeholder="e.g., AAO. Primary Open-Angle Glaucoma Preferred Practice Pattern. American Academy of Ophthalmology. 2020."
+            aria-label={`Reference ${index + 1} citation`}
+            className="w-full resize-none overflow-hidden rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          />
+
+          <div className="relative">
+            <ExternalLink
+              className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-text-muted"
+              aria-hidden
+            />
+            <input
+              type="url"
+              value={draft.url ?? ""}
+              onChange={(e) => onChangeUrl(e.target.value)}
+              placeholder="https://example.com/source (optional)"
+              aria-label={`Reference ${index + 1} URL`}
+              className="w-full rounded-base border border-border-default bg-bg-primary-soft pl-9 pr-3 py-2 text-sm text-text-heading placeholder:text-text-placeholder focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex items-center gap-1.5 rounded-base px-3 py-1.5 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft"
+            >
+              <X className="size-4" aria-hidden />
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onCommit}
+              disabled={!canCommit}
+              className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-3 py-1.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Check className="size-4" aria-hidden />
+              {hasBeenConfirmed ? "Update reference" : "Add reference"}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={`Remove reference ${index + 1}`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-danger-softer hover:text-text-fg-danger"
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            disabled
+            aria-label={`Move reference ${index + 1} up`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted opacity-30"
+          >
+            <ArrowUp className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            disabled
+            aria-label={`Move reference ${index + 1} down`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted opacity-30"
+          >
+            <ArrowDown className="size-4" aria-hidden />
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+type ReferenceConfirmedRowProps = {
+  index: number;
+  reference: Reference;
+  isFirst: boolean;
+  isLast: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+};
+
+function ReferenceConfirmedRow({
+  index,
+  reference,
+  isFirst,
+  isLast,
+  onMoveUp,
+  onMoveDown,
+  onEdit,
+  onDelete,
+}: ReferenceConfirmedRowProps) {
+  return (
+    <li className="rounded-base border border-border-default bg-bg-primary-soft p-4">
+      <div className="flex items-start gap-3">
+        <span className="mt-1 flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-brand-softer text-xs font-bold text-text-fg-brand-strong">
+          {index + 1}
+        </span>
+
+        <div className="min-w-0 flex-1 space-y-1">
+          <p className="text-sm leading-relaxed text-text-heading">{reference.text}</p>
+          {reference.url ? (
+            <a
+              href={reference.url}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex items-center gap-1 text-xs text-text-fg-brand-strong underline decoration-text-fg-brand/40 underline-offset-2 transition-colors hover:text-text-fg-brand hover:decoration-text-fg-brand"
+            >
+              <ExternalLink className="size-3" aria-hidden />
+              {reference.url}
+            </a>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onMoveUp}
+            disabled={isFirst}
+            aria-label={`Move reference ${index + 1} up`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
+          >
+            <ArrowUp className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onMoveDown}
+            disabled={isLast}
+            aria-label={`Move reference ${index + 1} down`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-text-muted"
+          >
+            <ArrowDown className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onEdit}
+            aria-label={`Edit reference ${index + 1}`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-secondary-soft hover:text-text-heading"
+          >
+            <Pencil className="size-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label={`Delete reference ${index + 1}`}
+            className="flex size-7 items-center justify-center rounded-sm text-text-muted transition-colors hover:bg-bg-danger-softer hover:text-text-fg-danger"
+          >
+            <Trash2 className="size-4" aria-hidden />
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
 
