@@ -1,15 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
-import { NextRequest, NextResponse } from "next/server";
-
-function withPathnameHeader(req: NextRequest): NextRequest {
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-pathname", req.nextUrl.pathname);
-  return new NextRequest(req.url, { headers: requestHeaders });
-}
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
-    request: withPathnameHeader(request),
+    request,
   });
 
   const supabase = createServerClient(
@@ -25,7 +19,7 @@ export async function middleware(request: NextRequest) {
             request.cookies.set(name, value);
           });
           supabaseResponse = NextResponse.next({
-            request: withPathnameHeader(request),
+            request,
           });
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options);
@@ -48,7 +42,7 @@ export const config = {
     /*
      * Match all request paths except:
      * - _next/static (static files)
-     * - _next/image (image optimization files)
+     * - _next/image (image optimization)
      * - favicon.ico (favicon file)
      * - common static image extensions
      */
