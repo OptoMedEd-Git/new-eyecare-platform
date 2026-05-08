@@ -15,6 +15,7 @@ const POST_SELECT = `
   content,
   cover_image_url,
   cover_image_attribution,
+  target_audience,
   author_id,
   category_id,
   status,

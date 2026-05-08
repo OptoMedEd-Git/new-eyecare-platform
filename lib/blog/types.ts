@@ -20,6 +20,8 @@ export type BlogAuthor = {
   last_name: string | null;
 };
 
+export type TargetAudience = "student" | "resident" | "practicing" | "all";
+
 export type BlogPost = {
   id: string;
   slug: string;
@@ -29,6 +31,7 @@ export type BlogPost = {
   cover_image_url: string | null;
   cover_image_path: string | null;
   cover_image_attribution: string | null;
+  target_audience: TargetAudience | null;
   author_id: string | null;
   category_id: string;
   status: "draft" | "published" | "archived";

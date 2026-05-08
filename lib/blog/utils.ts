@@ -78,6 +78,33 @@ export function calculateReadTime(
   }
 }
 
+const WORDS_PER_MINUTE = 200;
+
+/**
+ * Compute estimated reading time in minutes from a TipTap JSON document.
+ * Returns at least 1 minute even for very short content.
+ */
+export function getReadingTime(content: unknown): number {
+  const wordCount = countWords(content);
+  return Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
+}
+
+/**
+ * Count words in a TipTap JSON document by rendering it to text.
+ */
+export function countWords(content: unknown): number {
+  if (!content || typeof content !== "object") return 0;
+  try {
+    const text = generateText(content as Parameters<typeof generateText>[0], tiptapExtensions, {
+      blockSeparator: "\n",
+    });
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(Boolean).length;
+  } catch {
+    return 0;
+  }
+}
+
 export function truncateLabel(text: string, max = 52): string {
   const t = text.trim();
   if (t.length <= max) return t;

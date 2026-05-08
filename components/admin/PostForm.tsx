@@ -8,6 +8,7 @@ import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import type { AdminTag } from "@/lib/blog/admin-tags-queries";
+import { countWords } from "@/lib/blog/utils";
 import { slugify, slugifyShort } from "@/lib/blog/slugify";
 import { PostEditor, type PostEditorHandle } from "@/components/admin/PostEditor";
 import { ArrowLeft, RefreshCw, Save } from "lucide-react";
@@ -28,6 +29,8 @@ export type PostFormProps = {
     cover_image_url: string | null;
     cover_image_path: string | null;
     cover_image_attribution: string | null;
+    target_audience: "student" | "resident" | "practicing" | "all" | null;
+    author: { id: string; first_name: string | null; last_name: string | null } | null;
     tag_ids: string[];
     status: "draft" | "published";
     published_at: string | null;
@@ -35,9 +38,22 @@ export type PostFormProps = {
   };
   categories: Category[];
   availableTags: AdminTag[];
+  authorName?: string;
 };
 
-export function PostForm({ initialPost, categories, availableTags }: PostFormProps) {
+const WORDS_PER_MINUTE = 200;
+
+function parseContentForWordCount(initialPost: PostFormProps["initialPost"]): number {
+  if (!initialPost?.content) return 0;
+  try {
+    const parsed = JSON.parse(initialPost.content) as unknown;
+    return countWords(parsed);
+  } catch {
+    return 0;
+  }
+}
+
+export function PostForm({ initialPost, categories, availableTags, authorName }: PostFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const editorRef = useRef<PostEditorHandle>(null);
@@ -55,6 +71,8 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
     initialPost?.cover_image_attribution ?? ""
   );
   const [tagIds, setTagIds] = useState<string[]>(initialPost?.tag_ids ?? []);
+  const [targetAudience, setTargetAudience] = useState<string>(initialPost?.target_audience ?? "");
+  const [wordCount, setWordCount] = useState(() => parseContentForWordCount(initialPost));
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -73,6 +91,8 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
   const tagPickerTags = useMemo(() => availableTags.map(({ id, name }) => ({ id, name })), [availableTags]);
 
   const slug = isEdit ? editedSlug : slugifyShort(title);
+  const readingTimeMinutes = Math.max(1, Math.round(wordCount / WORDS_PER_MINUTE));
+  const authorNameValue = authorName?.trim() ? authorName.trim() : "Unknown author";
 
   useEffect(() => {
     if (!dirty) return;
@@ -99,6 +119,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
       fd.set("cover_image_url", coverImage.url ?? "");
       fd.set("cover_image_path", coverImage.path ?? "");
       fd.set("cover_image_attribution", coverImageAttribution);
+      fd.set("target_audience", targetAudience);
       fd.set("tag_ids", JSON.stringify(tagIds));
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
@@ -151,7 +172,7 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
 
   return (
     // TODO: beforeunload does not intercept in-app navigations (Next.js <Link />); add route-change guards separately if needed.
-    <form ref={formRef} onSubmit={handleSubmit} className="mx-auto flex w-full max-w-[640px] flex-col gap-8">
+    <form ref={formRef} onSubmit={handleSubmit} className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">{isEdit ? "Edit post" : "New post"}</h1>
@@ -168,30 +189,33 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
       {error ? <Alert variant="error" message={error} /> : null}
 
       <div className="flex flex-col gap-5">
-        <div className="flex flex-wrap items-start gap-5">
-          <div className="min-w-[255px] flex-1">
-            <FormInput
-              label="Title"
-              name="title"
-              required
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setDirty(true);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.preventDefault();
-              }}
-              placeholder="e.g. Reading OCT scans systematically"
-            />
-          </div>
+        {/* Row 1: Title (full width) */}
+        <div className="w-full">
+          <FormInput
+            label="Title"
+            name="title"
+            required
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setDirty(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.preventDefault();
+            }}
+            placeholder="e.g. Reading OCT scans systematically"
+          />
+        </div>
 
-          <div className="min-w-[255px] flex-1">
+        {/* Row 2: Slug + Author */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
               <div className="min-w-0 flex-1">
                 <FormInput
                   label={isEdit ? "Slug" : "Slug (auto-generated)"}
                   name="slug"
+                  required={isEdit}
                   value={slug}
                   onChange={
                     isEdit
@@ -223,18 +247,31 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
             </div>
           </div>
 
-          <div className="min-w-[255px] flex-1" onPointerDown={() => setDirty(true)}>
-            <FormSelect
-              key={categorySelectKey}
-              label="Category"
-              name="category_id"
-              required
-              options={categoryOptions}
-              defaultValue={initialPost?.category_id ?? ""}
-              placeholder="Select a category"
-              disabled={saving || publishing}
+          <div>
+            <label className="mb-2.5 block text-sm font-medium text-text-heading">Author</label>
+            <input
+              type="text"
+              value={authorNameValue}
+              readOnly
+              disabled
+              className="w-full cursor-not-allowed rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
             />
+            <p className="mt-1.5 text-xs text-text-muted">Author is set automatically from your account.</p>
           </div>
+        </div>
+
+        {/* Category */}
+        <div className="w-full" onPointerDown={() => setDirty(true)}>
+          <FormSelect
+            key={categorySelectKey}
+            label="Category"
+            name="category_id"
+            required
+            options={categoryOptions}
+            defaultValue={initialPost?.category_id ?? ""}
+            placeholder="Select a category"
+            disabled={saving || publishing}
+          />
         </div>
 
         <div className="w-full">
@@ -309,33 +346,80 @@ export function PostForm({ initialPost, categories, availableTags }: PostFormPro
 
         <div className="w-full">
           <label className="mb-2.5 block text-sm font-medium text-text-heading">
-            Tags <span className="font-normal text-text-muted">(optional)</span>
-          </label>
-          <TagsCombobox
-            availableTags={tagPickerTags}
-            selectedTagIds={tagIds}
-            onChange={(ids) => {
-              setTagIds(ids);
-              setDirty(true);
-            }}
-            maxTags={10}
-            disabled={saving || publishing}
-          />
-        </div>
-
-        <div className="w-full">
-          <label className="mb-2.5 block text-sm font-medium text-text-heading">
             Content <span className="text-text-fg-danger">*</span>
           </label>
           <PostEditor
             ref={editorRef}
             initialContent={initialPost?.content ?? ""}
-            onUpdate={() => setDirty(true)}
+            onUpdate={() => {
+              setDirty(true);
+              const json = editorRef.current?.getJSON();
+              if (json) setWordCount(countWords(json));
+            }}
             disabled={saving || publishing}
           />
           <p className="mt-1.5 text-xs text-text-muted">
             Write your post content. Use the toolbar for formatting, links, and images.
           </p>
+        </div>
+
+        {/* Article metadata */}
+        <div className="mt-2 w-full">
+          <h2 className="text-lg font-bold text-text-heading">Article metadata</h2>
+          <p className="mt-1 text-sm text-text-body">
+            Additional information to help readers find and contextualize your article.
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="target_audience" className="mb-2.5 block text-sm font-medium text-text-heading">
+                Target audience
+              </label>
+              <select
+                id="target_audience"
+                name="target_audience"
+                value={targetAudience}
+                onChange={(e) => {
+                  setTargetAudience(e.target.value);
+                  setDirty(true);
+                }}
+                disabled={saving || publishing}
+                className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Select an audience…</option>
+                <option value="student">Student</option>
+                <option value="resident">Resident</option>
+                <option value="practicing">Practicing clinician</option>
+                <option value="all">All clinicians</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-2.5 block text-sm font-medium text-text-heading">Estimated reading time</label>
+              <div className="w-full rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted">
+                {readingTimeMinutes} min read{wordCount > 0 ? ` · ${wordCount.toLocaleString()} words` : ""}
+              </div>
+              <p className="mt-1.5 text-xs text-text-muted">
+                Calculated from content (~{WORDS_PER_MINUTE} words per minute). Updates as you type.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="mb-2.5 block text-sm font-medium text-text-heading">
+              Tags <span className="font-normal text-text-muted">(optional)</span>
+            </label>
+            <TagsCombobox
+              availableTags={tagPickerTags}
+              selectedTagIds={tagIds}
+              onChange={(ids) => {
+                setTagIds(ids);
+                setDirty(true);
+              }}
+              maxTags={10}
+              disabled={saving || publishing}
+            />
+          </div>
         </div>
       </div>
 

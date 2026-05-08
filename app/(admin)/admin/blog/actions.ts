@@ -12,6 +12,8 @@ type ActionResult<T = void> =
 
 type AuthoringRole = "admin" | "contributor";
 
+type TargetAudience = "student" | "resident" | "practicing" | "all";
+
 type ProfileRoleRow = {
   role: "admin" | "contributor" | "member";
 };
@@ -197,6 +199,12 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
     const coverImageAttributionValue = isNonEmptyString(coverImageAttribution)
       ? coverImageAttribution.trim()
       : null;
+    const targetAudience = formData.get("target_audience");
+    const targetAudienceValue: TargetAudience | null =
+      isNonEmptyString(targetAudience) &&
+      (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
+        ? (targetAudience as TargetAudience)
+        : null;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -245,6 +253,7 @@ export async function createPost(formData: FormData): Promise<ActionResult<{ pos
         cover_image_url: coverImageUrl,
         cover_image_path: coverImagePath,
         cover_image_attribution: coverImageAttributionValue,
+        target_audience: targetAudienceValue,
       })
       .select("id")
       .maybeSingle<{ id: string }>();
@@ -298,6 +307,12 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
       ? coverImageAttribution.trim()
       : null;
     const slugOverrideRaw = getString(formData, "slug");
+    const targetAudience = formData.get("target_audience");
+    const targetAudienceValue: TargetAudience | null =
+      isNonEmptyString(targetAudience) &&
+      (["student", "resident", "practicing", "all"] as const).includes(targetAudience as TargetAudience)
+        ? (targetAudience as TargetAudience)
+        : null;
 
     const fieldErrors: Record<string, string> = {};
 
@@ -360,6 +375,7 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
       cover_image_url,
       cover_image_path,
       cover_image_attribution: coverImageAttributionValue,
+      target_audience: targetAudienceValue,
       ...(nextSlug ? { slug: nextSlug } : {}),
     };
 
@@ -373,6 +389,9 @@ export async function updatePost(postId: string, formData: FormData): Promise<Ac
     }
     if (!formData.has("cover_image_attribution")) {
       delete updatePayload.cover_image_attribution;
+    }
+    if (!formData.has("target_audience")) {
+      delete updatePayload.target_audience;
     }
 
     const oldCoverPath = existing.cover_image_path;

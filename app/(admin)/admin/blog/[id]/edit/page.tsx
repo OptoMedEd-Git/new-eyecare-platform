@@ -43,6 +43,9 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
 
   if (!post) notFound();
 
-  return <PostForm initialPost={post} categories={categories} availableTags={availableTags} />;
+  const authorName =
+    [post.author?.first_name, post.author?.last_name].filter(Boolean).join(" ") || "Unknown author";
+
+  return <PostForm initialPost={post} categories={categories} availableTags={availableTags} authorName={authorName} />;
 }
 

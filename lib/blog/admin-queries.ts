@@ -96,6 +96,8 @@ export type AdminPostForEdit = {
   cover_image_url: string | null;
   cover_image_path: string | null;
   cover_image_attribution: string | null;
+  target_audience: "student" | "resident" | "practicing" | "all" | null;
+  author: { id: string; first_name: string | null; last_name: string | null } | null;
   tag_ids: string[];
   status: "draft" | "published";
   published_at: string | null;
@@ -126,7 +128,7 @@ export async function getAdminPostForEdit({
   const { data: post, error } = await supabase
     .from("blog_posts")
     .select(
-      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, author_id, status, published_at, updated_at"
+      "id, title, slug, description, content, category_id, cover_image_url, cover_image_path, cover_image_attribution, target_audience, author:profiles!blog_posts_author_id_fkey(id, first_name, last_name), author_id, status, published_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle<{
@@ -139,6 +141,8 @@ export async function getAdminPostForEdit({
       cover_image_url: string | null;
       cover_image_path: string | null;
       cover_image_attribution: string | null;
+      target_audience: "student" | "resident" | "practicing" | "all" | null;
+      author: { id: string; first_name: string | null; last_name: string | null } | null;
       author_id: string | null;
       status: "draft" | "published" | "archived";
       published_at: string | null;
@@ -172,6 +176,8 @@ export async function getAdminPostForEdit({
     cover_image_url: post.cover_image_url,
     cover_image_path: post.cover_image_path,
     cover_image_attribution: post.cover_image_attribution,
+    target_audience: post.target_audience ?? null,
+    author: post.author ?? null,
     tag_ids,
     status,
     published_at: post.published_at,
