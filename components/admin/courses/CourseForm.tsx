@@ -13,6 +13,7 @@ import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
+import { slugifyShort } from "@/lib/blog/slugify";
 import type { AdminCourseForEdit, BlogCategoryOption } from "@/lib/courses/admin-queries";
 import { BookOpen, GraduationCap, Loader2, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -40,6 +41,11 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
 
   const [title, setTitle] = useState(initialCourse?.title ?? "");
   const [slug, setSlug] = useState(initialCourse?.slug ?? "");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(() =>
+    Boolean(
+      initialCourse?.slug && initialCourse.slug !== slugifyShort(initialCourse.title ?? ""),
+    ),
+  );
   const [description, setDescription] = useState(initialCourse?.description ?? "");
   const [coverImage, setCoverImage] = useState<{ url: string | null }>({
     url: initialCourse?.cover_image_url ?? null,
@@ -64,6 +70,20 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+  }
+
+  function handleTitleChange(newTitle: string) {
+    setTitle(newTitle);
+    setDirty(true);
+    if (!slugManuallyEdited) {
+      setSlug(slugifyShort(newTitle));
+    }
+  }
+
+  function handleSlugChange(newSlug: string) {
+    setSlug(newSlug);
+    setSlugManuallyEdited(true);
+    setDirty(true);
   }
 
   async function handleSave() {
@@ -231,26 +251,18 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
               id="course-title"
               required
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setDirty(true);
-              }}
+              onChange={(e) => handleTitleChange(e.target.value)}
             />
 
-            {isEdit ? (
-              <FormInput
-                label="URL slug"
-                helperText="Lowercase letters, numbers, and hyphens. Used in public URLs when the course is published."
-                name="slug"
-                id="course-slug"
-                required
-                value={slug}
-                onChange={(e) => {
-                  setSlug(e.target.value);
-                  setDirty(true);
-                }}
-              />
-            ) : null}
+            <FormInput
+              label={isEdit ? "URL slug" : "URL slug (auto-generated)"}
+              helperText="Lowercase letters, numbers, and hyphens. Used in public URLs when the course is published."
+              name="slug"
+              id="course-slug"
+              required={isEdit}
+              value={slug}
+              onChange={(e) => handleSlugChange(e.target.value)}
+            />
 
             <div>
               <label htmlFor="course-description" className="mb-1.5 block text-sm font-medium text-text-heading">
