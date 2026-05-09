@@ -35,12 +35,25 @@ type Props = {
   module: PathwayModule | null;
   moduleIndex: number;
   totalModules: number;
+  /** `panel` = bordered card (desktop). `modal` = padding only; modal chrome provides framing. */
+  variant?: "panel" | "modal";
 };
 
-export function ModuleDetailPanel({ module, moduleIndex, totalModules }: Props) {
+export function ModuleDetailPanel({
+  module,
+  moduleIndex,
+  totalModules,
+  variant = "panel",
+}: Props) {
   if (!module) {
     return (
-      <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-8 text-center">
+      <div
+        className={
+          variant === "modal"
+            ? "px-4 py-8 text-center"
+            : "rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-8 text-center"
+        }
+      >
         <p className="text-sm text-text-muted">Select a module from the curriculum to view details.</p>
       </div>
     );
@@ -56,8 +69,13 @@ export function ModuleDetailPanel({ module, moduleIndex, totalModules }: Props) 
         ? "Continue module"
         : "Start module";
 
+  const outerClasses =
+    variant === "modal"
+      ? "p-6"
+      : "rounded-base border border-border-default bg-bg-primary-soft p-6";
+
   return (
-    <div className="rounded-base border border-border-default bg-bg-primary-soft p-6">
+    <div className={outerClasses}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="inline-flex items-center gap-1.5 rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 font-medium text-text-fg-brand-strong">
           <TypeIcon className="size-3.5" aria-hidden />
