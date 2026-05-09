@@ -5,15 +5,19 @@ import type { SampleCourse, SampleLesson } from "@/lib/courses/sample-data";
 
 type Props = {
   course: SampleCourse;
+  completedLessonIds: string[];
 };
 
-export function LessonList({ course }: Props) {
+export function LessonList({ course, completedLessonIds }: Props) {
+  const completedSet = new Set(completedLessonIds);
+
   return (
     <ol className="flex flex-col">
       {course.lessons.map((lesson, index) => (
         <LessonRow
           key={lesson.id}
           lesson={lesson}
+          isCompleted={completedSet.has(lesson.id)}
           index={index}
           courseSlug={course.slug}
           isLast={index === course.lessons.length - 1}
@@ -25,17 +29,17 @@ export function LessonList({ course }: Props) {
 
 function LessonRow({
   lesson,
+  isCompleted,
   index,
   courseSlug,
   isLast,
 }: {
   lesson: SampleLesson;
+  isCompleted: boolean;
   index: number;
   courseSlug: string;
   isLast: boolean;
 }) {
-  const isCompleted = lesson.status === "completed";
-
   return (
     <li className={`flex items-center gap-4 py-4 ${!isLast ? "border-b border-border-default" : ""}`}>
       <span className="flex size-8 shrink-0 items-center justify-center rounded-full">

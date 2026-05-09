@@ -1,27 +1,60 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Undo2 } from "lucide-react";
 
+import { markLessonComplete, unmarkLessonComplete } from "@/app/(app)/courses/actions";
 import type { SampleLesson } from "@/lib/courses/sample-data";
 
 type Props = {
   lesson: SampleLesson;
+  courseId: string;
   courseSlug: string;
+  isCompleted: boolean;
   nextLesson: SampleLesson | null;
 };
 
-export function MarkCompleteCheckpoint({ lesson, courseSlug, nextLesson }: Props) {
-  const [completed, setCompleted] = useState(lesson.status === "completed");
+export function MarkCompleteCheckpoint({
+  lesson,
+  courseId,
+  courseSlug,
+  isCompleted,
+  nextLesson,
+}: Props) {
+  const [optimisticCompleted, setOptimisticCompleted] = useState(isCompleted);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleMarkComplete() {
-    setCompleted(true);
+    setError(null);
+    setOptimisticCompleted(true);
+
+    startTransition(async () => {
+      const result = await markLessonComplete(courseId, lesson.id, courseSlug, lesson.slug);
+      if (!result.success) {
+        setOptimisticCompleted(false);
+        setError(result.error);
+      }
+    });
+  }
+
+  function handleUnmark() {
+    setError(null);
+    setOptimisticCompleted(false);
+
+    startTransition(async () => {
+      const result = await unmarkLessonComplete(lesson.id, courseSlug, lesson.slug);
+      if (!result.success) {
+        setOptimisticCompleted(true);
+        setError(result.error);
+      }
+    });
   }
 
   return (
     <section className="mt-12 rounded-base border border-border-default bg-bg-primary-soft p-6">
-      {!completed ? (
+      {!optimisticCompleted ? (
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-lg font-bold text-text-heading">Finished this lesson?</h3>
@@ -30,7 +63,8 @@ export function MarkCompleteCheckpoint({ lesson, courseSlug, nextLesson }: Props
           <button
             type="button"
             onClick={handleMarkComplete}
-            className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
+            disabled={isPending}
+            className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Check className="size-4" aria-hidden />
             Mark complete
@@ -44,7 +78,15 @@ export function MarkCompleteCheckpoint({ lesson, courseSlug, nextLesson }: Props
             </span>
             <div>
               <h3 className="text-lg font-bold text-text-heading">Lesson complete</h3>
-              <p className="mt-1 text-sm text-text-body">Great work.</p>
+              <button
+                type="button"
+                onClick={handleUnmark}
+                disabled={isPending}
+                className="mt-1 inline-flex items-center gap-1 text-xs text-text-muted transition-colors hover:text-text-heading disabled:opacity-50"
+              >
+                <Undo2 className="size-3" aria-hidden />
+                Mark incomplete
+              </button>
             </div>
           </div>
           {nextLesson ? (
@@ -66,6 +108,8 @@ export function MarkCompleteCheckpoint({ lesson, courseSlug, nextLesson }: Props
           )}
         </div>
       )}
+
+      {error ? <p className="mt-3 text-sm text-text-fg-danger">{error}</p> : null}
     </section>
   );
 }

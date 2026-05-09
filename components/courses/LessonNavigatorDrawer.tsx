@@ -9,11 +9,20 @@ import type { SampleCourse } from "@/lib/courses/sample-data";
 type Props = {
   course: SampleCourse;
   currentLessonSlug: string;
+  completedLessonIds: string[];
   isOpen: boolean;
   onClose: () => void;
 };
 
-export function LessonNavigatorDrawer({ course, currentLessonSlug, isOpen, onClose }: Props) {
+export function LessonNavigatorDrawer({
+  course,
+  currentLessonSlug,
+  completedLessonIds,
+  isOpen,
+  onClose,
+}: Props) {
+  const completedSet = new Set(completedLessonIds);
+
   useEffect(() => {
     if (!isOpen) return;
     const original = document.body.style.overflow;
@@ -53,7 +62,7 @@ export function LessonNavigatorDrawer({ course, currentLessonSlug, isOpen, onClo
         <ol className="flex flex-col gap-1 p-4">
           {course.lessons.map((lesson, index) => {
             const isCurrent = lesson.slug === currentLessonSlug;
-            const isCompleted = lesson.status === "completed";
+            const isCompleted = completedSet.has(lesson.id);
 
             return (
               <li key={lesson.id}>

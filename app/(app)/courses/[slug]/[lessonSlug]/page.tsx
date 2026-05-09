@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { LessonPageLayout } from "@/components/courses/LessonPageLayout";
 import { renderContent } from "@/lib/blog/render-content";
 import { getCourseBySlug, getLessonBySlug, getLessonNeighbors } from "@/lib/courses/sample-data";
+import { getCompletedLessonIdsForCourse } from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function LessonPage({
@@ -35,6 +36,9 @@ export default async function LessonPage({
   const { previous, next } = getLessonNeighbors(slug, lessonSlug);
   const renderedHtml = renderContent(lesson.content);
 
+  const completedLessonIds = await getCompletedLessonIdsForCourse(course.id);
+  const isCompleted = completedLessonIds.includes(lesson.id);
+
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm">
@@ -64,6 +68,8 @@ export default async function LessonPage({
           previous={previous}
           next={next}
           renderedHtml={renderedHtml}
+          completedLessonIds={completedLessonIds}
+          isCurrentLessonCompleted={isCompleted}
         />
       </div>
     </div>

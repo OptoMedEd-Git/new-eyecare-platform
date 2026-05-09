@@ -4,8 +4,11 @@ import { useMemo, useState } from "react";
 
 import { FilterSidebar, type FilterOption } from "@/components/shared/FilterSidebar";
 
-import { CourseListCard } from "./CourseListCard";
+import type { CourseProgressSummary } from "@/lib/courses/progress";
+import { computeCourseProgress, toProgressSummary } from "@/lib/courses/progress";
 import type { CourseAudience, CourseCategory, SampleCourse } from "@/lib/courses/sample-data";
+
+import { CourseListCard } from "./CourseListCard";
 
 const CATEGORIES: CourseCategory[] = [
   "Glaucoma",
@@ -33,9 +36,12 @@ const SORT_OPTIONS = [
 
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
-type Props = { courses: SampleCourse[] };
+type Props = {
+  courses: SampleCourse[];
+  progressByCourseId: Record<string, CourseProgressSummary>;
+};
 
-export function CourseBrowser({ courses }: Props) {
+export function CourseBrowser({ courses, progressByCourseId }: Props) {
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
@@ -144,7 +150,14 @@ export function CourseBrowser({ courses }: Props) {
         {filtered.length > 0 ? (
           <div className="mt-4 flex flex-col gap-4">
             {filtered.map((c) => (
-              <CourseListCard key={c.id} course={c} />
+              <CourseListCard
+                key={c.id}
+                course={c}
+                progress={
+                  progressByCourseId[c.id] ??
+                  toProgressSummary(computeCourseProgress(c, []))
+                }
+              />
             ))}
           </div>
         ) : (

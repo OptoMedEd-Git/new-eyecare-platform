@@ -19,9 +19,19 @@ type Props = {
   previous: SampleLesson | null;
   next: SampleLesson | null;
   renderedHtml: string;
+  completedLessonIds: string[];
+  isCurrentLessonCompleted: boolean;
 };
 
-export function LessonPageLayout({ course, lesson, previous, next, renderedHtml }: Props) {
+export function LessonPageLayout({
+  course,
+  lesson,
+  previous,
+  next,
+  renderedHtml,
+  completedLessonIds,
+  isCurrentLessonCompleted,
+}: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
@@ -42,22 +52,31 @@ export function LessonPageLayout({ course, lesson, previous, next, renderedHtml 
             ) : null}
           </header>
 
-          <div
-            className={LESSON_CONTENT_PROSE_CLASS}
-            dangerouslySetInnerHTML={{ __html: renderedHtml }}
-          />
+          <div className={LESSON_CONTENT_PROSE_CLASS} dangerouslySetInnerHTML={{ __html: renderedHtml }} />
 
           <div className="max-w-3xl">
-            <MarkCompleteCheckpoint lesson={lesson} courseSlug={course.slug} nextLesson={next} />
+            <MarkCompleteCheckpoint
+              key={`${lesson.id}-${isCurrentLessonCompleted}`}
+              lesson={lesson}
+              courseId={course.id}
+              courseSlug={course.slug}
+              isCompleted={isCurrentLessonCompleted}
+              nextLesson={next}
+            />
           </div>
         </article>
 
-        <LessonTOCSidebar course={course} currentLessonSlug={lesson.slug} />
+        <LessonTOCSidebar
+          course={course}
+          currentLessonSlug={lesson.slug}
+          completedLessonIds={completedLessonIds}
+        />
       </div>
 
       <LessonNavigatorDrawer
         course={course}
         currentLessonSlug={lesson.slug}
+        completedLessonIds={completedLessonIds}
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
       />

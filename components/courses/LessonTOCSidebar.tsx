@@ -6,9 +6,12 @@ import type { SampleCourse } from "@/lib/courses/sample-data";
 type Props = {
   course: SampleCourse;
   currentLessonSlug: string;
+  completedLessonIds: string[];
 };
 
-export function LessonTOCSidebar({ course, currentLessonSlug }: Props) {
+export function LessonTOCSidebar({ course, currentLessonSlug, completedLessonIds }: Props) {
+  const completedSet = new Set(completedLessonIds);
+
   return (
     <aside className="hidden w-72 shrink-0 xl:block">
       <div className="sticky top-24 rounded-base border border-border-default bg-bg-primary-soft p-4">
@@ -21,7 +24,7 @@ export function LessonTOCSidebar({ course, currentLessonSlug }: Props) {
         <ol className="mt-3 flex flex-col gap-1">
           {course.lessons.map((lesson, index) => {
             const isCurrent = lesson.slug === currentLessonSlug;
-            const isCompleted = lesson.status === "completed";
+            const isCompleted = completedSet.has(lesson.id);
 
             return (
               <li key={lesson.id}>

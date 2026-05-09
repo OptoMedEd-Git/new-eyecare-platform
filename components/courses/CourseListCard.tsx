@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock, Layers } from "lucide-react";
 
+import type { CourseProgressSummary } from "@/lib/courses/progress";
 import { COURSE_CATEGORY_ICONS, type SampleCourse } from "@/lib/courses/sample-data";
 
 const AUDIENCE_LABELS = {
@@ -13,9 +14,10 @@ const AUDIENCE_LABELS = {
 
 type Props = {
   course: SampleCourse;
+  progress: CourseProgressSummary;
 };
 
-export function CourseListCard({ course }: Props) {
+export function CourseListCard({ course, progress }: Props) {
   const Icon = COURSE_CATEGORY_ICONS[course.category];
   const hours = Math.floor(course.totalDurationMinutes / 60);
   const remainingMinutes = course.totalDurationMinutes % 60;
@@ -81,13 +83,16 @@ export function CourseListCard({ course }: Props) {
           </Link>
         </div>
 
-        {course.progressPercent !== undefined ? (
+        {progress.hasStarted ? (
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-text-fg-brand-strong">{course.progressPercent}% complete</span>
+              <span className="font-medium text-text-fg-brand-strong">{progress.percentComplete}% complete</span>
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
-              <div className="h-full rounded-full bg-bg-brand" style={{ width: `${course.progressPercent}%` }} />
+              <div
+                className="h-full rounded-full bg-bg-brand"
+                style={{ width: `${Math.min(100, Math.max(0, progress.percentComplete))}%` }}
+              />
             </div>
           </div>
         ) : null}

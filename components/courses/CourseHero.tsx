@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, Layers, Play } from "lucide-react";
 
+import type { CourseProgress } from "@/lib/courses/progress";
 import { COURSE_CATEGORY_ICONS, type SampleCourse } from "@/lib/courses/sample-data";
 
 const AUDIENCE_LABELS = {
@@ -11,18 +12,29 @@ const AUDIENCE_LABELS = {
   all: "All clinicians",
 } as const;
 
-type Props = { course: SampleCourse };
+type Props = {
+  course: SampleCourse;
+  progress: CourseProgress;
+};
 
-export function CourseHero({ course }: Props) {
+export function CourseHero({ course, progress }: Props) {
   const Icon = COURSE_CATEGORY_ICONS[course.category];
   const hours = Math.floor(course.totalDurationMinutes / 60);
   const remainingMinutes = course.totalDurationMinutes % 60;
   const durationLabel =
     hours > 0 ? (remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`) : `${remainingMinutes}m`;
 
-  const nextLesson = course.lessons.find((l) => l.status === "not_started") ?? course.lessons[0];
-  const ctaLabel =
-    course.progressPercent !== undefined && course.progressPercent > 0 ? "Continue course" : "Start course";
+  const ctaLabel = !progress.hasStarted
+    ? "Start course"
+    : progress.nextLesson
+      ? "Continue course"
+      : "Course complete";
+
+  const ctaHref = progress.nextLesson
+    ? `/courses/${course.slug}/${progress.nextLesson.slug}`
+    : `/courses/${course.slug}`;
+
+  const firstLesson = course.lessons[0];
 
   return (
     <section className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
@@ -50,29 +62,29 @@ export function CourseHero({ course }: Props) {
             </span>
           </div>
 
-          {course.progressPercent !== undefined && course.progressPercent > 0 ? (
+          {progress.hasStarted ? (
             <div className="mt-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="font-medium text-text-fg-brand-strong">{course.progressPercent}% complete</span>
-                {nextLesson ? (
-                  <span className="text-text-muted">
-                    Up next: {nextLesson.title}
-                  </span>
-                ) : null}
+                <span className="font-medium text-text-fg-brand-strong">{progress.percentComplete}% complete</span>
+                {progress.nextLesson ? (
+                  <span className="text-text-muted">Up next: {progress.nextLesson.title}</span>
+                ) : (
+                  <span className="text-text-muted">All lessons complete</span>
+                )}
               </div>
               <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
                 <div
                   className="h-full rounded-full bg-bg-brand transition-[width]"
-                  style={{ width: `${course.progressPercent}%` }}
+                  style={{ width: `${Math.min(100, Math.max(0, progress.percentComplete))}%` }}
                 />
               </div>
             </div>
           ) : null}
 
           <div className="mt-2">
-            {nextLesson ? (
+            {firstLesson ? (
               <Link
-                href={`/courses/${course.slug}/${nextLesson.slug}`}
+                href={ctaHref}
                 className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
               >
                 <Play className="size-4 fill-current" aria-hidden />

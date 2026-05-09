@@ -3,7 +3,10 @@ import { ChevronRight, Home } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { CourseBrowser } from "@/components/courses/CourseBrowser";
+import type { CourseProgressSummary } from "@/lib/courses/progress";
+import { computeCourseProgress, toProgressSummary } from "@/lib/courses/progress";
 import { SAMPLE_COURSES } from "@/lib/courses/sample-data";
+import { getCompletedLessonIdsForAllCourses } from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CoursesPage() {
@@ -13,6 +16,13 @@ export default async function CoursesPage() {
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login");
+  }
+
+  const completionMap = await getCompletedLessonIdsForAllCourses();
+  const progressByCourseId: Record<string, CourseProgressSummary> = {};
+  for (const course of SAMPLE_COURSES) {
+    const completedIds = completionMap.get(course.id) ?? [];
+    progressByCourseId[course.id] = toProgressSummary(computeCourseProgress(course, completedIds));
   }
 
   return (
@@ -38,7 +48,7 @@ export default async function CoursesPage() {
       </header>
 
       <div className="mt-8">
-        <CourseBrowser courses={SAMPLE_COURSES} />
+        <CourseBrowser courses={SAMPLE_COURSES} progressByCourseId={progressByCourseId} />
       </div>
     </div>
   );

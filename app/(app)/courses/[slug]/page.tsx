@@ -4,7 +4,9 @@ import { notFound, redirect } from "next/navigation";
 
 import { CourseHero } from "@/components/courses/CourseHero";
 import { LessonList } from "@/components/courses/LessonList";
+import { computeCourseProgress } from "@/lib/courses/progress";
 import { getCourseBySlug } from "@/lib/courses/sample-data";
+import { getCompletedLessonIdsForCourse } from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseOverviewPage({
@@ -27,6 +29,9 @@ export default async function CourseOverviewPage({
     notFound();
   }
 
+  const completedLessonIds = await getCompletedLessonIdsForCourse(course.id);
+  const progress = computeCourseProgress(course, completedLessonIds);
+
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm">
@@ -46,13 +51,13 @@ export default async function CourseOverviewPage({
       </nav>
 
       <div className="mt-6">
-        <CourseHero course={course} />
+        <CourseHero course={course} progress={progress} />
       </div>
 
       <section className="mt-10">
         <h2 className="text-xl font-bold text-text-heading">Lessons</h2>
         <div className="mt-4 rounded-base border border-border-default bg-bg-primary-soft px-5">
-          <LessonList course={course} />
+          <LessonList course={course} completedLessonIds={completedLessonIds} />
         </div>
       </section>
     </div>

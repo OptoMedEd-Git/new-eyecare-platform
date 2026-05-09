@@ -22,8 +22,6 @@ export const COURSE_CATEGORY_ICONS: Record<CourseCategory, LucideIcon> = {
   "Career & Education": BookOpen,
 };
 
-export type LessonStatus = "completed" | "not_started";
-
 export type SampleLesson = {
   id: string;
   slug: string;
@@ -31,7 +29,6 @@ export type SampleLesson = {
   description: string;
   estimatedMinutes: number;
   content: unknown;
-  status: LessonStatus;
 };
 
 export type SampleCourse = {
@@ -45,7 +42,6 @@ export type SampleCourse = {
   totalDurationMinutes: number;
   publishedAt: string;
   lessons: SampleLesson[];
-  progressPercent?: number;
 };
 
 
@@ -59,7 +55,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
     "audience": "resident",
     "totalDurationMinutes": 180,
     "publishedAt": "2026-04-15",
-    "progressPercent": 33,
     "lessons": [
       {
         "id": "c1-l1",
@@ -67,7 +62,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Anatomy and aqueous dynamics",
         "description": "Review aqueous humor production, conventional and uveoscleral outflow, and the pressure gradient that maintains intraocular pressure.",
         "estimatedMinutes": 25,
-        "status": "completed",
         "content": {
           "type": "doc",
           "content": [
@@ -236,7 +230,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "IOP measurement: techniques and pitfalls",
         "description": "Compare Goldmann applanation, rebound tonometry, and contour tonometry. Understand corneal effects on measured pressure.",
         "estimatedMinutes": 30,
-        "status": "completed",
         "content": {
           "type": "doc",
           "content": [
@@ -426,7 +419,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Optic nerve evaluation",
         "description": "Systematically assess disc size, rim, cupping, and disc hemorrhages. Pattern recognition for glaucomatous damage.",
         "estimatedMinutes": 35,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -564,7 +556,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Visual field interpretation",
         "description": "Read SITA fields confidently. Recognize patterns of glaucomatous damage and distinguish from artifact.",
         "estimatedMinutes": 30,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -745,7 +736,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Risk factors for progression",
         "description": "Identify patients at higher risk of progression and tailor follow-up frequency accordingly.",
         "estimatedMinutes": 30,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -940,7 +930,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Establishing baseline and treatment targets",
         "description": "Set a clinically meaningful target IOP and measure progression against it.",
         "estimatedMinutes": 30,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1072,7 +1061,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "OCT physics and acquisition",
         "description": "Understand low-coherence interferometry, axial resolution, scan density, and why signal strength matters.",
         "estimatedMinutes": 22,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1213,7 +1201,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Normal retinal anatomy on OCT",
         "description": "Identify ILM, RNFL, GCL, IPL, INL, OPL, photoreceptors, RPE, and choroidal boundaries on cross-sections.",
         "estimatedMinutes": 24,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1298,7 +1285,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "RNFL and ganglion cell analysis",
         "description": "Interpret peripapillary RNFL thickness maps, macular GCL/IPL metrics, and progression algorithms.",
         "estimatedMinutes": 26,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1383,7 +1369,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Macular OCT pathology patterns",
         "description": "Recognize fluid compartments, drusen, holes, traction, and pigment epithelial detachments on macular scans.",
         "estimatedMinutes": 23,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1468,7 +1453,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "OCT artifacts and quality traps",
         "description": "Detect segmentation failure, motion lines, wrong eye laterality, and decentered scans.",
         "estimatedMinutes": 20,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1600,7 +1584,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Integrating OCT with the clinical exam",
         "description": "Combine structural imaging with ophthalmoscopy, visual fields, and history for coherent decisions.",
         "estimatedMinutes": 15,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -1669,7 +1652,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
     "audience": "student",
     "totalDurationMinutes": 110,
     "publishedAt": "2026-03-30",
-    "progressPercent": 60,
     "lessons": [
       {
         "id": "c3-l1",
@@ -1677,7 +1659,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Slit lamp setup and beam configurations",
         "description": "Optimize magnification, illumination angles, and beam width for different anterior segment tasks.",
         "estimatedMinutes": 20,
-        "status": "completed",
         "content": {
           "type": "doc",
           "content": [
@@ -1762,7 +1743,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Lid and conjunctiva exam",
         "description": "Differentiate blepharitis subtypes, papillary vs follicular responses, and staining patterns.",
         "estimatedMinutes": 18,
-        "status": "completed",
         "content": {
           "type": "doc",
           "content": [
@@ -1847,7 +1827,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Cornea evaluation",
         "description": "Use staining maps, tear break-up, and optical sectioning to localize epithelial and stromal disease.",
         "estimatedMinutes": 22,
-        "status": "completed",
         "content": {
           "type": "doc",
           "content": [
@@ -1932,7 +1911,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Anterior chamber and angle",
         "description": "Grade cell and flare, estimate depth, and position gonioscopy in management decisions.",
         "estimatedMinutes": 24,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2017,7 +1995,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Lens and iris documentation",
         "description": "Characterize cataract type, iris transillumination defects, and pupillary abnormalities systematically.",
         "estimatedMinutes": 26,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2114,7 +2091,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Visual development overview",
         "description": "Summarize critical periods, emmetropization drivers, and why timing of screening matters.",
         "estimatedMinutes": 22,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2178,7 +2154,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Newborn and infant assessment",
         "description": "Use red reflex testing, BRUCKNER, fixation preference, and milestones to risk-stratify infants.",
         "estimatedMinutes": 24,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2242,7 +2217,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Toddler vision screening",
         "description": "Select age-appropriate matching charts, crowd bars, and distraction-reduced techniques.",
         "estimatedMinutes": 20,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2306,7 +2280,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Preschool screening protocols",
         "description": "Compare photoscreening instruments and community protocols with evidence-based follow-up thresholds.",
         "estimatedMinutes": 21,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2370,7 +2343,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "School-age refraction considerations",
         "description": "Interpret cycloplegic findings, myopia progression signals, and binocular vision overlays.",
         "estimatedMinutes": 23,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2434,7 +2406,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Red flags and referral thresholds",
         "description": "Recognize leukocoria, forced head postures, nystagmus onset timing, and urgent escalation triggers.",
         "estimatedMinutes": 25,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
@@ -2498,7 +2469,6 @@ export const SAMPLE_COURSES: SampleCourse[] = [
         "title": "Parent counseling and documentation",
         "description": "Translate measurements into expectations, follow-up windows, and school accommodations clearly.",
         "estimatedMinutes": 15,
-        "status": "not_started",
         "content": {
           "type": "doc",
           "content": [
