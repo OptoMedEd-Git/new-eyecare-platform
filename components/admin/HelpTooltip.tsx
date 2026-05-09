@@ -76,7 +76,7 @@ export function HelpTooltip({ content, label = "More information", placement = "
           id={tooltipId}
           role="tooltip"
           className={[
-            "absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-base border border-border-default bg-bg-inverse px-3 py-2 text-xs leading-relaxed text-text-on-inverse shadow-lg",
+            "absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-base border border-border-default bg-bg-inverse px-3 py-2 text-xs leading-relaxed text-text-inverse shadow-lg",
             placement === "top" ? "bottom-full mb-2" : "top-full mt-2",
           ].join(" ")}
         >
