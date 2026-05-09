@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, List } from "lucide-react";
 
-import type { SampleLesson } from "@/lib/courses/sample-data";
+import type { Lesson } from "@/lib/courses/types";
 
 type Props = {
   courseSlug: string;
-  previous: SampleLesson | null;
-  next: SampleLesson | null;
+  previous: Lesson | null;
+  next: Lesson | null;
   onOpenDrawer: () => void;
 };
 

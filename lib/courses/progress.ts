@@ -1,11 +1,11 @@
-import type { SampleCourse, SampleLesson } from "./sample-data";
+import type { Course, Lesson } from "./types";
 
 export type CourseProgress = {
   completedCount: number;
   totalCount: number;
   percentComplete: number;
   /** First lesson not completed; null if all completed. */
-  nextLesson: SampleLesson | null;
+  nextLesson: Lesson | null;
   hasStarted: boolean;
 };
 
@@ -21,7 +21,7 @@ export function toProgressSummary(p: CourseProgress): CourseProgressSummary {
   };
 }
 
-export function computeCourseProgress(course: SampleCourse, completedLessonIds: string[]): CourseProgress {
+export function computeCourseProgress(course: Course, completedLessonIds: string[]): CourseProgress {
   const completedSet = new Set(completedLessonIds);
   const totalCount = course.lessons.length;
   const completedCount = course.lessons.filter((l) => completedSet.has(l.id)).length;

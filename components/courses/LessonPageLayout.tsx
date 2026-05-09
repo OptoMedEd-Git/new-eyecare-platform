@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { SampleCourse, SampleLesson } from "@/lib/courses/sample-data";
+import type { Course, Lesson } from "@/lib/courses/types";
 
 import { LessonNavigatorDrawer } from "./LessonNavigatorDrawer";
 import { LessonPrevNext } from "./LessonPrevNext";
@@ -14,10 +14,10 @@ const LESSON_CONTENT_PROSE_CLASS =
   "blog-content mt-8 prose prose-lg max-w-none text-text-body prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-gray-900 prose-p:leading-relaxed prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-blockquote:border-brand prose-blockquote:text-text-body prose-strong:text-gray-900 prose-code:rounded-md prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-code:text-gray-800 prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-img:rounded-lg prose-img:shadow-md dark:prose-invert dark:prose-headings:text-white dark:prose-blockquote:text-gray-300 dark:prose-code:bg-gray-800 dark:prose-code:text-gray-100";
 
 type Props = {
-  course: SampleCourse;
-  lesson: SampleLesson;
-  previous: SampleLesson | null;
-  next: SampleLesson | null;
+  course: Course;
+  lesson: Lesson;
+  previous: Lesson | null;
+  next: Lesson | null;
   renderedHtml: string;
   completedLessonIds: string[];
   isCurrentLessonCompleted: boolean;

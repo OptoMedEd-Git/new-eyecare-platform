@@ -5,8 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { CourseHero } from "@/components/courses/CourseHero";
 import { LessonList } from "@/components/courses/LessonList";
 import { computeCourseProgress } from "@/lib/courses/progress";
-import { getCourseBySlug } from "@/lib/courses/sample-data";
-import { getCompletedLessonIdsForCourse } from "@/lib/courses/queries";
+import { getCompletedLessonIdsForCourse, getPublishedCourseBySlug } from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseOverviewPage({
@@ -24,7 +23,7 @@ export default async function CourseOverviewPage({
     redirect("/login");
   }
 
-  const course = getCourseBySlug(slug);
+  const course = await getPublishedCourseBySlug(slug);
   if (!course) {
     notFound();
   }

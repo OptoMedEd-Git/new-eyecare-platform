@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { Check, Clock, X } from "lucide-react";
 
-import type { SampleCourse } from "@/lib/courses/sample-data";
+import type { Course } from "@/lib/courses/types";
 
 type Props = {
-  course: SampleCourse;
+  course: Course;
   currentLessonSlug: string;
   completedLessonIds: string[];
   isOpen: boolean;

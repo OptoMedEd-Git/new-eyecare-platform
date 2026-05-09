@@ -5,8 +5,7 @@ import { redirect } from "next/navigation";
 import { CourseBrowser } from "@/components/courses/CourseBrowser";
 import type { CourseProgressSummary } from "@/lib/courses/progress";
 import { computeCourseProgress, toProgressSummary } from "@/lib/courses/progress";
-import { SAMPLE_COURSES } from "@/lib/courses/sample-data";
-import { getCompletedLessonIdsForAllCourses } from "@/lib/courses/queries";
+import { getCompletedLessonIdsForAllCourses, getPublishedCourses } from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CoursesPage() {
@@ -18,9 +17,13 @@ export default async function CoursesPage() {
     redirect("/login");
   }
 
-  const completionMap = await getCompletedLessonIdsForAllCourses();
+  const [courses, completionMap] = await Promise.all([
+    getPublishedCourses(),
+    getCompletedLessonIdsForAllCourses(),
+  ]);
+
   const progressByCourseId: Record<string, CourseProgressSummary> = {};
-  for (const course of SAMPLE_COURSES) {
+  for (const course of courses) {
     const completedIds = completionMap.get(course.id) ?? [];
     progressByCourseId[course.id] = toProgressSummary(computeCourseProgress(course, completedIds));
   }
@@ -48,7 +51,7 @@ export default async function CoursesPage() {
       </header>
 
       <div className="mt-8">
-        <CourseBrowser courses={SAMPLE_COURSES} progressByCourseId={progressByCourseId} />
+        <CourseBrowser courses={courses} progressByCourseId={progressByCourseId} />
       </div>
     </div>
   );

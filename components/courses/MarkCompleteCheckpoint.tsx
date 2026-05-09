@@ -5,14 +5,14 @@ import Link from "next/link";
 import { ArrowRight, Check, Undo2 } from "lucide-react";
 
 import { markLessonComplete, unmarkLessonComplete } from "@/app/(app)/courses/actions";
-import type { SampleLesson } from "@/lib/courses/sample-data";
+import type { Lesson } from "@/lib/courses/types";
 
 type Props = {
-  lesson: SampleLesson;
+  lesson: Lesson;
   courseId: string;
   courseSlug: string;
   isCompleted: boolean;
-  nextLesson: SampleLesson | null;
+  nextLesson: Lesson | null;
 };
 
 export function MarkCompleteCheckpoint({

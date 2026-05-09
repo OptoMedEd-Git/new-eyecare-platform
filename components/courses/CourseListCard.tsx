@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock, Layers } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Layers } from "lucide-react";
 
+import { CATEGORY_ICON_BY_NAME } from "@/lib/courses/category-icons";
 import type { CourseProgressSummary } from "@/lib/courses/progress";
-import { COURSE_CATEGORY_ICONS, type SampleCourse } from "@/lib/courses/sample-data";
+import type { Course } from "@/lib/courses/types";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -13,12 +14,12 @@ const AUDIENCE_LABELS = {
 } as const;
 
 type Props = {
-  course: SampleCourse;
+  course: Course;
   progress: CourseProgressSummary;
 };
 
 export function CourseListCard({ course, progress }: Props) {
-  const Icon = COURSE_CATEGORY_ICONS[course.category];
+  const Icon = CATEGORY_ICON_BY_NAME[course.category?.name ?? ""] ?? BookOpen;
   const hours = Math.floor(course.totalDurationMinutes / 60);
   const remainingMinutes = course.totalDurationMinutes % 60;
   const durationLabel =
@@ -46,10 +47,14 @@ export function CourseListCard({ course, progress }: Props) {
 
       <div className="flex flex-1 flex-col">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
-            {course.category}
-          </span>
-          <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[course.audience]}</span>
+          {course.category ? (
+            <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
+              {course.category.name}
+            </span>
+          ) : null}
+          {course.audience ? (
+            <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[course.audience]}</span>
+          ) : null}
         </div>
 
         <h3 className="mt-2 text-lg font-bold leading-tight tracking-tight text-text-heading">
@@ -58,7 +63,7 @@ export function CourseListCard({ course, progress }: Props) {
           </Link>
         </h3>
 
-        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-text-body">{course.description}</p>
+        <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-text-body">{course.description ?? ""}</p>
 
         <div className="flex-1" />
 

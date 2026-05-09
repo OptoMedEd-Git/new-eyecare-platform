@@ -4,8 +4,11 @@ import { notFound, redirect } from "next/navigation";
 
 import { LessonPageLayout } from "@/components/courses/LessonPageLayout";
 import { renderContent } from "@/lib/blog/render-content";
-import { getCourseBySlug, getLessonBySlug, getLessonNeighbors } from "@/lib/courses/sample-data";
-import { getCompletedLessonIdsForCourse } from "@/lib/courses/queries";
+import {
+  getCompletedLessonIdsForCourse,
+  getLessonNeighborsFromCourse,
+  getPublishedLessonByCourseAndSlug,
+} from "@/lib/courses/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function LessonPage({
@@ -23,17 +26,13 @@ export default async function LessonPage({
     redirect("/login");
   }
 
-  const course = getCourseBySlug(slug);
-  if (!course) {
+  const result = await getPublishedLessonByCourseAndSlug(slug, lessonSlug);
+  if (!result) {
     notFound();
   }
 
-  const lesson = getLessonBySlug(slug, lessonSlug);
-  if (!lesson) {
-    notFound();
-  }
-
-  const { previous, next } = getLessonNeighbors(slug, lessonSlug);
+  const { course, lesson } = result;
+  const { previous, next } = getLessonNeighborsFromCourse(course, lessonSlug);
   const renderedHtml = renderContent(lesson.content);
 
   const completedLessonIds = await getCompletedLessonIdsForCourse(course.id);

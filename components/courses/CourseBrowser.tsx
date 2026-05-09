@@ -6,19 +6,9 @@ import { FilterSidebar, type FilterOption } from "@/components/shared/FilterSide
 
 import type { CourseProgressSummary } from "@/lib/courses/progress";
 import { computeCourseProgress, toProgressSummary } from "@/lib/courses/progress";
-import type { CourseAudience, CourseCategory, SampleCourse } from "@/lib/courses/sample-data";
+import type { Course, CourseAudience } from "@/lib/courses/types";
 
 import { CourseListCard } from "./CourseListCard";
-
-const CATEGORIES: CourseCategory[] = [
-  "Glaucoma",
-  "Anterior Segment",
-  "Posterior Segment",
-  "Diagnostic Imaging",
-  "Pediatric Optometry",
-  "Neuro-ophthalmology",
-  "Career & Education",
-];
 
 const AUDIENCES: { value: CourseAudience; label: string }[] = [
   { value: "student", label: "Student" },
@@ -37,7 +27,7 @@ const SORT_OPTIONS = [
 type SortValue = (typeof SORT_OPTIONS)[number]["value"];
 
 type Props = {
-  courses: SampleCourse[];
+  courses: Course[];
   progressByCourseId: Record<string, CourseProgressSummary>;
 };
 
@@ -47,15 +37,20 @@ export function CourseBrowser({ courses, progressByCourseId }: Props) {
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
   const [sort, setSort] = useState<SortValue>("newest");
 
-  const categoryOptions: FilterOption[] = useMemo(
-    () =>
-      CATEGORIES.map((cat) => ({
-        value: cat,
-        label: cat,
-        count: courses.filter((c) => c.category === cat).length,
-      })).filter((o) => (o.count ?? 0) > 0),
-    [courses],
-  );
+  const categoryOptions: FilterOption[] = useMemo(() => {
+    const counts = new Map<string, { name: string; count: number }>();
+    for (const c of courses) {
+      if (!c.category) continue;
+      const existing = counts.get(c.category.id);
+      counts.set(c.category.id, {
+        name: c.category.name,
+        count: (existing?.count ?? 0) + 1,
+      });
+    }
+    return Array.from(counts.entries())
+      .map(([id, { name, count }]) => ({ value: id, label: name, count }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [courses]);
 
   const audienceOptions: FilterOption[] = useMemo(
     () =>
@@ -72,19 +67,20 @@ export function CourseBrowser({ courses, progressByCourseId }: Props) {
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(
-        (c) => c.title.toLowerCase().includes(q) || c.description.toLowerCase().includes(q),
+        (c) =>
+          c.title.toLowerCase().includes(q) || (c.description ?? "").toLowerCase().includes(q),
       );
     }
     if (selectedCategories.length) {
-      result = result.filter((c) => selectedCategories.includes(c.category));
+      result = result.filter((c) => c.category && selectedCategories.includes(c.category.id));
     }
     if (selectedAudiences.length) {
-      result = result.filter((c) => selectedAudiences.includes(c.audience));
+      result = result.filter((c) => c.audience != null && selectedAudiences.includes(c.audience));
     }
 
     switch (sort) {
       case "newest":
-        result.sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+        result.sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""));
         break;
       case "shortest":
         result.sort((a, b) => a.totalDurationMinutes - b.totalDurationMinutes);

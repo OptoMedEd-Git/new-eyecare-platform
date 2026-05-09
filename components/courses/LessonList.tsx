@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, Check, Clock } from "lucide-react";
 
-import type { SampleCourse, SampleLesson } from "@/lib/courses/sample-data";
+import type { Course, Lesson } from "@/lib/courses/types";
 
 type Props = {
-  course: SampleCourse;
+  course: Course;
   completedLessonIds: string[];
 };
 
@@ -34,7 +34,7 @@ function LessonRow({
   courseSlug,
   isLast,
 }: {
-  lesson: SampleLesson;
+  lesson: Lesson;
   isCompleted: boolean;
   index: number;
   courseSlug: string;

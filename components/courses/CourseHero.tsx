@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Layers, Play } from "lucide-react";
+import { BookOpen, Clock, Layers, Play } from "lucide-react";
 
+import { CATEGORY_ICON_BY_NAME } from "@/lib/courses/category-icons";
 import type { CourseProgress } from "@/lib/courses/progress";
-import { COURSE_CATEGORY_ICONS, type SampleCourse } from "@/lib/courses/sample-data";
+import type { Course } from "@/lib/courses/types";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -13,12 +14,12 @@ const AUDIENCE_LABELS = {
 } as const;
 
 type Props = {
-  course: SampleCourse;
+  course: Course;
   progress: CourseProgress;
 };
 
 export function CourseHero({ course, progress }: Props) {
-  const Icon = COURSE_CATEGORY_ICONS[course.category];
+  const Icon = CATEGORY_ICON_BY_NAME[course.category?.name ?? ""] ?? BookOpen;
   const hours = Math.floor(course.totalDurationMinutes / 60);
   const remainingMinutes = course.totalDurationMinutes % 60;
   const durationLabel =
@@ -41,15 +42,19 @@ export function CourseHero({ course, progress }: Props) {
       <div className="grid grid-cols-1 lg:grid-cols-3">
         <div className="flex flex-col gap-4 p-6 lg:col-span-2 lg:p-8">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
-              {course.category}
-            </span>
-            <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[course.audience]}</span>
+            {course.category ? (
+              <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
+                {course.category.name}
+              </span>
+            ) : null}
+            {course.audience ? (
+              <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[course.audience]}</span>
+            ) : null}
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{course.title}</h1>
 
-          <p className="text-base leading-relaxed text-text-body">{course.description}</p>
+          <p className="text-base leading-relaxed text-text-body">{course.description ?? ""}</p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-body">
             <span className="inline-flex items-center gap-1.5">
