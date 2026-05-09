@@ -20,7 +20,7 @@ type Props = {
 
 export function CurriculumStepper({ modules, selectedModuleId, onSelect }: Props) {
   return (
-    <ol className="relative flex flex-col border-l-2 border-border-brand-subtle pl-6">
+    <ol className="relative flex flex-col pl-6">
       {modules.map((module, index) => {
         const isLast = index === modules.length - 1;
         const TypeIcon = TYPE_ICONS[module.type];
@@ -45,7 +45,7 @@ export function CurriculumStepper({ modules, selectedModuleId, onSelect }: Props
             {!isLast ? (
               <div
                 className={[
-                  "absolute left-[18px] top-10 z-0 h-[calc(100%-0.5rem)] w-0",
+                  "absolute left-[15px] top-8 z-0 h-[calc(100%-0.5rem)] w-0",
                   nextModule?.status === "locked" && module.status !== "locked"
                     ? "border-l-2 border-dashed border-border-default"
                     : module.status === "locked"
@@ -102,26 +102,26 @@ export function CurriculumStepper({ modules, selectedModuleId, onSelect }: Props
 
 function StatusDot({ status }: { status: PathwayModule["status"] }) {
   const baseClasses =
-    "relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full ring-4 ring-bg-primary-soft";
+    "relative z-10 flex size-8 shrink-0 items-center justify-center rounded-full ring-4 ring-bg-primary-soft";
 
   if (status === "completed") {
     return (
       <div className={`${baseClasses} bg-bg-brand text-text-on-brand`}>
-        <Check className="size-5" aria-hidden />
+        <Check className="size-4" aria-hidden />
       </div>
     );
   }
   if (status === "in_progress") {
     return (
       <div className={`${baseClasses} bg-bg-brand text-text-on-brand`}>
-        <Play className="size-4 fill-current" aria-hidden />
+        <Play className="size-3.5 fill-current" aria-hidden />
       </div>
     );
   }
   if (status === "locked") {
     return (
       <div className={`${baseClasses} bg-bg-secondary-medium text-text-muted`}>
-        <Lock className="size-4" aria-hidden />
+        <Lock className="size-3.5" aria-hidden />
       </div>
     );
   }
@@ -129,7 +129,7 @@ function StatusDot({ status }: { status: PathwayModule["status"] }) {
     <div
       className={`${baseClasses} border-2 border-border-brand-subtle bg-bg-primary-soft text-text-fg-brand-strong`}
     >
-      <Circle className="size-3 fill-current" aria-hidden />
+      <Circle className="size-2.5 fill-current" aria-hidden />
     </div>
   );
 }
