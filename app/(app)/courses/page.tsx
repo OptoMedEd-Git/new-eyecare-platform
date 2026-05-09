@@ -1,10 +1,45 @@
-import { ComingSoonPage } from "@/components/layout/ComingSoonPage";
+import Link from "next/link";
+import { ChevronRight, Home } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default function CoursesPage() {
+import { CourseBrowser } from "@/components/courses/CourseBrowser";
+import { SAMPLE_COURSES } from "@/lib/courses/sample-data";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function CoursesPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/login");
+  }
+
   return (
-    <ComingSoonPage
-      title="Courses"
-      description="Deep-dive courses covering core eye care topics with video, reading, and assessment. Coming soon — sign up to be notified when content launches."
-    />
+    <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1 text-text-muted transition-colors hover:text-text-heading"
+        >
+          <Home className="size-4" aria-hidden />
+          Home
+        </Link>
+        <ChevronRight className="size-4 text-text-muted" aria-hidden />
+        <span className="font-medium text-text-heading">Courses</span>
+      </nav>
+
+      <header className="mt-4">
+        <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">Courses</h1>
+        <p className="mt-2 max-w-2xl text-base text-text-body">
+          Multi-lesson learning units on focused clinical topics. Each course breaks a domain into ordered lessons
+          designed for sequential study.
+        </p>
+      </header>
+
+      <div className="mt-8">
+        <CourseBrowser courses={SAMPLE_COURSES} />
+      </div>
+    </div>
   );
 }
