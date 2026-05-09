@@ -3,8 +3,6 @@
 import { Check, ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { HelpTooltip } from "@/components/admin/HelpTooltip";
-
 type EditingState = {
   editing: boolean;
   snapshot?: string;
@@ -98,22 +96,36 @@ export function LearningObjectivesEditor({ value, onChange, recommendedRangeLabe
 
   return (
     <div className="w-full">
-      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="flex flex-wrap items-center gap-1.5 text-base font-bold text-text-heading">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-base font-bold text-text-heading">
           {label}
           <span className="text-sm font-normal text-text-muted">({recommendedRangeLabel})</span>
-          <HelpTooltip content="Each objective should describe what the learner will be ABLE TO DO after completing this content. Use measurable action verbs from Bloom's taxonomy: Describe, Identify, Compare, Construct, Interpret, Recognize, Analyze, Apply, Differentiate, Explain. Avoid vague verbs like Understand, Know, or Be familiar with — these aren't measurable. Each objective should start with a verb (no need for 'The learner will be able to' prefix; that's implied). Example: 'Identify three classes of pressure-lowering medications and their primary mechanisms of action.'" />
         </h3>
 
         <button
           type="button"
           onClick={addObjective}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-3 py-1.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
+          className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-3 py-1.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft"
         >
           <Plus className="size-4" aria-hidden />
           Add objective
         </button>
       </div>
+
+      <p className="mb-4 text-sm leading-relaxed text-text-body">
+        Each objective should describe what the learner will be{" "}
+        <span className="font-medium">able to do</span> after completing this content. Use measurable action verbs from
+        Bloom&apos;s taxonomy:{" "}
+        <span className="font-medium">
+          Describe, Identify, Compare, Construct, Interpret, Recognize, Analyze, Apply, Differentiate, Explain
+        </span>
+        . Avoid vague verbs like <span className="italic">Understand, Know, or Be familiar with</span> — these
+        aren&apos;t measurable.{" "}
+        <span className="text-text-muted">
+          Example: &ldquo;Identify three classes of pressure-lowering medications and their primary mechanisms of
+          action.&rdquo;
+        </span>
+      </p>
 
       {value.length === 0 ? (
         <p className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft px-4 py-6 text-center text-sm text-text-muted">

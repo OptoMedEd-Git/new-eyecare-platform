@@ -6,12 +6,18 @@ import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import type { AdminLessonForEdit } from "@/lib/courses/admin-queries";
 import { LearningObjectivesEditor } from "@/components/admin/courses/LearningObjectivesEditor";
+import { slugifyShort } from "@/lib/blog/slugify";
+import { getReadingTime } from "@/lib/blog/utils";
 import { RichContentEditor, type RichContentEditorHandle } from "@/components/shared/RichContentEditor";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, RefreshCw, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 const EMPTY_DOC = JSON.stringify({ type: "doc", content: [] });
+
+function emptyDoc(): Record<string, unknown> {
+  return { type: "doc", content: [] };
+}
 
 export type LessonFormProps = {
   courseId: string;
@@ -27,10 +33,27 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
 
   const [title, setTitle] = useState(initialLesson?.title ?? "");
   const [slug, setSlug] = useState(initialLesson?.slug ?? "");
-  const [description, setDescription] = useState(initialLesson?.description ?? "");
-  const [estimatedMinutes, setEstimatedMinutes] = useState(
-    initialLesson != null ? String(initialLesson.estimated_minutes) : "0",
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(() =>
+    Boolean(initialLesson?.slug && initialLesson.slug !== slugifyShort(initialLesson.title ?? "")),
   );
+  const [description, setDescription] = useState(initialLesson?.description ?? "");
+
+  const [contentDoc, setContentDoc] = useState<unknown>(() => {
+    if (initialLesson?.content != null && typeof initialLesson.content === "object") {
+      return initialLesson.content;
+    }
+    return emptyDoc();
+  });
+
+  const [minutesManuallyEdited, setMinutesManuallyEdited] = useState(
+    () => Boolean(initialLesson && initialLesson.estimated_minutes > 0),
+  );
+
+  /** Used when `minutesManuallyEdited` is true; ignored when auto-derived from content. */
+  const [estimatedMinutes, setEstimatedMinutes] = useState(() =>
+    initialLesson && initialLesson.estimated_minutes > 0 ? String(initialLesson.estimated_minutes) : "",
+  );
+
   const [learningObjectives, setLearningObjectives] = useState<string[]>(
     initialLesson?.learning_objectives ?? [],
   );
@@ -42,8 +65,49 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
   const initialContentJson =
     initialLesson?.content != null ? JSON.stringify(initialLesson.content) : EMPTY_DOC;
 
+  const derivedMinutesLabel = useMemo(
+    () => String(Math.max(1, getReadingTime(contentDoc))),
+    [contentDoc],
+  );
+
+  const minutesDisplay = minutesManuallyEdited ? estimatedMinutes : derivedMinutesLabel;
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+  }
+
+  function handleTitleChange(newTitle: string) {
+    setTitle(newTitle);
+    if (!slugManuallyEdited) {
+      setSlug(slugifyShort(newTitle));
+    }
+    setDirty(true);
+  }
+
+  function handleSlugChange(newSlug: string) {
+    setSlug(newSlug);
+    setSlugManuallyEdited(true);
+    setDirty(true);
+  }
+
+  function regenerateSlug() {
+    setSlug(slugifyShort(title));
+    setSlugManuallyEdited(false);
+    setDirty(true);
+  }
+
+  function handleMinutesChange(value: string) {
+    setEstimatedMinutes(value);
+    setMinutesManuallyEdited(true);
+    setDirty(true);
+  }
+
+  function recalculateMinutesFromContent() {
+    const json = editorRef.current?.getJSON() ?? contentDoc;
+    setContentDoc(json);
+    setMinutesManuallyEdited(false);
+    setEstimatedMinutes("");
+    setDirty(true);
   }
 
   function handleObjectivesChange(next: string[]) {
@@ -113,28 +177,39 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
               id="lesson-title"
               required
               value={title}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                setDirty(true);
-              }}
+              onChange={(e) => handleTitleChange(e.target.value)}
             />
 
-            <FormInput
-              label="URL slug"
-              helperText={
-                isEdit
+            <div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="min-w-0 flex-1">
+                  <FormInput
+                    label="URL slug"
+                    name="slug"
+                    id="lesson-slug"
+                    required={isEdit}
+                    value={slug}
+                    onChange={(e) => handleSlugChange(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  title="Regenerate slug from title"
+                  aria-label="Regenerate slug from title"
+                  onClick={regenerateSlug}
+                  disabled={saving}
+                  className="inline-flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-border-default bg-bg-secondary-soft text-text-muted transition-colors hover:border-border-default-medium hover:text-text-heading disabled:opacity-50"
+                >
+                  <RefreshCw className="size-4" aria-hidden />
+                  <span className="sr-only">Regenerate slug from title</span>
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-text-muted">
+                {isEdit
                   ? "Unique within this course. Lowercase letters, numbers, and hyphens."
-                  : "Optional on create — defaults from the title. Must be unique within this course."
-              }
-              name="slug"
-              id="lesson-slug"
-              required={isEdit}
-              value={slug}
-              onChange={(e) => {
-                setSlug(e.target.value);
-                setDirty(true);
-              }}
-            />
+                  : "Optional on create — defaults from the title. Must be unique within this course."}
+              </p>
+            </div>
 
             <div>
               <label htmlFor="lesson-description" className="mb-1.5 block text-sm font-medium text-text-heading">
@@ -168,25 +243,45 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
                 ref={editorRef}
                 initialContent={initialContentJson}
                 disabled={saving}
-                onUpdate={() => setDirty(true)}
+                onUpdate={() => {
+                  setDirty(true);
+                  const j = editorRef.current?.getJSON();
+                  if (j !== undefined) setContentDoc(j);
+                }}
               />
             </div>
           </div>
 
           <div className="space-y-6">
-            <FormInput
-              label="Estimated minutes"
-              name="estimated_minutes"
-              id="lesson-minutes"
-              type="number"
-              min={0}
-              step={1}
-              value={estimatedMinutes}
-              onChange={(e) => {
-                setEstimatedMinutes(e.target.value);
-                setDirty(true);
-              }}
-            />
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <label htmlFor="lesson-minutes" className="text-sm font-medium text-text-heading">
+                  Estimated minutes
+                </label>
+                {minutesManuallyEdited ? (
+                  <button
+                    type="button"
+                    onClick={recalculateMinutesFromContent}
+                    className="text-xs font-medium text-text-fg-brand-strong hover:underline"
+                  >
+                    Recalculate from content
+                  </button>
+                ) : null}
+              </div>
+              <input
+                id="lesson-minutes"
+                name="estimated_minutes"
+                type="number"
+                min={1}
+                step={1}
+                value={minutesDisplay}
+                onChange={(e) => handleMinutesChange(e.target.value)}
+                className="h-[42px] w-full rounded-lg border border-border-default bg-bg-primary px-3 py-2.5 text-sm text-text-body outline-none ring-offset-0 transition-all duration-150 hover:border-border-default-medium focus:border-border-brand focus:ring-2 focus:ring-ring-brand dark:border-border-default-medium dark:bg-bg-inverse-medium dark:text-text-inverse"
+              />
+              <p className="mt-1 text-xs text-text-muted">
+                Auto-calculated from content as you write. Adjust manually if needed.
+              </p>
+            </div>
           </div>
         </div>
 

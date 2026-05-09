@@ -35,6 +35,10 @@ export default async function EditCoursePage({ params }: { params: Promise<{ id:
     notFound();
   }
 
+  const authorName =
+    [course.author?.first_name, course.author?.last_name].filter((x): x is string => Boolean(x?.trim())).join(" ").trim() ||
+    "—";
+
   return (
     <div className="mx-auto w-full max-w-5xl">
       <Breadcrumb
@@ -54,7 +58,7 @@ export default async function EditCoursePage({ params }: { params: Promise<{ id:
       </Link>
 
       <div className="mt-8">
-        <CourseForm categories={categories} initialCourse={course} />
+        <CourseForm categories={categories} authorName={authorName} initialCourse={course} />
       </div>
     </div>
   );

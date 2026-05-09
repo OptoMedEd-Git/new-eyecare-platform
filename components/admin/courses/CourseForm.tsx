@@ -7,6 +7,7 @@ import {
   unpublishCourse,
   updateCourse,
 } from "@/app/(admin)/admin/courses/actions";
+import { HelpTooltip } from "@/components/admin/HelpTooltip";
 import { LearningObjectivesEditor } from "@/components/admin/courses/LearningObjectivesEditor";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusPill } from "@/components/admin/PostStatusPill";
@@ -16,13 +17,15 @@ import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { slugifyShort } from "@/lib/blog/slugify";
 import type { AdminCourseForEdit, BlogCategoryOption } from "@/lib/courses/admin-queries";
-import { BookOpen, GraduationCap, Loader2, Save, Trash2 } from "lucide-react";
+import { BookOpen, GraduationCap, Loader2, RefreshCw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
 export type CourseFormProps = {
   categories: BlogCategoryOption[];
+  /** Display name for read-only author field (current user on create, stored author on edit). */
+  authorName: string;
   initialCourse?: AdminCourseForEdit;
 };
 
@@ -34,7 +37,7 @@ const AUDIENCE_OPTIONS = [
   { value: "all", label: "All" },
 ];
 
-export function CourseForm({ categories, initialCourse }: CourseFormProps) {
+export function CourseForm({ categories, authorName, initialCourse }: CourseFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const isEdit = Boolean(initialCourse);
@@ -87,6 +90,12 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
   function handleSlugChange(newSlug: string) {
     setSlug(newSlug);
     setSlugManuallyEdited(true);
+    setDirty(true);
+  }
+
+  function regenerateSlug() {
+    setSlug(slugifyShort(title));
+    setSlugManuallyEdited(false);
     setDirty(true);
   }
 
@@ -264,15 +273,51 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
               onChange={(e) => handleTitleChange(e.target.value)}
             />
 
-            <FormInput
-              label={isEdit ? "URL slug" : "URL slug (auto-generated)"}
-              helperText="Lowercase letters, numbers, and hyphens. Used in public URLs when the course is published."
-              name="slug"
-              id="course-slug"
-              required={isEdit}
-              value={slug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="min-w-0 flex-1">
+                    <FormInput
+                      label={isEdit ? "URL slug" : "URL slug (auto-generated)"}
+                      name="slug"
+                      id="course-slug"
+                      required={isEdit}
+                      value={slug}
+                      onChange={(e) => handleSlugChange(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    title="Regenerate slug from title"
+                    aria-label="Regenerate slug from title"
+                    onClick={regenerateSlug}
+                    disabled={saving || publishing || deleting}
+                    className="inline-flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-border-default bg-bg-secondary-soft text-text-muted transition-colors hover:border-border-default-medium hover:text-text-heading disabled:opacity-50"
+                  >
+                    <RefreshCw className="size-4" aria-hidden />
+                    <span className="sr-only">Regenerate slug from title</span>
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-text-muted">
+                  Lowercase letters, numbers, and hyphens. Used in public URLs when the course is published.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-2.5 flex items-center gap-1.5 text-sm font-medium text-text-heading">
+                  Author
+                  <HelpTooltip content="The course author is set when the course is created and cannot be changed." />
+                </label>
+                <input
+                  id="course-author"
+                  type="text"
+                  value={authorName}
+                  readOnly
+                  disabled
+                  className="w-full cursor-not-allowed rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-muted"
+                />
+              </div>
+            </div>
 
             <div>
               <label htmlFor="course-description" className="mb-1.5 block text-sm font-medium text-text-heading">

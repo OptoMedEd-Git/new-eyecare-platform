@@ -11,6 +11,8 @@ export const metadata = { title: "New course" };
 
 type ProfileRow = {
   role: "admin" | "contributor" | "member";
+  first_name: string | null;
+  last_name: string | null;
 };
 
 export default async function NewCoursePage() {
@@ -20,8 +22,15 @@ export default async function NewCoursePage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle<ProfileRow>();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, first_name, last_name")
+    .eq("id", user.id)
+    .maybeSingle<ProfileRow>();
   if (!profile || profile.role === "member") redirect("/dashboard");
+
+  const authorName =
+    [profile.first_name, profile.last_name].filter((x): x is string => Boolean(x?.trim())).join(" ").trim() || "—";
 
   const categories = await getBlogCategoriesForCourseForms();
 
@@ -40,7 +49,7 @@ export default async function NewCoursePage() {
       </Link>
 
       <div className="mt-8">
-        <CourseForm categories={categories} />
+        <CourseForm categories={categories} authorName={authorName} />
       </div>
     </div>
   );

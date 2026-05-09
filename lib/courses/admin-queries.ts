@@ -6,6 +6,12 @@ export type BlogCategoryOption = {
   slug: string;
 };
 
+export type AdminCourseAuthor = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+};
+
 export type AdminCourseListItem = {
   id: string;
   slug: string;
@@ -16,6 +22,7 @@ export type AdminCourseListItem = {
   published_at: string | null;
   updated_at: string;
   author_id: string | null;
+  author: AdminCourseAuthor | null;
   category: { id: string; name: string } | null;
   lesson_count: number;
 };
@@ -34,6 +41,7 @@ export type AdminCourseForEdit = {
   updated_at: string;
   author_id: string | null;
   learning_objectives: string[];
+  author: AdminCourseAuthor | null;
 };
 
 export type AdminLessonRow = {
@@ -99,6 +107,7 @@ export async function getAdminCourses(userId: string, role: "admin" | "contribut
       published_at,
       updated_at,
       author_id,
+      author:profiles!courses_author_id_fkey(id, first_name, last_name),
       category:blog_categories(id, name),
       lessons(count)
     `,
@@ -126,11 +135,13 @@ export async function getAdminCourses(userId: string, role: "admin" | "contribut
       published_at: string | null;
       updated_at: string;
       author_id: string | null;
+      author: AdminCourseAuthor | AdminCourseAuthor[] | null;
       category: { id: string; name: string } | { id: string; name: string }[] | null;
       lessons: { count: number }[] | null;
     };
 
     const category = single(r.category);
+    const author = single(r.author);
     const lessonsEmbed = Array.isArray(r.lessons) ? r.lessons[0] : null;
     const lesson_count = lessonsEmbed?.count ?? 0;
 
@@ -144,6 +155,7 @@ export async function getAdminCourses(userId: string, role: "admin" | "contribut
       published_at: r.published_at,
       updated_at: r.updated_at,
       author_id: r.author_id,
+      author,
       category,
       lesson_count,
     };
@@ -155,7 +167,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
   const { data, error } = await supabase
     .from("courses")
     .select(
-      "id, slug, title, description, category_id, target_audience, cover_image_url, cover_image_attribution, status, published_at, updated_at, author_id, learning_objectives",
+      "id, slug, title, description, category_id, target_audience, cover_image_url, cover_image_attribution, status, published_at, updated_at, author_id, learning_objectives, author:profiles!courses_author_id_fkey(id, first_name, last_name)",
     )
     .eq("id", courseId)
     .maybeSingle();
@@ -179,6 +191,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
     updated_at: string;
     author_id: string | null;
     learning_objectives: unknown;
+    author: AdminCourseAuthor | AdminCourseAuthor[] | null;
   };
 
   const ta = row.target_audience;
@@ -199,6 +212,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
     updated_at: row.updated_at,
     author_id: row.author_id,
     learning_objectives: normalizeLearningObjectives(row.learning_objectives),
+    author: single(row.author),
   };
 }
 
