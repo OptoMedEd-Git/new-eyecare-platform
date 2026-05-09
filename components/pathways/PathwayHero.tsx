@@ -1,0 +1,108 @@
+import Image from "next/image";
+import { Clock, Layers as LayersIcon, Play } from "lucide-react";
+
+import { CATEGORY_ICONS, type SamplePathway } from "@/lib/pathways/sample-data";
+
+const AUDIENCE_LABELS = {
+  student: "Student",
+  resident: "Resident",
+  practicing: "Practicing",
+  all: "All clinicians",
+} as const;
+
+type Props = {
+  pathway: SamplePathway;
+};
+
+export function PathwayHero({ pathway }: Props) {
+  const Icon = CATEGORY_ICONS[pathway.category];
+  const hours = Math.floor(pathway.estimated_minutes / 60);
+  const remainingMinutes = pathway.estimated_minutes % 60;
+  const durationLabel =
+    hours > 0 ? (remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`) : `${remainingMinutes}m`;
+
+  const nextModule =
+    pathway.curriculum.find((m) => m.status === "in_progress") ??
+    pathway.curriculum.find((m) => m.status === "not_started");
+
+  const ctaLabel = pathway.progress_percent !== undefined ? "Continue learning" : "Start pathway";
+
+  return (
+    <section className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
+      <div className="grid grid-cols-1 lg:grid-cols-3">
+        <div className="flex flex-col gap-4 p-6 lg:col-span-2 lg:p-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
+              {pathway.category}
+            </span>
+            <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[pathway.audience]}</span>
+          </div>
+
+          <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{pathway.title}</h1>
+
+          <p className="text-base leading-relaxed text-text-body">{pathway.description}</p>
+
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-body">
+            <span className="inline-flex items-center gap-1.5">
+              <LayersIcon className="size-4 text-text-muted" aria-hidden />
+              {pathway.lessons_count} modules
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="size-4 text-text-muted" aria-hidden />
+              {durationLabel} total
+            </span>
+          </div>
+
+          {pathway.progress_percent !== undefined ? (
+            <div className="mt-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="font-medium text-text-fg-brand-strong">{pathway.progress_percent}% complete</span>
+                {nextModule ? (
+                  <span className="max-w-[min(100%,280px)] truncate text-text-muted" title={nextModule.title}>
+                    Up next: {nextModule.title}
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
+                <div
+                  className="h-full rounded-full bg-bg-brand transition-[width]"
+                  style={{ width: `${Math.min(100, Math.max(0, pathway.progress_percent))}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-2">
+            <a
+              href="#curriculum"
+              className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
+            >
+              <Play className="size-4 fill-current" aria-hidden />
+              {ctaLabel}
+            </a>
+          </div>
+        </div>
+
+        <div className="relative hidden min-h-[280px] lg:block">
+          {pathway.cover_image_url ? (
+            <Image
+              src={pathway.cover_image_url}
+              alt={pathway.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 33vw"
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full min-h-[280px] w-full items-center justify-center bg-bg-brand-softer">
+              <Icon className="size-24 text-text-fg-brand-strong/40" aria-hidden />
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-center border-t border-border-default bg-bg-brand-softer py-8 lg:hidden">
+          <Icon className="size-16 text-text-fg-brand-strong/40" aria-hidden />
+        </div>
+      </div>
+    </section>
+  );
+}
