@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { normalizeLearningObjectives } from "@/lib/courses/admin-queries";
 
 import type { Course, CourseAudience, Lesson } from "./types";
 
@@ -66,6 +67,7 @@ function rowToCourse(courseRow: Record<string, unknown>, lessonRows: Record<stri
       orderIndex: Number(l.order_index ?? 0),
       createdAt: l.created_at as string,
       updatedAt: l.updated_at as string,
+      learningObjectives: normalizeLearningObjectives(l.learning_objectives),
     }),
   );
 
@@ -96,6 +98,7 @@ function rowToCourse(courseRow: Record<string, unknown>, lessonRows: Record<stri
     updatedAt: courseRow.updated_at as string,
     lessons,
     totalDurationMinutes,
+    learningObjectives: normalizeLearningObjectives(courseRow.learning_objectives),
   };
 }
 

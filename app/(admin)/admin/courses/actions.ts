@@ -52,6 +52,35 @@ function parseContentJson(contentRaw: string): unknown {
   }
 }
 
+function parseLearningObjectivesFromForm(formData: FormData): string[] {
+  const raw = String(formData.get("learning_objectives") ?? "[]");
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((o): o is string => typeof o === "string")
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function revalidatePublicCoursePages(
+  supabase: AuthedContext["supabase"],
+  courseId: string,
+  lessonSlug?: string,
+) {
+  revalidatePath("/courses");
+  const { data } = await supabase.from("courses").select("slug").eq("id", courseId).maybeSingle<{ slug: string }>();
+  const courseSlug = data?.slug;
+  if (!courseSlug) return;
+  revalidatePath(`/courses/${courseSlug}`);
+  if (lessonSlug) {
+    revalidatePath(`/courses/${courseSlug}/${lessonSlug}`);
+  }
+}
+
 async function getCurrentUserAndRole(): Promise<AuthedContext> {
   const supabase = await createClient();
   const {
@@ -150,6 +179,8 @@ export async function createCourse(formData: FormData): Promise<ActionResult<{ c
       return { ok: false, error: "Validation failed", fieldErrors };
     }
 
+    const learningObjectives = parseLearningObjectivesFromForm(formData);
+
     const baseSlug = slugify(titleRaw!);
     if (!baseSlug) {
       return { ok: false, error: "Validation failed", fieldErrors: { title: "Title must produce a valid slug" } };
@@ -168,6 +199,7 @@ export async function createCourse(formData: FormData): Promise<ActionResult<{ c
         author_id: ctx.user.id,
         status: "draft",
         published_at: null,
+        learning_objectives: learningObjectives,
       })
       .select("id")
       .maybeSingle<{ id: string }>();
@@ -177,6 +209,7 @@ export async function createCourse(formData: FormData): Promise<ActionResult<{ c
     }
 
     revalidatePath("/admin/courses");
+    await revalidatePublicCoursePages(ctx.supabase, data.id);
     return { ok: true, data: { courseId: data.id } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create course";
@@ -224,6 +257,8 @@ export async function updateCourse(courseId: string, formData: FormData): Promis
       return { ok: false, error: "Validation failed", fieldErrors };
     }
 
+    const learningObjectives = parseLearningObjectivesFromForm(formData);
+
     const normalizedSlug = slugRaw!
       .toLowerCase()
       .trim()
@@ -243,6 +278,7 @@ export async function updateCourse(courseId: string, formData: FormData): Promis
         target_audience: targetAudienceValue,
         cover_image_url: coverImageUrl,
         cover_image_attribution: coverImageAttribution,
+        learning_objectives: learningObjectives,
       })
       .eq("id", courseId);
 
@@ -251,6 +287,7 @@ export async function updateCourse(courseId: string, formData: FormData): Promis
     }
 
     revalidateCourseAdmin(courseId);
+    await revalidatePublicCoursePages(ctx.supabase, courseId);
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to update course";
@@ -383,6 +420,8 @@ export async function createLesson(courseId: string, formData: FormData): Promis
       return { ok: false, error: "Validation failed", fieldErrors };
     }
 
+    const learningObjectives = parseLearningObjectivesFromForm(formData);
+
     let slugBase: string;
     if (isNonEmptyString(slugRaw)) {
       slugBase = slugify(slugRaw);
@@ -418,6 +457,7 @@ export async function createLesson(courseId: string, formData: FormData): Promis
         content,
         estimated_minutes: estimated,
         order_index: nextOrder,
+        learning_objectives: learningObjectives,
       })
       .select("id")
       .maybeSingle<{ id: string }>();
@@ -427,6 +467,7 @@ export async function createLesson(courseId: string, formData: FormData): Promis
     }
 
     revalidateCourseAdmin(courseId);
+    await revalidatePublicCoursePages(ctx.supabase, courseId, finalSlug);
     return { ok: true, data: { lessonId: data.id } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create lesson";
@@ -471,6 +512,8 @@ export async function updateLesson(courseId: string, lessonId: string, formData:
       return { ok: false, error: "Validation failed", fieldErrors };
     }
 
+    const learningObjectives = parseLearningObjectivesFromForm(formData);
+
     const exists = await lessonSlugExists(ctx, courseId, normalizedSlug, lessonId);
     if (exists) {
       return { ok: false, error: "This slug is already in use for another lesson in this course." };
@@ -486,6 +529,7 @@ export async function updateLesson(courseId: string, lessonId: string, formData:
         description: descriptionRaw && descriptionRaw.length > 0 ? descriptionRaw : null,
         content,
         estimated_minutes: estimated,
+        learning_objectives: learningObjectives,
       })
       .eq("id", lessonId)
       .eq("course_id", courseId);
@@ -496,6 +540,7 @@ export async function updateLesson(courseId: string, lessonId: string, formData:
 
     revalidateCourseAdmin(courseId);
     revalidatePath(`/admin/courses/${courseId}/lessons/${lessonId}/edit`);
+    await revalidatePublicCoursePages(ctx.supabase, courseId, normalizedSlug);
     return { ok: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to update lesson";

@@ -7,6 +7,7 @@ import {
   unpublishCourse,
   updateCourse,
 } from "@/app/(admin)/admin/courses/actions";
+import { LearningObjectivesEditor } from "@/components/admin/courses/LearningObjectivesEditor";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { PostStatusPill } from "@/components/admin/PostStatusPill";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
@@ -47,6 +48,9 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
     ),
   );
   const [description, setDescription] = useState(initialCourse?.description ?? "");
+  const [learningObjectives, setLearningObjectives] = useState<string[]>(
+    initialCourse?.learning_objectives ?? [],
+  );
   const [coverImage, setCoverImage] = useState<{ url: string | null }>({
     url: initialCourse?.cover_image_url ?? null,
   });
@@ -86,6 +90,11 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
     setDirty(true);
   }
 
+  function handleObjectivesChange(next: string[]) {
+    setLearningObjectives(next);
+    setDirty(true);
+  }
+
   async function handleSave() {
     const form = formRef.current;
     if (!form) return;
@@ -96,6 +105,7 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
       const fd = new FormData(form);
       fd.set("cover_image_url", coverImage.url ?? "");
       fd.set("cover_image_attribution", coverImageAttribution);
+      fd.set("learning_objectives", JSON.stringify(learningObjectives));
 
       if (isEdit && initialCourse) {
         const result = await updateCourse(initialCourse.id, fd);
@@ -330,6 +340,15 @@ export function CourseForm({ categories, initialCourse }: CourseFormProps) {
             />
           </div>
         </div>
+
+        <section className="mt-8">
+          <LearningObjectivesEditor
+            value={learningObjectives}
+            onChange={handleObjectivesChange}
+            recommendedRangeLabel="5–8 recommended"
+            label="Course learning objectives"
+          />
+        </section>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-border-default pt-6">
           <button

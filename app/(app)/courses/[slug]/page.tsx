@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Home } from "lucide-react";
+import { Check, ChevronRight, Home, Target } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
 import { CourseHero } from "@/components/courses/CourseHero";
@@ -52,6 +52,23 @@ export default async function CourseOverviewPage({
       <div className="mt-6">
         <CourseHero course={course} progress={progress} />
       </div>
+
+      {course.learningObjectives.length > 0 ? (
+        <section className="mt-8 rounded-base border border-border-default bg-bg-primary-soft p-6">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-text-heading">
+            <Target className="size-5 text-text-fg-brand-strong" aria-hidden />
+            What you&apos;ll learn
+          </h2>
+          <ul className="mt-4 space-y-2">
+            {course.learningObjectives.map((obj, i) => (
+              <li key={i} className="flex gap-3 text-sm leading-relaxed text-text-body">
+                <Check className="mt-0.5 size-4 shrink-0 text-text-fg-brand-strong" aria-hidden />
+                <span>{obj}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="mt-10">
         <h2 className="text-xl font-bold text-text-heading">Lessons</h2>

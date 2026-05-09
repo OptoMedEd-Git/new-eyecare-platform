@@ -33,6 +33,7 @@ export type AdminCourseForEdit = {
   published_at: string | null;
   updated_at: string;
   author_id: string | null;
+  learning_objectives: string[];
 };
 
 export type AdminLessonRow = {
@@ -43,6 +44,7 @@ export type AdminLessonRow = {
   estimated_minutes: number;
   order_index: number;
   updated_at: string;
+  learning_objectives: string[];
 };
 
 export type AdminLessonForEdit = {
@@ -54,7 +56,17 @@ export type AdminLessonForEdit = {
   content: unknown;
   estimated_minutes: number;
   order_index: number;
+  learning_objectives: string[];
 };
+
+/** Normalize jsonb / API learning_objectives to a string array. */
+export function normalizeLearningObjectives(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((o): o is string => typeof o === "string")
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+}
 
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
@@ -143,7 +155,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
   const { data, error } = await supabase
     .from("courses")
     .select(
-      "id, slug, title, description, category_id, target_audience, cover_image_url, cover_image_attribution, status, published_at, updated_at, author_id",
+      "id, slug, title, description, category_id, target_audience, cover_image_url, cover_image_attribution, status, published_at, updated_at, author_id, learning_objectives",
     )
     .eq("id", courseId)
     .maybeSingle();
@@ -166,6 +178,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
     published_at: string | null;
     updated_at: string;
     author_id: string | null;
+    learning_objectives: unknown;
   };
 
   const ta = row.target_audience;
@@ -185,6 +198,7 @@ export async function getCourseForEdit(courseId: string): Promise<AdminCourseFor
     published_at: row.published_at,
     updated_at: row.updated_at,
     author_id: row.author_id,
+    learning_objectives: normalizeLearningObjectives(row.learning_objectives),
   };
 }
 
@@ -192,7 +206,7 @@ export async function getLessonsForCourseAdmin(courseId: string): Promise<AdminL
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lessons")
-    .select("id, slug, title, description, estimated_minutes, order_index, updated_at")
+    .select("id, slug, title, description, estimated_minutes, order_index, updated_at, learning_objectives")
     .eq("course_id", courseId)
     .order("order_index", { ascending: true });
 
@@ -201,14 +215,20 @@ export async function getLessonsForCourseAdmin(courseId: string): Promise<AdminL
     return [];
   }
 
-  return (data ?? []) as AdminLessonRow[];
+  return (data ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    return {
+      ...(row as AdminLessonRow),
+      learning_objectives: normalizeLearningObjectives(r.learning_objectives),
+    };
+  });
 }
 
 export async function getLessonForEdit(courseId: string, lessonId: string): Promise<AdminLessonForEdit | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("lessons")
-    .select("id, course_id, slug, title, description, content, estimated_minutes, order_index")
+    .select("id, course_id, slug, title, description, content, estimated_minutes, order_index, learning_objectives")
     .eq("id", lessonId)
     .eq("course_id", courseId)
     .maybeSingle();
@@ -218,7 +238,12 @@ export async function getLessonForEdit(courseId: string, lessonId: string): Prom
     return null;
   }
 
-  return data as AdminLessonForEdit;
+  const row = data as unknown as AdminLessonForEdit & { learning_objectives: unknown };
+
+  return {
+    ...row,
+    learning_objectives: normalizeLearningObjectives(row.learning_objectives),
+  };
 }
 
 export async function countLessonsForCourse(courseId: string): Promise<number> {

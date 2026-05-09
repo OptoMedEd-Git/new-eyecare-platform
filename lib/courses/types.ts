@@ -12,6 +12,7 @@ export type Lesson = {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
+  learningObjectives: string[];
 };
 
 export type Course = {
@@ -31,4 +32,5 @@ export type Course = {
   lessons: Lesson[];
   /** Sum of all lesson estimatedMinutes */
   totalDurationMinutes: number;
+  learningObjectives: string[];
 };

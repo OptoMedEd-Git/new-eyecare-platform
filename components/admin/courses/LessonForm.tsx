@@ -5,6 +5,7 @@ import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
 import type { AdminLessonForEdit } from "@/lib/courses/admin-queries";
+import { LearningObjectivesEditor } from "@/components/admin/courses/LearningObjectivesEditor";
 import { RichContentEditor, type RichContentEditorHandle } from "@/components/shared/RichContentEditor";
 import { Loader2, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,9 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
   const [estimatedMinutes, setEstimatedMinutes] = useState(
     initialLesson != null ? String(initialLesson.estimated_minutes) : "0",
   );
+  const [learningObjectives, setLearningObjectives] = useState<string[]>(
+    initialLesson?.learning_objectives ?? [],
+  );
 
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,6 +46,11 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
     e.preventDefault();
   }
 
+  function handleObjectivesChange(next: string[]) {
+    setLearningObjectives(next);
+    setDirty(true);
+  }
+
   async function handleSave() {
     const form = formRef.current;
     if (!form) return;
@@ -52,6 +61,7 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
       const fd = new FormData(form);
       const editorJSON = editorRef.current?.getJSON() ?? { type: "doc", content: [] };
       fd.set("content", JSON.stringify(editorJSON));
+      fd.set("learning_objectives", JSON.stringify(learningObjectives));
 
       if (isEdit && initialLesson) {
         const result = await updateLesson(courseId, initialLesson.id, fd);
@@ -142,6 +152,15 @@ export function LessonForm({ courseId, courseTitle, initialLesson }: LessonFormP
                 className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-body shadow-xs outline-none transition-colors placeholder:text-text-muted focus:border-border-brand focus:ring-4 focus:ring-ring-brand"
               />
             </div>
+
+            <section className="mt-2">
+              <LearningObjectivesEditor
+                value={learningObjectives}
+                onChange={handleObjectivesChange}
+                recommendedRangeLabel="3–5 recommended"
+                label="Lesson learning objectives"
+              />
+            </section>
 
             <div>
               <span className="mb-1.5 block text-sm font-medium text-text-heading">Lesson content</span>

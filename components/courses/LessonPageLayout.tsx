@@ -1,5 +1,6 @@
 "use client";
 
+import { Target } from "lucide-react";
 import { useState } from "react";
 
 import type { Course, Lesson } from "@/lib/courses/types";
@@ -51,6 +52,23 @@ export function LessonPageLayout({
               <p className="mt-3 text-base leading-relaxed text-text-body">{lesson.description}</p>
             ) : null}
           </header>
+
+          {lesson.learningObjectives.length > 0 ? (
+            <section className="mt-6 rounded-base border border-border-default bg-bg-secondary-soft p-5">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-text-heading">
+                <Target className="size-4 text-text-fg-brand-strong" aria-hidden />
+                In this lesson, you&apos;ll learn to:
+              </h2>
+              <ul className="mt-3 space-y-1.5">
+                {lesson.learningObjectives.map((obj, i) => (
+                  <li key={i} className="flex gap-2 text-sm leading-relaxed text-text-body">
+                    <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-text-muted" />
+                    <span>{obj}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <div className={LESSON_CONTENT_PROSE_CLASS} dangerouslySetInnerHTML={{ __html: renderedHtml }} />
 
