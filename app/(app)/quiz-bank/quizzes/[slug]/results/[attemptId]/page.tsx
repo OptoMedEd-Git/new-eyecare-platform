@@ -2,9 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
+import { QuizResultsView } from "@/components/quiz-bank/QuizResultsView";
 import { createClient } from "@/lib/supabase/server";
+import { getQuizResultsForAttempt, getUserAttemptsForQuiz } from "@/lib/quiz-bank/queries";
 
-export default async function QuizResultsPlaceholderPage({
+export default async function QuizResultsPage({
   params,
 }: {
   params: Promise<{ slug: string; attemptId: string }>;
@@ -17,25 +19,16 @@ export default async function QuizResultsPlaceholderPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: attempt, error } = await supabase
-    .from("quiz_attempts")
-    .select("id, quiz_id, status, score_correct, score_total")
-    .eq("id", attemptId)
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const result = await getQuizResultsForAttempt(attemptId);
+  if (!result) notFound();
 
-  if (error || !attempt) notFound();
+  if (result.quiz.slug !== slug) notFound();
 
-  const { data: quizRow, error: quizErr } = await supabase
-    .from("quizzes")
-    .select("slug, title")
-    .eq("id", attempt.quiz_id as string)
-    .maybeSingle();
+  if (result.attempt.status !== "submitted") {
+    redirect(`/quiz-bank/quizzes/${slug}`);
+  }
 
-  if (quizErr || !quizRow || quizRow.slug !== slug) notFound();
-
-  const scoreCorrect = attempt.score_correct as number | null;
-  const scoreTotal = attempt.score_total as number | null;
+  const pastAttempts = await getUserAttemptsForQuiz(result.quiz.id);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
@@ -56,33 +49,18 @@ export default async function QuizResultsPlaceholderPage({
           Curated quizzes
         </Link>
         <ChevronRight className="size-4 text-text-muted" aria-hidden />
+        <Link
+          href={`/quiz-bank/quizzes/${slug}`}
+          className="text-text-muted transition-colors hover:text-text-heading"
+        >
+          {result.quiz.title}
+        </Link>
+        <ChevronRight className="size-4 text-text-muted" aria-hidden />
         <span className="font-medium text-text-heading">Results</span>
       </nav>
 
-      <header className="mt-6">
-        <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">Quiz submitted</h1>
-        <p className="mt-2 text-base text-text-body">{String(quizRow.title)}</p>
-      </header>
-
-      <div className="mt-8 rounded-base border border-border-default bg-bg-primary-soft p-8">
-        <p className="text-lg font-semibold text-text-heading">
-          {attempt.status === "submitted" && scoreCorrect != null && scoreTotal != null ? (
-            <>
-              Score: {scoreCorrect}/{scoreTotal}
-            </>
-          ) : (
-            <>Your attempt was recorded.</>
-          )}
-        </p>
-        <p className="mt-2 text-sm text-text-body">
-          Detailed review and explanations will appear here in a future update.
-        </p>
-        <Link
-          href="/quiz-bank/quizzes"
-          className="mt-6 inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
-        >
-          Back to curated quizzes
-        </Link>
+      <div className="mt-6">
+        <QuizResultsView result={result} pastAttempts={pastAttempts} quizSlug={slug} />
       </div>
     </div>
   );

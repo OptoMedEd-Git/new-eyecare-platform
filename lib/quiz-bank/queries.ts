@@ -401,3 +401,137 @@ export async function getActiveQuestionCategories(): Promise<{ id: string; name:
     .map(([id, v]) => ({ id, name: v.name, count: v.count }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/** Full data needed to render the quiz results screen. */
+export type QuizAttemptResult = {
+  attempt: QuizAttempt;
+  quiz: Quiz;
+  questions: Array<{
+    question: QuizQuestion;
+    userChoiceId: string | null;
+    isCorrect: boolean | null;
+  }>;
+  totalTimeSeconds: number | null;
+};
+
+export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizAttemptResult | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: attemptRow, error: aErr } = await supabase
+    .from("quiz_attempts")
+    .select("*")
+    .eq("id", attemptId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (aErr || !attemptRow) return null;
+
+  const quizId = String((attemptRow as Record<string, unknown>).quiz_id);
+
+  const { data: quizRow, error: qErr } = await supabase
+    .from("quizzes")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name)
+    `,
+    )
+    .eq("id", quizId)
+    .maybeSingle();
+
+  if (qErr || !quizRow) return null;
+
+  const { data: itemsData, error: iErr } = await supabase
+    .from("quiz_items")
+    .select(
+      `
+      position,
+      question:quiz_questions(
+        *,
+        category:blog_categories(id, name),
+        choices:quiz_question_choices(id, position, text, is_correct)
+      )
+    `,
+    )
+    .eq("quiz_id", quizId)
+    .order("position", { ascending: true });
+
+  if (iErr || !itemsData) return null;
+
+  const { data: responsesData } = await supabase
+    .from("question_responses")
+    .select("question_id, choice_id, is_correct")
+    .eq("quiz_attempt_id", attemptId)
+    .eq("user_id", user.id);
+
+  const responseByQuestion = new Map<string, { choiceId: string; isCorrect: boolean }>();
+  for (const r of responsesData ?? []) {
+    const row = r as { question_id: string; choice_id: string; is_correct: boolean };
+    responseByQuestion.set(row.question_id, {
+      choiceId: row.choice_id,
+      isCorrect: Boolean(row.is_correct),
+    });
+  }
+
+  const questions: QuizAttemptResult["questions"] = [];
+
+  for (const item of itemsData as Array<Record<string, unknown>>) {
+    const qRaw = item.question;
+    const questionRow = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    if (!questionRow || typeof questionRow !== "object") continue;
+
+    const q = questionRow as Record<string, unknown>;
+    const choicesRaw = q.choices;
+    const choiceRows = (
+      Array.isArray(choicesRaw) ? choicesRaw : choicesRaw ? [choicesRaw] : []
+    ) as Array<Record<string, unknown>>;
+
+    const question = rowToQuizQuestion(q, choiceRows);
+    const response = responseByQuestion.get(question.id);
+
+    questions.push({
+      question,
+      userChoiceId: response?.choiceId ?? null,
+      isCorrect: response ? response.isCorrect : null,
+    });
+  }
+
+  const ar = attemptRow as Record<string, unknown>;
+  let totalTimeSeconds: number | null = null;
+  if (ar.started_at && ar.submitted_at) {
+    const start = new Date(String(ar.started_at)).getTime();
+    const end = new Date(String(ar.submitted_at)).getTime();
+    totalTimeSeconds = Math.floor((end - start) / 1000);
+  }
+
+  return {
+    attempt: rowToAttempt(ar),
+    quiz: rowToQuiz(quizRow as Record<string, unknown>),
+    questions,
+    totalTimeSeconds,
+  };
+}
+
+export async function getUserAttemptsForQuiz(quizId: string): Promise<QuizAttempt[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select("*")
+    .eq("user_id", user.id)
+    .eq("quiz_id", quizId)
+    .eq("status", "submitted")
+    .order("submitted_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return data.map((row) => rowToAttempt(row as Record<string, unknown>));
+}
