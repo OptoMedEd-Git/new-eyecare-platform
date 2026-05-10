@@ -120,3 +120,27 @@ export type QuizWithQuestions = Quiz & {
 export type QuizListing = Quiz & {
   questionCount: number;
 };
+
+/** Practice-mode accuracy aggregated by question category (quiz bank dashboard). */
+export type QuizBankCategoryAccuracyRow = {
+  category: string;
+  percentage: number;
+  total: number;
+  correct: number;
+};
+
+/** One calendar day of practice accuracy (UTC date key from `answered_at`). */
+export type QuizBankDailyAccuracyRow = {
+  dateKey: string;
+  label: string;
+  accuracyPct: number;
+};
+
+/** Server payload for `/quiz-bank` dashboard stats and charts. */
+export type QuizBankDashboardData = {
+  stats: PracticeStats;
+  accuracyPct: number;
+  unansweredCount: number;
+  categoryAccuracy: QuizBankCategoryAccuracyRow[];
+  accuracyOverTime: QuizBankDailyAccuracyRow[];
+};

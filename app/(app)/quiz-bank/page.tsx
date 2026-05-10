@@ -1,12 +1,24 @@
-import { BookOpenCheck, ChevronRight, Home, Target, TrendingUp } from "lucide-react";
+import {
+  BookOpenCheck,
+  ChevronRight,
+  ClipboardList,
+  CircleHelp,
+  Home,
+  Layers,
+  Target,
+  TrendingUp,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
-import { getPracticeStats } from "@/lib/quiz-bank/queries";
+import { AccuracyOverTimeChart } from "@/components/quiz-bank/AccuracyOverTimeChart";
+import { CategoryAccuracyChart } from "@/components/quiz-bank/CategoryAccuracyChart";
+import { ModeCard } from "@/components/quiz-bank/ModeCard";
+import { getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const stats = await getPracticeStats();
-  const accuracyPct = stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
+  const dashboard = await getQuizBankDashboardData();
+  const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
@@ -30,7 +42,7 @@ export default async function QuizBankPage() {
         </p>
       </header>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <section className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatTile
           icon={BookOpenCheck}
           label="Questions answered"
@@ -48,40 +60,54 @@ export default async function QuizBankPage() {
           value={stats.totalAnswered > 0 ? `${accuracyPct}%` : "—"}
           sublabel={stats.totalAnswered === 0 ? "No answers yet" : null}
         />
+        <StatTile
+          icon={CircleHelp}
+          label="Unanswered"
+          value={unansweredCount.toString()}
+          sublabel={stats.totalAnswered === 0 ? "Full bank available" : null}
+        />
       </section>
 
-      <section className="mt-10">
-        <div className="rounded-base border border-border-default bg-bg-primary-soft p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-xl">
-              <h2 className="text-xl font-bold text-text-heading">Practice mode</h2>
-              <p className="mt-2 text-sm leading-relaxed text-text-body">
-                Answer questions one at a time with immediate feedback and explanations. Filter by category, audience, or
-                difficulty to focus your practice.
-              </p>
-            </div>
-            <Link
-              href="/quiz-bank/practice"
-              className="inline-flex shrink-0 items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
-            >
-              Start practicing
-              <ChevronRight className="size-4" aria-hidden />
-            </Link>
-          </div>
+      <section className="mt-12">
+        <h2 className="text-xl font-bold text-text-heading">Your performance</h2>
+        <p className="mt-2 max-w-2xl text-sm text-text-body">
+          Trends use practice-mode answers only. Formal quiz attempts are tracked separately on each quiz&apos;s results
+          page.
+        </p>
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+          <CategoryAccuracyChart data={categoryAccuracy} />
+          <AccuracyOverTimeChart data={accuracyOverTime} />
         </div>
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Link
-          href="/quiz-bank/quizzes"
-          className="group rounded-base border border-border-default bg-bg-primary-soft p-6 transition-colors hover:border-border-brand-subtle hover:bg-bg-secondary-soft"
-        >
-          <h3 className="text-base font-bold text-text-heading group-hover:text-text-fg-brand-strong">Pre-made quizzes</h3>
-          <p className="mt-1 text-sm text-text-body">Curated quiz collections on focused clinical topics.</p>
-        </Link>
-        <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-6">
-          <h3 className="text-base font-bold text-text-muted">Build your own quiz</h3>
-          <p className="mt-1 text-sm text-text-muted">Coming soon</p>
+      <section className="mt-12">
+        <h2 className="text-xl font-bold text-text-heading">Modes</h2>
+        <p className="mt-2 max-w-2xl text-sm text-text-body">
+          Pick a mode that fits your study block — quick drills, structured quizzes, or a custom mix later on.
+        </p>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3 md:items-stretch">
+          <ModeCard
+            variant="interactive"
+            href="/quiz-bank/practice"
+            icon={BookOpenCheck}
+            title="Practice mode"
+            description="Answer questions one at a time with immediate feedback and explanations. Filter by category, audience, or difficulty."
+            ctaLabel="Start practicing →"
+          />
+          <ModeCard
+            variant="interactive"
+            href="/quiz-bank/quizzes"
+            icon={ClipboardList}
+            title="Pre-made quizzes"
+            description="Curated quiz collections on focused clinical topics with structured pacing."
+            ctaLabel="Browse quizzes →"
+          />
+          <ModeCard
+            variant="coming-soon"
+            icon={Layers}
+            title="Build your own quiz"
+            description="Assemble a custom set from the bank when this workflow is ready."
+          />
         </div>
       </section>
     </div>

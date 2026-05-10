@@ -9,6 +9,9 @@ import type {
   QuizAttempt,
   QuizChoice,
   QuizDifficulty,
+  QuizBankCategoryAccuracyRow,
+  QuizBankDailyAccuracyRow,
+  QuizBankDashboardData,
   QuizListing,
   QuizQuestion,
   QuizQuestionType,
@@ -534,4 +537,147 @@ export async function getUserAttemptsForQuiz(quizId: string): Promise<QuizAttemp
   if (error || !data) return [];
 
   return data.map((row) => rowToAttempt(row as Record<string, unknown>));
+}
+
+/** Published question count (anonymous-safe; used for unanswered tally). */
+export async function getPublishedQuizQuestionCount(): Promise<number> {
+  const supabase = await createClient();
+  const { count, error } = await supabase
+    .from("quiz_questions")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "published");
+  if (error) return 0;
+  return count ?? 0;
+}
+
+type PracticeResponseRow = {
+  question_id: string;
+  is_correct: boolean;
+  answered_at: string;
+  question?: unknown;
+};
+
+function aggregateCategoryAccuracy(
+  rows: PracticeResponseRow[],
+): QuizBankCategoryAccuracyRow[] {
+  const categoryMap = new Map<string, { correct: number; total: number }>();
+
+  for (const raw of rows) {
+    const q = raw.question;
+    const questionRow = Array.isArray(q) ? q[0] : q;
+    let categoryName = "Uncategorized";
+    if (questionRow && typeof questionRow === "object") {
+      const cat = (questionRow as { category?: unknown }).category;
+      const c = Array.isArray(cat) ? cat[0] : cat;
+      if (c && typeof c === "object" && c !== null && "name" in c) {
+        categoryName = String((c as { name: string }).name);
+      }
+    }
+    const agg = categoryMap.get(categoryName) ?? { correct: 0, total: 0 };
+    agg.total += 1;
+    if (raw.is_correct) agg.correct += 1;
+    categoryMap.set(categoryName, agg);
+  }
+
+  return Array.from(categoryMap.entries())
+    .map(([category, { correct, total }]) => ({
+      category,
+      total,
+      correct,
+      percentage: total > 0 ? Math.round((correct / total) * 100) : 0,
+    }))
+    .sort((a, b) => b.percentage - a.percentage || a.category.localeCompare(b.category));
+}
+
+function aggregateAccuracyOverTime(rows: PracticeResponseRow[]): QuizBankDailyAccuracyRow[] {
+  const dayMap = new Map<string, { correct: number; total: number }>();
+
+  for (const raw of rows) {
+    const dateKey = new Date(raw.answered_at).toISOString().slice(0, 10);
+    const agg = dayMap.get(dateKey) ?? { correct: 0, total: 0 };
+    agg.total += 1;
+    if (raw.is_correct) agg.correct += 1;
+    dayMap.set(dateKey, agg);
+  }
+
+  const sortedKeys = [...dayMap.keys()].sort();
+  return sortedKeys.map((dateKey) => {
+    const { correct, total } = dayMap.get(dateKey)!;
+    const d = new Date(`${dateKey}T12:00:00.000Z`);
+    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return {
+      dateKey,
+      label,
+      accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
+    };
+  });
+}
+
+/**
+ * Stats + chart series for the quiz bank dashboard.
+ * Uses one practice-response fetch and aggregates category + daily accuracy in memory.
+ */
+export async function getQuizBankDashboardData(): Promise<QuizBankDashboardData> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const publishedCount = await getPublishedQuizQuestionCount();
+
+  if (!user) {
+    return {
+      stats: { totalAnswered: 0, totalCorrect: 0, totalUniqueQuestionsAnswered: 0 },
+      accuracyPct: 0,
+      unansweredCount: publishedCount,
+      categoryAccuracy: [],
+      accuracyOverTime: [],
+    };
+  }
+
+  const { data: responses, error } = await supabase
+    .from("question_responses")
+    .select(
+      `
+      question_id,
+      is_correct,
+      answered_at,
+      question:quiz_questions(
+        category:blog_categories(name)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .is("quiz_attempt_id", null);
+
+  if (error || !responses?.length) {
+    const stats = await getPracticeStats();
+    const accuracyPct =
+      stats.totalAnswered > 0 ? Math.round((stats.totalCorrect / stats.totalAnswered) * 100) : 0;
+    return {
+      stats,
+      accuracyPct,
+      unansweredCount: Math.max(0, publishedCount - stats.totalUniqueQuestionsAnswered),
+      categoryAccuracy: [],
+      accuracyOverTime: [],
+    };
+  }
+
+  const rows = responses as PracticeResponseRow[];
+  const uniqueIds = new Set(rows.map((r) => r.question_id));
+  const totalAnswered = rows.length;
+  const totalCorrect = rows.filter((r) => r.is_correct).length;
+  const accuracyPct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+
+  return {
+    stats: {
+      totalAnswered,
+      totalCorrect,
+      totalUniqueQuestionsAnswered: uniqueIds.size,
+    },
+    accuracyPct,
+    unansweredCount: Math.max(0, publishedCount - uniqueIds.size),
+    categoryAccuracy: aggregateCategoryAccuracy(rows),
+    accuracyOverTime: aggregateAccuracyOverTime(rows),
+  };
 }
