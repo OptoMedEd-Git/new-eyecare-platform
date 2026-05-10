@@ -28,11 +28,9 @@ function validateQuestionFields(
   formData: FormData,
   choices: Array<{ text: string; isCorrect: boolean }>,
 ): string | null {
-  const vignette = String(formData.get("vignette") ?? "").trim();
   const questionText = String(formData.get("question_text") ?? "").trim();
   const explanation = String(formData.get("explanation") ?? "").trim();
 
-  if (!vignette) return "Vignette is required";
   if (!questionText) return "Question is required";
   if (!explanation) return "Explanation is required";
   if (choices.some((c) => !c.text)) return "All 4 choice texts are required";
@@ -73,7 +71,8 @@ export async function createQuestion(formData: FormData): Promise<ActionResult<{
   const validationError = validateQuestionFields(formData, choices);
   if (validationError) return { success: false, error: validationError };
 
-  const vignette = String(formData.get("vignette") ?? "").trim();
+  const vignetteRaw = String(formData.get("vignette") ?? "").trim();
+  const vignette = vignetteRaw.length > 0 ? vignetteRaw : null;
   const questionText = String(formData.get("question_text") ?? "").trim();
   const explanation = String(formData.get("explanation") ?? "").trim();
   const categoryId = parseCategoryId(formData);
@@ -138,7 +137,8 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
   const validationError = validateQuestionFields(formData, choices);
   if (validationError) return { success: false, error: validationError };
 
-  const vignette = String(formData.get("vignette") ?? "").trim();
+  const vignetteRaw = String(formData.get("vignette") ?? "").trim();
+  const vignette = vignetteRaw.length > 0 ? vignetteRaw : null;
   const questionText = String(formData.get("question_text") ?? "").trim();
   const explanation = String(formData.get("explanation") ?? "").trim();
   const categoryId = parseCategoryId(formData);

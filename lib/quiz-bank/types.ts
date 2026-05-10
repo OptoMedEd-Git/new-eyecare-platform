@@ -13,7 +13,7 @@ export type QuizChoice = {
 
 export type QuizQuestion = {
   id: string;
-  vignette: string;
+  vignette: string | null;
   questionText: string;
   explanation: string;
   imageUrl: string | null;

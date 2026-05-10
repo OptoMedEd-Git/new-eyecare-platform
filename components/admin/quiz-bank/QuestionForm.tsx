@@ -259,12 +259,13 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <div>
-              <label htmlFor="vignette" className="text-sm font-medium text-text-heading">
-                Vignette <span className="text-text-fg-danger">*</span>
+              <label htmlFor="vignette" className="flex flex-wrap items-center gap-1 text-sm font-medium text-text-heading">
+                Vignette
+                <span className="text-sm font-normal text-text-muted">(optional)</span>
               </label>
               <p className="mt-1 mb-2 text-xs text-text-muted">
-                The clinical scenario. Typically 3–6 sentences with presenting symptoms, relevant history, exam findings,
-                and any diagnostic data.
+                The clinical scenario, when applicable. Typically 3–6 sentences with presenting symptoms, relevant history,
+                exam findings, and any diagnostic data. Leave blank for direct questions that don&apos;t need a scenario.
               </p>
               <textarea
                 id="vignette"

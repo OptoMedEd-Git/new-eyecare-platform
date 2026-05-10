@@ -9,18 +9,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
-function vignetteExcerpt(text: string, max = 80): string {
-  const t = text.replace(/\s+/g, " ").trim();
+function vignetteExcerpt(text: string | null | undefined, max = 80): string {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
+}
+
+/** Primary row preview: vignette when present, otherwise question stem. */
+function rowPreview(q: AdminQuestionRow): string {
+  const v = q.vignette?.trim();
+  if (v) return v;
+  return q.question_text;
 }
 
 export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  function handleDelete(id: string, vignette: string) {
-    const preview = vignetteExcerpt(vignette, 60);
+  function handleDelete(id: string, previewSource: string) {
+    const preview = vignetteExcerpt(previewSource, 60);
     if (!window.confirm(`Delete this question?\n\n${preview}\n\nThis cannot be undone.`)) return;
     startTransition(async () => {
       const result = await deleteQuestion(id);
@@ -93,9 +100,9 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                   <Link
                     href={`/admin/quiz-bank/${q.id}/edit`}
                     className="block text-sm font-medium text-text-heading hover:underline"
-                    title={q.vignette}
+                    title={rowPreview(q)}
                   >
-                    {vignetteExcerpt(q.vignette)}
+                    {vignetteExcerpt(rowPreview(q))}
                   </Link>
                   <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.question_text}</p>
                 </td>
@@ -122,7 +129,7 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                     <button
                       type="button"
                       disabled={pending}
-                      onClick={() => handleDelete(q.id, q.vignette)}
+                      onClick={() => handleDelete(q.id, rowPreview(q))}
                       className="inline-flex items-center gap-1 font-medium text-text-fg-danger-strong hover:underline disabled:opacity-50"
                     >
                       <Trash2 className="size-3.5" aria-hidden />

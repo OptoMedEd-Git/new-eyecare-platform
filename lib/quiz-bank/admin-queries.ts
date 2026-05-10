@@ -7,7 +7,7 @@ function single<T>(value: T | T[] | null | undefined): T | null {
 
 export type AdminQuestionRow = {
   id: string;
-  vignette: string;
+  vignette: string | null;
   question_text: string;
   explanation: string;
   image_url: string | null;
