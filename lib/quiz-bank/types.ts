@@ -90,3 +90,33 @@ export type QuizWithItems = Quiz & {
   items: QuizItem[];
   questionCount: number;
 };
+
+export type QuizAttemptStatus = "in_progress" | "submitted" | "abandoned";
+
+export type QuizAttempt = {
+  id: string;
+  userId: string;
+  quizId: string;
+  status: QuizAttemptStatus;
+  startedAt: string;
+  submittedAt: string | null;
+  abandonedAt: string | null;
+  scoreCorrect: number | null;
+  scoreTotal: number | null;
+  timeLimitMinutes: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuizAttemptResponse = {
+  questionId: string;
+  choiceId: string;
+};
+
+export type QuizWithQuestions = Quiz & {
+  questions: QuizQuestion[];
+};
+
+export type QuizListing = Quiz & {
+  questionCount: number;
+};

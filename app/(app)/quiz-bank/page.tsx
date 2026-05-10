@@ -72,10 +72,13 @@ export default async function QuizBankPage() {
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-6">
-          <h3 className="text-base font-bold text-text-muted">Pre-made quizzes</h3>
-          <p className="mt-1 text-sm text-text-muted">Coming soon</p>
-        </div>
+        <Link
+          href="/quiz-bank/quizzes"
+          className="group rounded-base border border-border-default bg-bg-primary-soft p-6 transition-colors hover:border-border-brand-subtle hover:bg-bg-secondary-soft"
+        >
+          <h3 className="text-base font-bold text-text-heading group-hover:text-text-fg-brand-strong">Pre-made quizzes</h3>
+          <p className="mt-1 text-sm text-text-body">Curated quiz collections on focused clinical topics.</p>
+        </Link>
         <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-6">
           <h3 className="text-base font-bold text-text-muted">Build your own quiz</h3>
           <p className="mt-1 text-sm text-text-muted">Coming soon</p>
