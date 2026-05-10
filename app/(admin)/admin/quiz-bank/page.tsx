@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList, LayoutList, Plus } from "lucide-react";
 
 import { QuestionsAdminTable } from "@/components/admin/quiz-bank/QuestionsAdminTable";
 import { getAllAdminQuestions } from "@/lib/quiz-bank/admin-queries";
@@ -29,15 +29,26 @@ export default async function QuizBankAdminPage() {
       <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-text-heading">Quiz bank</h1>
-          <p className="mt-1 text-sm text-text-body">Author and manage board-style questions.</p>
+          <p className="mt-1 text-sm text-text-body">
+            Author and manage board-style questions and curated quizzes.
+          </p>
         </div>
-        <Link
-          href="/admin/quiz-bank/new"
-          className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus:outline-none focus:ring-4 focus:ring-ring-brand"
-        >
-          <Plus className="size-4" aria-hidden />
-          New question
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/quiz-bank/quizzes"
+            className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          >
+            <LayoutList className="size-4" aria-hidden />
+            Manage quizzes
+          </Link>
+          <Link
+            href="/admin/quiz-bank/new"
+            className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          >
+            <Plus className="size-4" aria-hidden />
+            New question
+          </Link>
+        </div>
       </header>
 
       {questions.length === 0 ? (

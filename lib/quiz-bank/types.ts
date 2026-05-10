@@ -56,3 +56,37 @@ export type PracticeQuestionResult = {
   previouslyAnswered: boolean;
   previousResult?: { wasCorrect: boolean };
 };
+
+export type QuizKind = "curated" | "user_generated";
+
+export type Quiz = {
+  id: string;
+  slug: string | null;
+  title: string;
+  description: string | null;
+  kind: QuizKind;
+  category: { id: string; name: string } | null;
+  audience: QuestionAudience | null;
+  difficulty: QuizDifficulty | null;
+  timeLimitMinutes: number | null;
+  timePerQuestionSeconds: number | null;
+  isFeatured: boolean;
+  status: QuestionStatus;
+  authorId: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type QuizItem = {
+  id: string;
+  quizId: string;
+  questionId: string;
+  position: number;
+  question?: QuizQuestion;
+};
+
+export type QuizWithItems = Quiz & {
+  items: QuizItem[];
+  questionCount: number;
+};
