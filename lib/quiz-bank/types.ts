@@ -29,3 +29,30 @@ export type QuizQuestion = {
   updatedAt: string;
   choices: QuizChoice[];
 };
+
+export type QuestionResponse = {
+  id: string;
+  userId: string;
+  questionId: string;
+  choiceId: string;
+  isCorrect: boolean;
+  answeredAt: string;
+};
+
+export type PracticeStats = {
+  totalAnswered: number;
+  totalCorrect: number;
+  totalUniqueQuestionsAnswered: number;
+};
+
+export type PracticeFilters = {
+  categoryIds: string[];
+  audiences: QuestionAudience[];
+  difficulties: QuizDifficulty[];
+};
+
+export type PracticeQuestionResult = {
+  question: QuizQuestion;
+  previouslyAnswered: boolean;
+  previousResult?: { wasCorrect: boolean };
+};
