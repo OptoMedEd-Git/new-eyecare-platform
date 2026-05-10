@@ -1,4 +1,4 @@
-import { ChevronRight, Home } from "lucide-react";
+import { ArrowLeft, ChevronRight, Home } from "lucide-react";
 import Link from "next/link";
 
 import { PracticeOrchestrator } from "@/components/quiz-bank/PracticeOrchestrator";
@@ -24,6 +24,14 @@ export default async function PracticePage() {
         <ChevronRight className="size-4 text-text-muted" aria-hidden />
         <span className="font-medium text-text-heading">Practice</span>
       </nav>
+
+      <Link
+        href="/quiz-bank"
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text-fg-brand-strong hover:underline"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to quiz bank
+      </Link>
 
       <header className="mt-4">
         <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">Practice mode</h1>

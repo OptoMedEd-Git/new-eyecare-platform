@@ -48,7 +48,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
 
   return (
     <article className="rounded-base border border-border-default bg-bg-primary-soft">
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border-default p-5">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default p-5">
         <div className="flex flex-wrap items-center gap-2">
           {question.category ? (
             <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
