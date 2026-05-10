@@ -26,6 +26,8 @@ export type QuizFormProps = {
   categories: QuizCategoryOption[];
   authorName: string;
   initialQuiz?: AdminQuizRow;
+  /** When false, omits the in-form back link (page shell provides breadcrumb + back). Default true. */
+  showBackLink?: boolean;
 };
 
 const AUDIENCE_OPTIONS = [
@@ -43,7 +45,7 @@ const DIFFICULTY_OPTIONS = [
   { value: "advanced", label: "Advanced" },
 ];
 
-export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps) {
+export function QuizForm({ categories, authorName, initialQuiz, showBackLink = true }: QuizFormProps) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const isEdit = Boolean(initialQuiz);
@@ -184,22 +186,28 @@ export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps)
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="mx-auto w-full max-w-5xl">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className={isEdit ? "mx-auto w-full max-w-5xl" : "w-full"}
+    >
       <UnsavedChangesGuard dirty={dirty && !saving && !publishing && !deleting} onSave={performSave} />
 
-      <div className="mb-6">
-        <Link
-          href="/admin/quiz-bank/quizzes"
-          className="text-sm font-medium text-text-fg-brand-strong hover:text-text-fg-brand hover:underline"
-        >
-          ← Back to curated quizzes
-        </Link>
-      </div>
+      {showBackLink ? (
+        <div className="mb-6">
+          <Link
+            href="/admin/quiz-bank/quizzes"
+            className="text-sm font-medium text-text-fg-brand-strong hover:text-text-fg-brand hover:underline"
+          >
+            ← Back to curated quizzes
+          </Link>
+        </div>
+      ) : null}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold text-text-heading">{isEdit ? "Edit quiz" : "New quiz"}</h1>
-          {isEdit ? (
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {isEdit ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold text-text-heading">Edit quiz</h1>
             <span
               className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${
                 isPublished
@@ -209,27 +217,31 @@ export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps)
             >
               {isPublished ? "Published" : "Draft"}
             </span>
-          ) : null}
-          {dirty ? (
-            <span className="inline-flex items-center rounded-sm bg-bg-warning-softer px-2 py-0.5 text-xs font-medium text-text-fg-warning-strong">
-              Unsaved changes
-            </span>
-          ) : null}
-        </div>
+            {dirty ? (
+              <span className="inline-flex items-center rounded-sm bg-bg-warning-softer px-2 py-0.5 text-xs font-medium text-text-fg-warning-strong">
+                Unsaved changes
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <div>
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">New quiz</h1>
+          </div>
+        )}
 
-        <div className="flex flex-wrap items-center gap-2">
-          {isEdit && isPublished ? (
-            <button
-              type="button"
-              onClick={() => void handleUnpublish()}
-              disabled={publishing || saving || deleting}
-              className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
-            >
-              <Undo2 className="size-4" aria-hidden />
-              Unpublish
-            </button>
-          ) : null}
-          {isEdit ? (
+        {isEdit ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {isPublished ? (
+              <button
+                type="button"
+                onClick={() => void handleUnpublish()}
+                disabled={publishing || saving || deleting}
+                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+              >
+                <Undo2 className="size-4" aria-hidden />
+                Unpublish
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => void handleDelete()}
@@ -239,59 +251,48 @@ export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps)
               <Trash2 className="size-4" aria-hidden />
               Delete
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => void performSave()}
-            disabled={saving || publishing || deleting}
-            className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                {isEdit
-                  ? isPublished && dirty
-                    ? "Save changes"
-                    : isPublished
-                      ? "Saved"
-                      : "Save draft"
-                  : "Continue to questions"}
-              </>
-            ) : isEdit ? (
-              <>
-                <Save className="size-4" aria-hidden />
-                {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
-              </>
-            ) : (
-              <>
-                Continue to questions
-                <ArrowRight className="size-4" aria-hidden />
-              </>
-            )}
-          </button>
-          {isEdit && !isPublished ? (
             <button
               type="button"
-              onClick={() => void handlePublish()}
-              disabled={publishing || saving || deleting}
-              className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+              onClick={() => void performSave()}
+              disabled={saving || publishing || deleting}
+              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
             >
-              {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-              Publish
+              {saving ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
+                </>
+              ) : (
+                <>
+                  <Save className="size-4" aria-hidden />
+                  {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
+                </>
+              )}
             </button>
-          ) : null}
-          {isEdit && isPublished && dirty ? (
-            <button
-              type="button"
-              onClick={() => void handlePublish()}
-              disabled={publishing || saving || deleting}
-              className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
-            >
-              {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-              Publish changes
-            </button>
-          ) : null}
-        </div>
+            {!isPublished ? (
+              <button
+                type="button"
+                onClick={() => void handlePublish()}
+                disabled={publishing || saving || deleting}
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+              >
+                {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+                Publish
+              </button>
+            ) : null}
+            {isPublished && dirty ? (
+              <button
+                type="button"
+                onClick={() => void handlePublish()}
+                disabled={publishing || saving || deleting}
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+              >
+                {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
+                Publish changes
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       {error ? (
@@ -445,6 +446,29 @@ export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps)
           </label>
         </div>
       </div>
+
+      {!isEdit ? (
+        <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border-default pt-6">
+          <button
+            type="button"
+            onClick={() => void performSave()}
+            disabled={saving || publishing || deleting}
+            className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Continue to questions
+              </>
+            ) : (
+              <>
+                Continue to questions
+                <ArrowRight className="size-4" aria-hidden />
+              </>
+            )}
+          </button>
+        </div>
+      ) : null}
 
       {isEdit && initialQuiz ? (
         <div className="mt-8 flex flex-wrap gap-4 border-t border-border-default pt-6 text-xs text-text-muted">

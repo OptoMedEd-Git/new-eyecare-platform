@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import { QuizForm } from "@/components/admin/quiz-bank/QuizForm";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,12 +36,30 @@ export default async function NewQuizPage() {
   const categories = categoriesRaw.map((c) => ({ id: c.id, name: c.name }));
 
   return (
-    <div className="flex flex-col gap-8">
-      <p className="text-sm text-text-body">
+    <div className="mx-auto w-full max-w-5xl">
+      <Breadcrumb
+        showHomeIcon={false}
+        items={[
+          { label: "Admin" },
+          { label: "Curated quizzes", href: "/admin/quiz-bank/quizzes" },
+          { label: "New quiz" },
+        ]}
+      />
+      <Link
+        href="/admin/quiz-bank/quizzes"
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong transition-colors hover:text-text-fg-brand"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to curated quizzes
+      </Link>
+
+      <p className="mt-6 text-sm text-text-body">
         Fill in the quiz details below. After saving, you&apos;ll be able to add questions from the bank.
       </p>
 
-      <QuizForm categories={categories} authorName={authorName} />
+      <div className="mt-8">
+        <QuizForm categories={categories} authorName={authorName} showBackLink={false} />
+      </div>
     </div>
   );
 }
