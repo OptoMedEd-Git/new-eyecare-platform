@@ -68,7 +68,7 @@ export default async function LessonPage({
         {course.title}
       </Link>
 
-      <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{lesson.title}</h1>
+      <h1 className="mt-6 text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{lesson.title}</h1>
 
       {lesson.description ? (
         <p className="mt-3 text-base leading-relaxed text-text-body">{lesson.description}</p>

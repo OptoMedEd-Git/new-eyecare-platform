@@ -13,7 +13,7 @@ export function LessonTOCSidebar({ course, currentLessonSlug, completedLessonIds
   const completedSet = new Set(completedLessonIds);
 
   return (
-    <aside className="hidden w-72 shrink-0 xl:block">
+    <aside className="hidden w-[360px] shrink-0 xl:block">
       <div className="sticky top-24 rounded-base border border-border-default bg-bg-primary-soft p-4">
         <h3 className="text-sm font-bold text-text-heading">Lessons</h3>
 
