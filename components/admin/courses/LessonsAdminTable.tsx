@@ -8,6 +8,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useState, useTransition } from "react";
 
+function formatTotalDuration(minutes: number): string {
+  if (minutes <= 0) return "0 min";
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  if (hours === 0) return `${remaining} min`;
+  if (remaining === 0) return `${hours}h`;
+  return `${hours}h ${remaining}m`;
+}
+
 type LessonsAdminTableProps = {
   courseId: string;
   lessons: AdminLessonRow[];
@@ -77,6 +86,7 @@ export function LessonsAdminTable({ courseId, lessons: initialLessons }: Lessons
   }
 
   const sorted = [...optimisticLessons].sort((a, b) => a.order_index - b.order_index);
+  const totalMinutes = sorted.reduce((sum, l) => sum + (l.estimated_minutes ?? 0), 0);
 
   return (
     <div className="flex flex-col gap-3">
@@ -176,6 +186,16 @@ export function LessonsAdminTable({ courseId, lessons: initialLessons }: Lessons
           </tbody>
         </table>
       </div>
+
+      {sorted.length > 0 ? (
+        <div className="mt-3 flex items-center justify-end gap-2 text-sm text-text-muted">
+          <span>
+            {sorted.length} {sorted.length === 1 ? "lesson" : "lessons"}
+          </span>
+          <span aria-hidden>·</span>
+          <span>{formatTotalDuration(totalMinutes)} total</span>
+        </div>
+      ) : null}
     </div>
   );
 }
