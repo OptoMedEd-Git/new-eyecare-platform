@@ -41,7 +41,7 @@ export function LessonPrevNext({ courseSlug, previous, next, onOpenDrawer }: Pro
         {next ? (
           <Link
             href={`/courses/${courseSlug}/${next.slug}`}
-            className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body hover:bg-bg-secondary-soft"
+            className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
           >
             Next
             <ArrowRight className="size-4" aria-hidden />

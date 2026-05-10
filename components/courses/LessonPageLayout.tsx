@@ -73,7 +73,6 @@ export function LessonPageLayout({
                 courseId={course.id}
                 courseSlug={course.slug}
                 isCompleted={isCurrentLessonCompleted}
-                nextLesson={next}
               />
             </div>
 
