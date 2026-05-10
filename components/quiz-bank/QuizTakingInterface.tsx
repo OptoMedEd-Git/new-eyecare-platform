@@ -100,6 +100,7 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
   }, []);
 
   const timerMinutes = attempt.timeLimitMinutes ?? quiz.timeLimitMinutes;
+  const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   if (!currentQuestion || totalQuestions === 0) {
     return (
@@ -111,17 +112,33 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
 
   return (
     <>
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-base border border-border-default bg-bg-primary-soft p-4">
-        <div className="flex flex-col gap-0.5">
-          <h1 className="line-clamp-1 text-base font-bold text-text-heading">{quiz.title}</h1>
-          <p className="text-xs text-text-muted">
-            Question {currentIndex + 1} of {totalQuestions} · {answeredCount} answered
-          </p>
+      <header className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <div className="flex flex-col gap-0.5">
+            <h1 className="line-clamp-1 text-base font-bold text-text-heading">{quiz.title}</h1>
+            <p className="text-xs text-text-muted">
+              Question {currentIndex + 1} of {totalQuestions} · {answeredCount} answered
+            </p>
+          </div>
+
+          {timerMinutes ? (
+            <QuizTimer startedAt={attempt.startedAt} timeLimitMinutes={timerMinutes} onTimeout={handleTimeout} />
+          ) : null}
         </div>
 
-        {timerMinutes ? (
-          <QuizTimer startedAt={attempt.startedAt} timeLimitMinutes={timerMinutes} onTimeout={handleTimeout} />
-        ) : null}
+        <div
+          className="h-1.5 w-full overflow-hidden rounded-b-base bg-bg-secondary-soft"
+          role="progressbar"
+          aria-valuenow={answeredCount}
+          aria-valuemin={0}
+          aria-valuemax={totalQuestions}
+          aria-label={`${answeredCount} of ${totalQuestions} questions answered`}
+        >
+          <div
+            className="h-full bg-bg-brand transition-all duration-300 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
       </header>
 
       {timedOut ? (
