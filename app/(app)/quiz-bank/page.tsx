@@ -13,11 +13,12 @@ import Link from "next/link";
 
 import { AccuracyOverTimeChart } from "@/components/quiz-bank/AccuracyOverTimeChart";
 import { CategoryAccuracyChart } from "@/components/quiz-bank/CategoryAccuracyChart";
+import { FeaturedQuizCard } from "@/components/quiz-bank/FeaturedQuizCard";
 import { ModeCard } from "@/components/quiz-bank/ModeCard";
-import { getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
+import { getFeaturedQuiz, getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const dashboard = await getQuizBankDashboardData();
+  const [dashboard, featuredQuiz] = await Promise.all([getQuizBankDashboardData(), getFeaturedQuiz()]);
   const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
   return (
@@ -80,6 +81,16 @@ export default async function QuizBankPage() {
         </div>
       </section>
 
+      {featuredQuiz ? (
+        <section className="mt-10">
+          <h2 className="text-xl font-bold text-text-heading">Featured</h2>
+          <p className="mt-1 text-sm text-text-body">A quick recommendation to jump in.</p>
+          <div className="mt-6">
+            <FeaturedQuizCard quiz={featuredQuiz} />
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-12">
         <h2 className="text-xl font-bold text-text-heading">Modes</h2>
         <p className="mt-2 max-w-2xl text-sm text-text-body">
@@ -92,7 +103,7 @@ export default async function QuizBankPage() {
             icon={BookOpenCheck}
             title="Practice mode"
             description="Answer questions one at a time with immediate feedback and explanations. Filter by category, audience, or difficulty."
-            ctaLabel="Start practicing →"
+            ctaLabel="Start practicing"
           />
           <ModeCard
             variant="interactive"
@@ -100,7 +111,7 @@ export default async function QuizBankPage() {
             icon={ClipboardList}
             title="Pre-made quizzes"
             description="Curated quiz collections on focused clinical topics with structured pacing."
-            ctaLabel="Browse quizzes →"
+            ctaLabel="Browse quizzes"
           />
           <ModeCard
             variant="coming-soon"

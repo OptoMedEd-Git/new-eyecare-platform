@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type InteractiveProps = {
@@ -49,9 +50,10 @@ export function ModeCard(props: ModeCardProps) {
       <div className="mt-4 flex flex-1 flex-col">
         <h3 className="text-base font-bold text-text-heading">{title}</h3>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-text-body">{description}</p>
-        <span className="mt-6 text-sm font-medium text-text-fg-brand-strong opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+        <div className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-text-fg-brand-strong">
           {ctaLabel}
-        </span>
+          <ArrowRight className="size-4" aria-hidden />
+        </div>
       </div>
     </Link>
   );

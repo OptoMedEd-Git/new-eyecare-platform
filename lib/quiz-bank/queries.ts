@@ -136,6 +136,44 @@ export async function getPublishedQuizzes(): Promise<QuizListing[]> {
 }
 
 /**
+ * Most recently published featured curated quiz, with question count.
+ * Returns null if none exist or if the row has no slug (cannot link).
+ */
+export async function getFeaturedQuiz(): Promise<QuizListing | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("quizzes")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name),
+      quiz_items(count)
+    `,
+    )
+    .eq("status", "published")
+    .eq("kind", "curated")
+    .eq("is_featured", true)
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const row = data as Record<string, unknown>;
+  if (row.slug == null || String(row.slug).length === 0) return null;
+
+  const itemsEmbed = row.quiz_items as unknown;
+  const countRow = Array.isArray(itemsEmbed) ? (itemsEmbed[0] as { count?: number } | undefined) : undefined;
+  const questionCount = typeof countRow?.count === "number" ? countRow.count : 0;
+
+  return {
+    ...rowToQuiz(row),
+    questionCount,
+  };
+}
+
+/**
  * Get a single published quiz by slug, with full question data (ordered by position).
  */
 export async function getPublishedQuizBySlug(slug: string): Promise<QuizWithQuestions | null> {
