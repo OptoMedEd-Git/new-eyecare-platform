@@ -3,7 +3,6 @@ import {
   ChevronRight,
   ClipboardList,
   CircleHelp,
-  Flag,
   Home,
   Layers,
   Target,
@@ -14,15 +13,27 @@ import Link from "next/link";
 
 import { AccuracyOverTimeChart } from "@/components/quiz-bank/AccuracyOverTimeChart";
 import { CategoryAccuracyChart } from "@/components/quiz-bank/CategoryAccuracyChart";
+import { ContinueLearningCard } from "@/components/quiz-bank/ContinueLearningCard";
 import { FeaturedQuizCard } from "@/components/quiz-bank/FeaturedQuizCard";
+import { FlaggedSummaryCard } from "@/components/quiz-bank/FlaggedSummaryCard";
 import { ModeCard } from "@/components/quiz-bank/ModeCard";
-import { getFeaturedQuiz, getFlaggedCount, getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
+import {
+  getFeaturedQuiz,
+  getFlaggedCount,
+  getLastQuizAttempt,
+  getQuizBankDashboardData,
+  getRecentFlaggedQuestions,
+  getRecentPracticeActivity,
+} from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const [dashboard, featuredQuiz, flaggedCount] = await Promise.all([
+  const [dashboard, featuredQuiz, flaggedCount, recentFlagged, recentPractice, lastQuizAttempt] = await Promise.all([
     getQuizBankDashboardData(),
     getFeaturedQuiz(),
     getFlaggedCount(),
+    getRecentFlaggedQuestions(3),
+    getRecentPracticeActivity(3),
+    getLastQuizAttempt(),
   ]);
   const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
@@ -74,17 +85,6 @@ export default async function QuizBankPage() {
         />
       </section>
 
-      {flaggedCount > 0 ? (
-        <Link
-          href="/quiz-bank/flagged"
-          className="mt-6 inline-flex w-full max-w-xl items-center gap-2 rounded-base border border-border-default bg-bg-warning-softer/30 px-4 py-3 text-sm font-medium text-text-heading transition-colors hover:bg-bg-warning-softer sm:w-auto"
-        >
-          <Flag className="size-4 shrink-0 text-text-fg-warning-strong" fill="currentColor" aria-hidden />
-          {flaggedCount} {flaggedCount === 1 ? "question" : "questions"} flagged for review
-          <ChevronRight className="size-4 shrink-0 text-text-muted" aria-hidden />
-        </Link>
-      ) : null}
-
       <section className="mt-12">
         <h2 className="text-xl font-bold text-text-heading">Your performance</h2>
         <p className="mt-2 max-w-2xl text-sm text-text-body">
@@ -94,6 +94,13 @@ export default async function QuizBankPage() {
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
           <CategoryAccuracyChart data={categoryAccuracy} />
           <AccuracyOverTimeChart data={accuracyOverTime} />
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+          <FlaggedSummaryCard totalCount={flaggedCount} recent={recentFlagged} />
+          <ContinueLearningCard recentPractice={recentPractice} lastQuizAttempt={lastQuizAttempt} />
         </div>
       </section>
 

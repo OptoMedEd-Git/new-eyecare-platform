@@ -1,32 +1,322 @@
 [
   {
-    "vignette": "A 62-year-old woman presents with progressively worsening peripheral vision over the past 6 months. IOP is 26 mmHg OD and 24 mmHg OS. Gonioscopy shows open angles to ciliary body band. Visual fields show early superior arcuate defects bilaterally.",
-    "question_text": "Which of the following is the most appropriate first-line topical therapy?",
+    "question_number": 1,
+    "vignette": null,
+    "question_text": "Which physical principle underlies image formation in spectral-domain optical coherence tomography?",
     "choices": [
-      { "letter": "A", "text": "Latanoprost 0.005% once nightly", "is_correct": true },
-      { "letter": "B", "text": "Timolol 0.5% twice daily", "is_correct": false },
-      { "letter": "C", "text": "Brimonidine 0.2% three times daily", "is_correct": false },
-      { "letter": "D", "text": "Dorzolamide 2% three times daily", "is_correct": false }
+      { "letter": "A", "text": "Confocal reflectance of a scanning laser focused at varying depths", "is_correct": false },
+      { "letter": "B", "text": "Low-coherence interferometry comparing reflected sample light to a reference beam", "is_correct": true },
+      { "letter": "C", "text": "Time-of-flight measurement of photons reflected from tissue interfaces", "is_correct": false },
+      { "letter": "D", "text": "Doppler shift of light scattered by moving particles within tissue", "is_correct": false }
     ],
-    "explanation": "Prostaglandin analogs (latanoprost, travoprost, bimatoprost) are first-line for primary open-angle glaucoma due to their efficacy (typically 25-33% IOP reduction), once-daily dosing, and favorable systemic safety profile. Timolol is second-line and has systemic contraindications including asthma, COPD, and bradyarrhythmia.",
-    "category": "Glaucoma",
-    "audience": "practicing",
+    "explanation": "OCT uses low-coherence interferometry: light is split into a sample arm and reference arm, and depth-resolved structural information is reconstructed from the interference pattern when the reflected beams recombine. Spectral-domain OCT acquires the full A-scan in the frequency domain via a spectrometer, eliminating the need for a moving reference mirror and enabling much faster acquisition than time-domain OCT. Time-of-flight (C) is incorrect because the temporal resolution required to directly time photon return over retinal-scale distances is not feasible with current detectors — interferometry is the workaround.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "question_number": 2,
+    "vignette": null,
+    "question_text": "On a normal macular spectral-domain OCT B-scan, which layer appears as the outermost (most posterior) hyperreflective band before the choroid?",
+    "choices": [
+      { "letter": "A", "text": "External limiting membrane", "is_correct": false },
+      { "letter": "B", "text": "Ellipsoid zone", "is_correct": false },
+      { "letter": "C", "text": "Retinal pigment epithelium / Bruch's membrane complex", "is_correct": true },
+      { "letter": "D", "text": "Interdigitation zone", "is_correct": false }
+    ],
+    "explanation": "The RPE/Bruch's complex is the most posterior hyperreflective band of the retina on OCT, sitting just anterior to the choriocapillaris. Moving anteriorly from the RPE, the next reflective bands are the interdigitation zone, ellipsoid zone (formerly called IS/OS junction), and external limiting membrane. The ellipsoid zone (B) is sometimes mistaken for the outermost band because it is bright and prominent, but it lies anterior to both the interdigitation zone and the RPE.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "question_number": 3,
+    "vignette": null,
+    "question_text": "A macular OCT shows abrupt vertical loss of signal beneath a hyperreflective inner retinal vessel, obscuring the underlying outer retina. This finding is best described as which artifact?",
+    "choices": [
+      { "letter": "A", "text": "Projection artifact", "is_correct": false },
+      { "letter": "B", "text": "Shadowing artifact", "is_correct": true },
+      { "letter": "C", "text": "Segmentation error", "is_correct": false },
+      { "letter": "D", "text": "Motion artifact", "is_correct": false }
+    ],
+    "explanation": "Shadowing occurs when an overlying highly reflective or absorptive structure (retinal vessel, vitreous opacity, dense hemorrhage) attenuates the OCT beam, producing a vertical column of reduced signal in the deeper layers. Projection artifact (A) is a different phenomenon specific to OCT angiography, in which superficial flow signal is duplicated onto deeper slabs; it does not produce signal loss on structural B-scans.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "foundational",
+    "image_suggestion": "Macular B-scan showing a vertical hyporeflective column extending posteriorly from a superficial retinal vessel"
+  },
+  {
+    "question_number": 4,
+    "vignette": null,
+    "question_text": "On a glaucoma RNFL thickness printout, the central TSNIT curve is shifted entirely below the green normative band but the patient's eye is otherwise healthy with a normal disc and visual field. Which factor most commonly produces this pattern?",
+    "choices": [
+      { "letter": "A", "text": "Diffuse glaucomatous RNFL loss", "is_correct": false },
+      { "letter": "B", "text": "High myopia and longer axial length", "is_correct": true },
+      { "letter": "C", "text": "Media opacity reducing signal strength", "is_correct": false },
+      { "letter": "D", "text": "Off-center scan circle placement", "is_correct": false }
+    ],
+    "explanation": "Highly myopic eyes have thinner average RNFL measurements because the peripapillary retina is stretched over a larger axial length, producing a 'red disease' pattern of falsely abnormal thickness compared to emmetropic normative databases. This is a well-recognized limitation of OCT normative comparison and is one reason axial length or refractive error should be considered when interpreting glaucoma reports. Diffuse RNFL loss (A) from glaucoma is possible but would be expected to correlate with disc and field findings, which the stem rules out.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
     "difficulty": "intermediate",
     "image_suggestion": null
   },
   {
+    "question_number": 5,
     "vignette": null,
-    "question_text": "Which medication class is most often associated with worsening of myasthenia gravis symptoms?",
+    "question_text": "Which scan pattern is most appropriate when the goal is to detect subtle focal RPE elevations across the entire macula rather than along a single meridian?",
     "choices": [
-      { "letter": "A", "text": "Alpha-2 agonists", "is_correct": false },
-      { "letter": "B", "text": "Beta-blockers", "is_correct": true },
-      { "letter": "C", "text": "Prostaglandin analogs", "is_correct": false },
-      { "letter": "D", "text": "Carbonic anhydrase inhibitors", "is_correct": false }
+      { "letter": "A", "text": "Single horizontal line scan through the fovea", "is_correct": false },
+      { "letter": "B", "text": "Radial scan pattern centered on the fovea", "is_correct": false },
+      { "letter": "C", "text": "Macular cube/volume scan", "is_correct": true },
+      { "letter": "D", "text": "Peripapillary circle scan", "is_correct": false }
     ],
-    "explanation": "Topical beta-blockers can be absorbed systemically and worsen myasthenia gravis by blocking neuromuscular junction beta-adrenergic effects. They should be avoided in this population. Prostaglandins, alpha-2 agonists, and CAIs are generally safer alternatives.",
-    "category": "Glaucoma",
-    "audience": "resident",
+    "explanation": "A macular cube acquires a dense raster of B-scans that can be reviewed individually and as an enface or thickness map, making it the right tool when pathology may be focal and its location within the macula is unknown. A radial pattern (B) samples through the fovea but leaves wedge-shaped gaps peripherally where small drusen, pigment epithelial detachments, or focal MNV could be missed. Single-line scans further undersample.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "question_number": 6,
+    "vignette": null,
+    "question_text": "On OCT angiography of a normal macula, hyperreflective signal in the outer retinal slab corresponding directly above large superficial retinal vessels is best interpreted as which finding?",
+    "choices": [
+      { "letter": "A", "text": "True choriocapillaris flow signal", "is_correct": false },
+      { "letter": "B", "text": "Projection artifact from superficial vasculature", "is_correct": true },
+      { "letter": "C", "text": "Type 1 macular neovascularization", "is_correct": false },
+      { "letter": "D", "text": "Outer retinal telangiectasia", "is_correct": false }
+    ],
+    "explanation": "Projection artifact is the duplication of superficial flow signal onto deeper slabs along the path of the OCT beam, and it is the most common pitfall in OCTA interpretation — outer retinal and choriocapillaris slabs should normally show no flow, so any pattern that mirrors the overlying retinal vasculature is artifact. Most commercial OCTA platforms now offer projection-resolved algorithms to suppress this. Mistaking projection for type 1 MNV (C) is a classic overcall and is why the segmentation and B-scan correlation must always be reviewed.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "OCTA outer retinal slab demonstrating linear hyperreflective signal that mirrors the superficial vascular pattern"
+  },
+  {
+    "question_number": 7,
+    "vignette": null,
+    "question_text": "A macular OCT report shows the inner retinal segmentation line tracking through the middle of the retina rather than along the inner limiting membrane, producing a falsely thin total retinal thickness measurement. Which is the most appropriate next step before reporting the result?",
+    "choices": [
+      { "letter": "A", "text": "Report the thickness as measured", "is_correct": false },
+      { "letter": "B", "text": "Manually correct the segmentation or reacquire the scan", "is_correct": true },
+      { "letter": "C", "text": "Switch to a thicker B-scan averaging protocol", "is_correct": false },
+      { "letter": "D", "text": "Compare to the fellow eye and average the values", "is_correct": false }
+    ],
+    "explanation": "Segmentation errors invalidate quantitative thickness measurements and are common in eyes with epiretinal membrane, vitreomacular traction, large drusen, or low signal strength. The standard approach is to manually correct the segmentation lines using the device software or repeat acquisition with better fixation and signal; reporting uncorrected values (A) propagates the error into clinical decisions. Switching averaging protocols (C) improves B-scan quality but does not fix a misidentified boundary line.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "question_number": 8,
+    "vignette": null,
+    "question_text": "Which finding on OCT most reliably indicates the presence of subretinal fluid as opposed to intraretinal fluid?",
+    "choices": [
+      { "letter": "A", "text": "Hyporeflective spaces within the outer nuclear layer", "is_correct": false },
+      { "letter": "B", "text": "A hyporeflective space between the photoreceptor outer segments and the RPE", "is_correct": true },
+      { "letter": "C", "text": "Cystic spaces in the inner nuclear layer", "is_correct": false },
+      { "letter": "D", "text": "Hyperreflective foci scattered through the outer retina", "is_correct": false }
+    ],
+    "explanation": "Subretinal fluid lies in the potential space between the neurosensory retina (photoreceptor outer segments) and the RPE, and on OCT appears as a hyporeflective dome with the detached retina visibly separated from the RPE band. Intraretinal fluid (A, C) appears as cystic spaces within retinal layers — most commonly the inner nuclear and outer nuclear layers — and the distinction matters because the two have different prognostic implications in exudative AMD and DME.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "question_number": 9,
+    "vignette": "A 74-year-old man is referred for evaluation of gradual central vision decline in the right eye over 18 months, now 20/80. He denies metamorphopsia or sudden change. Macular OCT of the right eye shows sharply demarcated zones of choroidal hypertransmission beneath an absent RPE band, with overlying loss of the ellipsoid zone and outer nuclear layer thinning. There is no intraretinal or subretinal fluid.",
+    "question_text": "Which diagnosis best fits these OCT findings?",
+    "choices": [
+      { "letter": "A", "text": "Geographic atrophy secondary to age-related macular degeneration", "is_correct": true },
+      { "letter": "B", "text": "Type 1 macular neovascularization", "is_correct": false },
+      { "letter": "C", "text": "Central serous chorioretinopathy", "is_correct": false },
+      { "letter": "D", "text": "Stargardt disease", "is_correct": false }
+    ],
+    "explanation": "Geographic atrophy is identified on OCT by the cardinal triad of RPE loss, overlying photoreceptor (ellipsoid zone) loss with outer nuclear layer thinning, and choroidal hypertransmission from the absent RPE — exactly the picture described, and consistent with the slow tempo and absence of fluid. Type 1 MNV (B) typically presents with a sub-RPE hyperreflective lesion and exudation rather than RPE loss with hypertransmission. The Classification of Atrophy Meetings (CAM) criteria formalize the OCT definition.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing well-demarcated zones of choroidal hypertransmission with absent RPE and overlying outer retinal thinning"
+  },
+  {
+    "question_number": 10,
+    "vignette": "A 68-year-old woman with prior dry AMD presents with new metamorphopsia and a one-week drop in vision to 20/60 in the left eye. Macular OCT of the left eye shows a dome-shaped elevation of the RPE with underlying moderate hyperreflectivity, overlying subretinal fluid, and small intraretinal cystic spaces in the outer nuclear layer.",
+    "question_text": "Which lesion type best describes the OCT findings?",
+    "choices": [
+      { "letter": "A", "text": "Drusenoid pigment epithelial detachment", "is_correct": false },
+      { "letter": "B", "text": "Type 1 (sub-RPE) macular neovascularization with exudation", "is_correct": true },
+      { "letter": "C", "text": "Type 2 (subretinal) macular neovascularization", "is_correct": false },
+      { "letter": "D", "text": "Central serous chorioretinopathy with pigment epithelial detachment", "is_correct": false }
+    ],
+    "explanation": "Type 1 MNV grows beneath the RPE and on OCT produces a vascularized PED — a dome of elevated RPE with internal moderate hyperreflectivity from the neovascular tissue — accompanied by exudative features (subretinal fluid, intraretinal cysts) when active. Type 2 MNV (C) sits above the RPE in the subretinal space and appears as a hyperreflective lesion between the RPE and the neurosensory retina, not beneath an intact RPE band. A drusenoid PED would lack fluid and show homogeneous medium reflectivity without exudation.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing a dome-shaped RPE elevation with internal moderate reflectivity, overlying subretinal fluid, and small intraretinal cysts"
+  },
+  {
+    "question_number": 11,
+    "vignette": "A 58-year-old man with type 2 diabetes (HbA1c 8.4%) is found on routine exam to have moderate nonproliferative diabetic retinopathy. Vision is 20/40 in the right eye. Macular OCT of the right eye shows cystoid spaces predominantly in the inner nuclear and outer nuclear layers, scattered hyperreflective foci, and a central subfield thickness of 380 μm.",
+    "question_text": "Which OCT finding in this patient carries the strongest implication that anti-VEGF therapy is indicated?",
+    "choices": [
+      { "letter": "A", "text": "Hyperreflective foci scattered in the outer retina", "is_correct": false },
+      { "letter": "B", "text": "Center-involving retinal thickening with intraretinal cystoid fluid", "is_correct": true },
+      { "letter": "C", "text": "Disorganization of retinal inner layers (DRIL)", "is_correct": false },
+      { "letter": "D", "text": "Mild thinning of the ganglion cell complex", "is_correct": false }
+    ],
+    "explanation": "Center-involving DME with intraretinal fluid and reduced visual acuity is the classic indication for anti-VEGF therapy supported by Protocol T and related DRCR Retina Network trials. Hyperreflective foci (A) and DRIL (C) carry prognostic value — DRIL in particular correlates with worse visual outcomes — but neither is the threshold finding for initiating treatment. Non-center-involving thickening is generally observed or treated with focal laser depending on context.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing center-involving cystoid intraretinal fluid in the inner and outer nuclear layers with scattered hyperreflective foci"
+  },
+  {
+    "question_number": 12,
+    "vignette": "A 66-year-old woman presents with sudden painless vision loss in the left eye to 20/200, three days ago. Fundus exam shows scattered intraretinal hemorrhages in all four quadrants of the left eye and a swollen optic disc. Macular OCT of the left eye shows diffuse retinal thickening with large cystoid spaces in the inner nuclear and outer nuclear layers and overlying subretinal fluid.",
+    "question_text": "Which diagnosis best fits the OCT and clinical findings?",
+    "choices": [
+      { "letter": "A", "text": "Central retinal vein occlusion with macular edema", "is_correct": true },
+      { "letter": "B", "text": "Branch retinal vein occlusion with macular edema", "is_correct": false },
+      { "letter": "C", "text": "Central retinal artery occlusion", "is_correct": false },
+      { "letter": "D", "text": "Diabetic macular edema", "is_correct": false }
+    ],
+    "explanation": "The combination of four-quadrant intraretinal hemorrhage, disc edema, and OCT showing diffuse macular edema with large cystoid spaces and subretinal fluid is characteristic of CRVO; subretinal fluid is more common in CRVO than in diabetic edema and helps distinguish the two. Central retinal artery occlusion (C) would show inner retinal hyperreflectivity and thickening acutely, followed by inner retinal atrophy — not predominantly cystoid edema with subretinal fluid. The four-quadrant distribution rules out BRVO.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing diffuse retinal thickening with large cystoid spaces and a shallow layer of subretinal fluid"
+  },
+  {
+    "question_number": 13,
+    "vignette": "A 45-year-old man presents with a two-week history of central blur and a darker patch of vision in the right eye. He recently completed a course of oral prednisone for poison ivy. Vision is 20/30 in the right eye. Macular OCT of the right eye shows a shallow dome of subretinal fluid centered at the fovea without intraretinal cysts; the RPE is intact and there is no sub-RPE hyperreflective material. Choroidal thickness appears increased.",
+    "question_text": "Which diagnosis best fits the OCT findings?",
+    "choices": [
+      { "letter": "A", "text": "Type 2 macular neovascularization", "is_correct": false },
+      { "letter": "B", "text": "Central serous chorioretinopathy", "is_correct": true },
+      { "letter": "C", "text": "Vogt-Koyanagi-Harada disease", "is_correct": false },
+      { "letter": "D", "text": "Optic pit maculopathy", "is_correct": false }
+    ],
+    "explanation": "Central serous chorioretinopathy classically shows isolated subretinal fluid without intraretinal cysts, an intact RPE (sometimes with small focal PEDs), and a thickened choroid on enhanced-depth imaging — the OCT pattern described, in a middle-aged man with recent corticosteroid exposure (a well-recognized risk factor). Type 2 MNV (A) would be expected to show a hyperreflective subretinal lesion above the RPE with exudation, not isolated subretinal fluid over an intact RPE. VKH typically presents with multiple serous detachments and choroidal involvement in the setting of systemic findings.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing a shallow dome of subretinal fluid over an intact RPE with thickened underlying choroid"
+  },
+  {
+    "question_number": 14,
+    "vignette": "A 71-year-old woman reports gradual blurring and mild metamorphopsia in the right eye over the past year. Vision is 20/40. Macular OCT of the right eye shows a hyperreflective band on the inner retinal surface with retinal surface wrinkling, loss of the foveal contour, and inner retinal thickening. There is no full-thickness break and no subretinal fluid.",
+    "question_text": "Which OCT finding most specifically establishes the diagnosis of epiretinal membrane?",
+    "choices": [
+      { "letter": "A", "text": "Loss of the normal foveal contour", "is_correct": false },
+      { "letter": "B", "text": "Inner retinal thickening", "is_correct": false },
+      { "letter": "C", "text": "A hyperreflective membrane along the inner retinal surface", "is_correct": true },
+      { "letter": "D", "text": "Retinal surface wrinkling on enface imaging", "is_correct": false }
+    ],
+    "explanation": "Direct visualization of a hyperreflective membrane on the inner limiting membrane is the defining OCT finding of ERM; the other features listed are consequences of contraction (foveal flattening, inner retinal thickening, surface striae) and can occur with vitreomacular traction or other surface pathology that lacks a true membrane. Distinguishing ERM from VMT matters because management differs — VMT may resolve spontaneously or with pharmacologic vitreolysis, while symptomatic ERM is addressed surgically.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "intermediate",
+    "image_suggestion": "Macular B-scan showing a thin hyperreflective membrane on the inner retinal surface with loss of foveal contour and surface striae"
+  },
+  {
+    "question_number": 15,
+    "vignette": "A 63-year-old woman reports a sudden central scotoma and metamorphopsia in the left eye after a cough two days ago. Vision is 20/200. Macular OCT of the left eye shows a full-thickness foveal defect spanning from the internal limiting membrane to the RPE, with small intraretinal cystic spaces at the lesion edges and an attached posterior hyaloid that lifts off centrally with foveal traction. The minimum diameter of the defect is 380 μm.",
+    "question_text": "How is this lesion best classified using the International Vitreomacular Traction Study (IVTS) criteria?",
+    "choices": [
+      { "letter": "A", "text": "Vitreomacular adhesion without traction", "is_correct": false },
+      { "letter": "B", "text": "Vitreomacular traction without macular hole", "is_correct": false },
+      { "letter": "C", "text": "Small full-thickness macular hole with vitreomacular traction", "is_correct": false },
+      { "letter": "D", "text": "Medium full-thickness macular hole with vitreomacular traction", "is_correct": true }
+    ],
+    "explanation": "The IVTS classification defines a full-thickness macular hole as a foveal defect extending through all retinal layers, sized by minimum linear diameter on OCT: small ≤250 μm, medium >250 to ≤400 μm, and large >400 μm; vitreomacular traction is concurrent when the posterior hyaloid is attached with anatomic distortion. At 380 μm with attached hyaloid producing traction, this is a medium FTMH with VMT. A lamellar hole is a partial-thickness defect with intact photoreceptors and would not span all retinal layers.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "advanced",
+    "image_suggestion": "Macular B-scan showing a full-thickness foveal defect with attached posterior hyaloid producing centrifugal traction and small cystic edges"
+  },
+  {
+    "question_number": 16,
+    "vignette": "A 24-year-old woman reports decreased vision in the right eye and pain on eye movement over the past five days. Vision is 20/80 with a relative afferent pupillary defect. Optic nerve OCT three months earlier was normal. Repeat peripapillary RNFL OCT today shows global RNFL thickening of the right eye to 145 μm. Macular ganglion cell complex measurements are within normal limits bilaterally.",
+    "question_text": "What pattern of change would be most expected on follow-up OCT in three to six months if the diagnosis is acute demyelinating optic neuritis?",
+    "choices": [
+      { "letter": "A", "text": "Persistent global RNFL thickening", "is_correct": false },
+      { "letter": "B", "text": "Resolution of RNFL thickening with subsequent thinning, accompanied by macular ganglion cell complex thinning", "is_correct": true },
+      { "letter": "C", "text": "Progressive RNFL thickening with new disc hemorrhages", "is_correct": false },
+      { "letter": "D", "text": "Normalization of RNFL with no change in ganglion cell measurements", "is_correct": false }
+    ],
+    "explanation": "Acute optic neuritis typically produces transient RNFL swelling that resolves over weeks to months, followed by RNFL thinning and macular ganglion cell-inner plexiform layer thinning that reflects retrograde axonal degeneration; ganglion cell layer thinning is often detectable earlier and more reliably than RNFL thinning because it is not initially obscured by edema. Persistent thickening (A) suggests an alternative such as ongoing inflammation or compressive optic neuropathy. This sequence is the basis for using OCT to monitor optic neuritis recovery and demyelinating disease.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
     "difficulty": "advanced",
     "image_suggestion": null
+  },
+  {
+    "question_number": 17,
+    "vignette": "A 62-year-old woman has been taking hydroxychloroquine 400 mg daily for systemic lupus erythematosus for 8 years. She is asymptomatic with vision of 20/20 bilaterally. Spectral-domain macular OCT shows symmetric parafoveal disruption of the ellipsoid zone with relative foveal sparing in both eyes; the RPE is intact.",
+    "question_text": "Which OCT finding is most characteristic of established hydroxychloroquine retinal toxicity?",
+    "choices": [
+      { "letter": "A", "text": "Subfoveal ellipsoid zone disruption with foveal involvement", "is_correct": false },
+      { "letter": "B", "text": "Parafoveal ellipsoid zone loss with relative foveal sparing", "is_correct": true },
+      { "letter": "C", "text": "Diffuse RPE atrophy across the macula", "is_correct": false },
+      { "letter": "D", "text": "Outer nuclear layer thickening with subretinal fluid", "is_correct": false }
+    ],
+    "explanation": "In non-Asian patients, hydroxychloroquine toxicity classically produces a parafoveal ring of photoreceptor (ellipsoid zone) loss with foveal sparing — the so-called 'flying saucer sign' on OCT — corresponding to the bull's-eye maculopathy seen on fundus imaging in advanced disease. Asian patients more often show a pericentral pattern outside the typical 5-degree ring, which is why the AAO 2016 screening guidelines recommend 24-2 fields plus consideration of 10-2 in this group, alongside SD-OCT and FAF. Subfoveal involvement (A) is a late finding once toxicity has progressed.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "advanced",
+    "image_suggestion": "Macular B-scan demonstrating bilateral symmetric parafoveal ellipsoid zone loss with intact subfoveal ellipsoid zone"
+  },
+  {
+    "question_number": 18,
+    "vignette": "A 38-year-old man reports decreased night vision and progressive peripheral visual field constriction since adolescence. Family history is notable for a maternal uncle with similar symptoms. Macular OCT shows preservation of the central ellipsoid zone with abrupt loss of the ellipsoid and external limiting membrane lines outside a small parafoveal island. Outer nuclear layer thinning is marked outside this island, and the RPE is intact centrally.",
+    "question_text": "Which diagnosis is most consistent with these OCT findings?",
+    "choices": [
+      { "letter": "A", "text": "Retinitis pigmentosa", "is_correct": true },
+      { "letter": "B", "text": "Stargardt disease", "is_correct": false },
+      { "letter": "C", "text": "Cone dystrophy", "is_correct": false },
+      { "letter": "D", "text": "Choroideremia", "is_correct": false }
+    ],
+    "explanation": "Retinitis pigmentosa characteristically produces a central island of preserved ellipsoid zone and ELM with abrupt transition to outer retinal atrophy outside that island, mirroring the clinical pattern of preserved central vision with peripheral loss; the OCT pattern combined with nyctalopia and constricted fields supports the diagnosis. Stargardt disease (B) typically shows central rather than peripheral outer retinal loss with foveal atrophy and a 'beaten bronze' appearance. Choroideremia would show prominent RPE and choroidal atrophy in addition to outer retinal loss.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "advanced",
+    "image_suggestion": "Macular B-scan showing a small central island of preserved ellipsoid zone with abrupt transition to outer retinal atrophy"
+  },
+  {
+    "question_number": 19,
+    "vignette": "A 55-year-old man with no ocular history is found on routine exam to have an asymmetric cup-to-disc ratio (0.7 right, 0.4 left) with intraocular pressures of 19 and 18 mmHg. Visual fields are full. Peripapillary RNFL OCT of the right eye shows focal thinning in the inferotemporal sector below the red normative range; the corresponding macular ganglion cell-inner plexiform layer map shows a wedge of thinning in the superior parafoveal region.",
+    "question_text": "Which interpretation of these OCT findings is most appropriate?",
+    "choices": [
+      { "letter": "A", "text": "The findings are likely artifactual since the visual field is full", "is_correct": false },
+      { "letter": "B", "text": "The structural and functional results disagree, so the OCT should be disregarded", "is_correct": false },
+      { "letter": "C", "text": "Structural damage on OCT can precede detectable visual field loss and supports a diagnosis of preperimetric glaucoma", "is_correct": true },
+      { "letter": "D", "text": "The macular GCIPL findings cannot be glaucomatous because the corresponding field is normal", "is_correct": false }
+    ],
+    "explanation": "RNFL and macular ganglion cell layer thinning on OCT can precede reproducible 24-2 visual field defects by years, and concordant structural findings — inferotemporal RNFL thinning matching superior parafoveal GCIPL thinning, anatomically consistent — support preperimetric glaucoma rather than artifact. Disregarding OCT when fields are normal (B) misses the rationale for structural imaging in early disease. Confirmatory testing (10-2 fields, repeat OCT, IOP and disc evaluation over time) is appropriate next.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "advanced",
+    "image_suggestion": "Combined RNFL and GCIPL printout showing inferotemporal peripapillary RNFL thinning with corresponding superior parafoveal ganglion cell thinning"
+  },
+  {
+    "question_number": 20,
+    "vignette": "A 42-year-old man presents with a four-day history of a paracentral scotoma in the right eye following a viral illness. Vision is 20/25. Fundus exam is unremarkable. Macular OCT of the right eye shows a band of hyperreflectivity at the level of the inner nuclear layer in the parafoveal region, with no inner retinal thickening and no outer retinal involvement.",
+    "question_text": "Which diagnosis best fits these OCT findings?",
+    "choices": [
+      { "letter": "A", "text": "Acute macular neuroretinopathy", "is_correct": false },
+      { "letter": "B", "text": "Paracentral acute middle maculopathy", "is_correct": true },
+      { "letter": "C", "text": "Branch retinal artery occlusion", "is_correct": false },
+      { "letter": "D", "text": "Acute zonal occult outer retinopathy", "is_correct": false }
+    ],
+    "explanation": "Paracentral acute middle maculopathy (PAMM) is identified on OCT by a hyperreflective band at the inner nuclear layer, reflecting ischemia of the intermediate and deep retinal capillary plexuses; over weeks the band fades and is replaced by INL thinning. Acute macular neuroretinopathy (A) involves the outer plexiform and outer nuclear layers rather than the INL and produces a different OCT band, though the two entities can coexist. PAMM is now recognized as a marker of microvascular disease and warrants systemic workup in some patients.",
+    "category": "Diagnostic Imaging",
+    "audience": "all",
+    "difficulty": "advanced",
+    "image_suggestion": "Macular B-scan showing a hyperreflective parafoveal band localized to the inner nuclear layer"
   }
 ]

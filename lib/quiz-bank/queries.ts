@@ -839,3 +839,188 @@ export async function getFlaggedCount(): Promise<number> {
   if (error) return 0;
   return count ?? 0;
 }
+
+/**
+ * Last N questions flagged by the current user, with minimal data for previews.
+ */
+export type RecentFlaggedItem = {
+  questionId: string;
+  questionText: string;
+  vignettePreview: string | null;
+  category: { id: string; name: string } | null;
+  flaggedAt: string;
+};
+
+export async function getRecentFlaggedQuestions(limit: number = 3): Promise<RecentFlaggedItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("flagged_questions")
+    .select(
+      `
+      flagged_at,
+      question:quiz_questions(
+        id,
+        question_text,
+        vignette,
+        category:blog_categories(id, name)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .order("flagged_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  const out: RecentFlaggedItem[] = [];
+
+  for (const row of data as Array<{ flagged_at: string; question: unknown }>) {
+    const qRaw = row.question;
+    const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    if (!q || typeof q !== "object") continue;
+
+    const qr = q as Record<string, unknown>;
+    const cat = single(qr.category as { id: string; name: string } | { id: string; name: string }[] | null);
+    const vignette = qr.vignette == null || qr.vignette === "" ? null : String(qr.vignette);
+    let vignettePreview: string | null = null;
+    if (vignette) {
+      vignettePreview = vignette.length > 100 ? `${vignette.slice(0, 100)}...` : vignette;
+    }
+
+    out.push({
+      questionId: String(qr.id),
+      questionText: String(qr.question_text),
+      vignettePreview,
+      category: cat,
+      flaggedAt: row.flagged_at,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Last N question responses by the current user, restricted to practice mode (quiz_attempt_id is null).
+ */
+export type RecentPracticeItem = {
+  questionId: string;
+  questionText: string;
+  category: { id: string; name: string } | null;
+  isCorrect: boolean;
+  answeredAt: string;
+};
+
+export async function getRecentPracticeActivity(limit: number = 3): Promise<RecentPracticeItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("question_responses")
+    .select(
+      `
+      is_correct,
+      answered_at,
+      question:quiz_questions(
+        id,
+        question_text,
+        category:blog_categories(id, name)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .is("quiz_attempt_id", null)
+    .order("answered_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  const out: RecentPracticeItem[] = [];
+
+  for (const row of data as Array<{
+    is_correct: boolean;
+    answered_at: string;
+    question: unknown;
+  }>) {
+    const qRaw = row.question;
+    const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    if (!q || typeof q !== "object") continue;
+
+    const qr = q as Record<string, unknown>;
+    const cat = single(qr.category as { id: string; name: string } | { id: string; name: string }[] | null);
+
+    out.push({
+      questionId: String(qr.id),
+      questionText: String(qr.question_text),
+      category: cat,
+      isCorrect: Boolean(row.is_correct),
+      answeredAt: row.answered_at,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Most recent submitted quiz attempt for the user.
+ */
+export type LastQuizAttemptSummary = {
+  attemptId: string;
+  quizId: string;
+  quizSlug: string | null;
+  quizTitle: string;
+  scoreCorrect: number;
+  scoreTotal: number;
+  submittedAt: string;
+};
+
+export async function getLastQuizAttempt(): Promise<LastQuizAttemptSummary | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select(
+      `
+      id,
+      score_correct,
+      score_total,
+      submitted_at,
+      quiz:quizzes(id, slug, title)
+    `,
+    )
+    .eq("user_id", user.id)
+    .eq("status", "submitted")
+    .order("submitted_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const row = data as Record<string, unknown>;
+  const qRaw = row.quiz;
+  const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+  if (!q || typeof q !== "object") return null;
+
+  const quiz = q as Record<string, unknown>;
+
+  return {
+    attemptId: String(row.id),
+    quizId: String(quiz.id),
+    quizSlug: quiz.slug == null ? null : String(quiz.slug),
+    quizTitle: String(quiz.title),
+    scoreCorrect: Number(row.score_correct ?? 0),
+    scoreTotal: Number(row.score_total ?? 0),
+    submittedAt: String(row.submitted_at),
+  };
+}
