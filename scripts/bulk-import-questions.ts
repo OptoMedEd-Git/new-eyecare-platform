@@ -42,6 +42,8 @@ if (!filePath) {
   process.exit(1);
 }
 
+const jsonInputPath: string = filePath;
+
 type InputChoice = {
   letter?: string;
   text: string;
@@ -123,7 +125,7 @@ async function buildCategoryMap(): Promise<Map<string, string>> {
 }
 
 async function main() {
-  const fullPath = resolve(process.cwd(), filePath);
+  const fullPath = resolve(process.cwd(), jsonInputPath);
   console.log(`Reading from: ${fullPath}`);
 
   let raw: string;

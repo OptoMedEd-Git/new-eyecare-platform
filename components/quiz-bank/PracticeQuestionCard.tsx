@@ -3,6 +3,8 @@
 import { submitQuestionResponse } from "@/app/(app)/quiz-bank/actions";
 import type { PracticeQuestionResult } from "@/lib/quiz-bank/types";
 import { ArrowRight, Check, History, X } from "lucide-react";
+
+import { FlagButton } from "./FlagButton";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 
@@ -13,7 +15,7 @@ type Props = {
 };
 
 export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
-  const { question, previouslyAnswered, previousResult } = result;
+  const { question, previouslyAnswered, previousResult, isFlagged } = result;
 
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
   const [submission, setSubmission] = useState<{
@@ -66,12 +68,15 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
           ) : null}
         </div>
 
-        {previouslyAnswered ? (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-bg-secondary-soft px-2 py-0.5 text-xs font-medium text-text-muted">
-            <History className="size-3" aria-hidden />
-            Previously {previousResult?.wasCorrect ? "correct" : "incorrect"}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {previouslyAnswered ? (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-bg-secondary-soft px-2 py-0.5 text-xs font-medium text-text-muted">
+              <History className="size-3" aria-hidden />
+              Previously {previousResult?.wasCorrect ? "correct" : "incorrect"}
+            </span>
+          ) : null}
+          <FlagButton questionId={question.id} initialFlagged={isFlagged} variant="icon" />
+        </div>
       </header>
 
       <div className="space-y-5 p-5">

@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { QuizTakingInterface } from "@/components/quiz-bank/QuizTakingInterface";
 import { createClient } from "@/lib/supabase/server";
 import {
+  getFlaggedQuestionIds,
   getPublishedQuizBySlug,
   getQuizAttemptWithResponses,
   getUserActiveAttemptForQuiz,
@@ -25,7 +26,10 @@ export default async function QuizTakePage({ params }: { params: Promise<{ slug:
     redirect(`/quiz-bank/quizzes/${slug}`);
   }
 
-  const attemptData = await getQuizAttemptWithResponses(activeAttempt.id);
+  const [attemptData, flaggedIds] = await Promise.all([
+    getQuizAttemptWithResponses(activeAttempt.id),
+    getFlaggedQuestionIds(),
+  ]);
   if (!attemptData) {
     redirect(`/quiz-bank/quizzes/${slug}`);
   }
@@ -37,6 +41,7 @@ export default async function QuizTakePage({ params }: { params: Promise<{ slug:
         quizSlug={slug}
         attempt={attemptData.attempt}
         initialResponses={attemptData.responses}
+        initialFlaggedIds={Array.from(flaggedIds)}
       />
     </div>
   );

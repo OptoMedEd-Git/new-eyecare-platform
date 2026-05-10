@@ -17,9 +17,16 @@ type Props = {
   quizSlug: string;
   attempt: QuizAttempt;
   initialResponses: { questionId: string; choiceId: string }[];
+  initialFlaggedIds: string[];
 };
 
-export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses }: Props) {
+export function QuizTakingInterface({
+  quiz,
+  quizSlug,
+  attempt,
+  initialResponses,
+  initialFlaggedIds,
+}: Props) {
   const router = useRouter();
 
   const [answers, setAnswers] = useState<Map<string, string>>(() => {
@@ -27,6 +34,8 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
     for (const r of initialResponses) m.set(r.questionId, r.choiceId);
     return m;
   });
+
+  const [flaggedIds, setFlaggedIds] = useState<Set<string>>(() => new Set(initialFlaggedIds));
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
@@ -73,6 +82,15 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
 
   function handleNext() {
     if (currentIndex < totalQuestions - 1) setCurrentIndex(currentIndex + 1);
+  }
+
+  function handleFlagToggle(questionId: string, nowFlagged: boolean) {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (nowFlagged) next.add(questionId);
+      else next.delete(questionId);
+      return next;
+    });
   }
 
   function handleSubmitClick() {
@@ -157,6 +175,8 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
           selectedChoiceId={answers.get(currentQuestion.id) ?? null}
           onSelectChoice={handleSelectChoice}
           locked={timedOut}
+          initialFlagged={flaggedIds.has(currentQuestion.id)}
+          onFlagToggle={(nowFlagged) => handleFlagToggle(currentQuestion.id, nowFlagged)}
         />
       </div>
 

@@ -18,6 +18,12 @@ import type {
   QuizWithQuestions,
 } from "./types";
 
+export type FlaggedQuestionEntry = {
+  question: QuizQuestion;
+  flaggedAt: string;
+  note: string | null;
+};
+
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
@@ -357,6 +363,44 @@ export async function getLatestResponseForQuestion(questionId: string): Promise<
   return { wasCorrect: Boolean(data.is_correct) };
 }
 
+/**
+ * Get IDs of all questions the current user has flagged.
+ * Returns a Set for O(1) membership checks.
+ */
+export async function getFlaggedQuestionIds(): Promise<Set<string>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Set();
+
+  const { data, error } = await supabase.from("flagged_questions").select("question_id").eq("user_id", user.id);
+
+  if (error || !data) return new Set();
+  return new Set(data.map((r) => r.question_id as string));
+}
+
+/**
+ * Check if a specific question is flagged by the current user.
+ */
+export async function isQuestionFlagged(questionId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data, error } = await supabase
+    .from("flagged_questions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("question_id", questionId)
+    .maybeSingle();
+
+  if (error) return false;
+  return !!data;
+}
+
 export async function getRandomPracticeQuestion(filters: PracticeFilters): Promise<PracticeQuestionResult | null> {
   const supabase = await createClient();
   const {
@@ -404,10 +448,13 @@ export async function getRandomPracticeQuestion(filters: PracticeFilters): Promi
   const previouslyAnswered = answeredIds.has(String(picked.id));
   const previousResult = previouslyAnswered ? await getLatestResponseForQuestion(String(picked.id)) : null;
 
+  const isFlagged = user ? await isQuestionFlagged(String(picked.id)) : false;
+
   return {
     question: rowToQuizQuestion(picked, choices as Record<string, unknown>[]),
     previouslyAnswered,
     previousResult: previousResult ? { wasCorrect: previousResult.wasCorrect } : undefined,
+    isFlagged,
   };
 }
 
@@ -718,4 +765,77 @@ export async function getQuizBankDashboardData(): Promise<QuizBankDashboardData>
     categoryAccuracy: aggregateCategoryAccuracy(rows),
     accuracyOverTime: aggregateAccuracyOverTime(rows),
   };
+}
+
+/**
+ * Get all flagged questions for the current user with full question data.
+ * Sorted newest-flagged first.
+ */
+export async function getFlaggedQuestionsForUser(): Promise<FlaggedQuestionEntry[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("flagged_questions")
+    .select(
+      `
+      flagged_at,
+      note,
+      question:quiz_questions(
+        *,
+        category:blog_categories(id, name),
+        choices:quiz_question_choices(id, position, text, is_correct)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .order("flagged_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const out: FlaggedQuestionEntry[] = [];
+
+  for (const row of data as Array<{
+    flagged_at: string;
+    note: string | null;
+    question: Record<string, unknown> | Record<string, unknown>[] | null;
+  }>) {
+    const qRaw = row.question;
+    const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    if (!q || typeof q !== "object") continue;
+
+    const choicesEmbed = (q as { choices?: unknown }).choices;
+    const choiceRows = Array.isArray(choicesEmbed) ? (choicesEmbed as Record<string, unknown>[]) : [];
+
+    out.push({
+      question: rowToQuizQuestion(q as Record<string, unknown>, choiceRows),
+      flaggedAt: row.flagged_at,
+      note: row.note,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Count of flagged questions for the current user.
+ * Cheaper than getFlaggedQuestionsForUser when you just need the number.
+ */
+export async function getFlaggedCount(): Promise<number> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from("flagged_questions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (error) return 0;
+  return count ?? 0;
 }

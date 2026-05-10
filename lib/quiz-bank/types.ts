@@ -55,6 +55,7 @@ export type PracticeQuestionResult = {
   question: QuizQuestion;
   previouslyAnswered: boolean;
   previousResult?: { wasCorrect: boolean };
+  isFlagged: boolean;
 };
 
 export type QuizKind = "curated" | "user_generated";

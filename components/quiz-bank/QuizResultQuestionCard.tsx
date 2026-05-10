@@ -2,12 +2,16 @@ import { Check, X, AlertCircle } from "lucide-react";
 
 import type { QuizAttemptResult } from "@/lib/quiz-bank/queries";
 
+import { FlagButton } from "./FlagButton";
+
 type Props = {
   entry: QuizAttemptResult["questions"][number];
   questionNumber: number;
+  initialFlagged: boolean;
+  onFlagToggle?: (nowFlagged: boolean) => void;
 };
 
-export function QuizResultQuestionCard({ entry, questionNumber }: Props) {
+export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, onFlagToggle }: Props) {
   const { question, userChoiceId, isCorrect } = entry;
   const wasAnswered = userChoiceId !== null;
 
@@ -32,7 +36,16 @@ export function QuizResultQuestionCard({ entry, questionNumber }: Props) {
           <span className="text-xs font-medium capitalize text-text-muted">{question.difficulty}</span>
         </div>
 
-        <StatusBadge isCorrect={isCorrect} wasAnswered={wasAnswered} />
+        <div className="flex items-center gap-2">
+          <StatusBadge isCorrect={isCorrect} wasAnswered={wasAnswered} />
+          <FlagButton
+            key={`${question.id}-${initialFlagged}`}
+            questionId={question.id}
+            initialFlagged={initialFlagged}
+            variant="icon"
+            onToggle={onFlagToggle}
+          />
+        </div>
       </header>
 
       <div className="space-y-5 p-5">

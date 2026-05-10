@@ -4,7 +4,11 @@ import { ChevronRight, Home } from "lucide-react";
 
 import { QuizResultsView } from "@/components/quiz-bank/QuizResultsView";
 import { createClient } from "@/lib/supabase/server";
-import { getQuizResultsForAttempt, getUserAttemptsForQuiz } from "@/lib/quiz-bank/queries";
+import {
+  getFlaggedQuestionIds,
+  getQuizResultsForAttempt,
+  getUserAttemptsForQuiz,
+} from "@/lib/quiz-bank/queries";
 
 export default async function QuizResultsPage({
   params,
@@ -19,7 +23,10 @@ export default async function QuizResultsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const result = await getQuizResultsForAttempt(attemptId);
+  const [result, flaggedIds] = await Promise.all([
+    getQuizResultsForAttempt(attemptId),
+    getFlaggedQuestionIds(),
+  ]);
   if (!result) notFound();
 
   if (result.quiz.slug !== slug) notFound();
@@ -60,7 +67,12 @@ export default async function QuizResultsPage({
       </nav>
 
       <div className="mt-6">
-        <QuizResultsView result={result} pastAttempts={pastAttempts} quizSlug={slug} />
+        <QuizResultsView
+          result={result}
+          pastAttempts={pastAttempts}
+          quizSlug={slug}
+          flaggedQuestionIds={Array.from(flaggedIds)}
+        />
       </div>
     </div>
   );

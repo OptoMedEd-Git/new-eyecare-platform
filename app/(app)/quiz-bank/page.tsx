@@ -3,6 +3,7 @@ import {
   ChevronRight,
   ClipboardList,
   CircleHelp,
+  Flag,
   Home,
   Layers,
   Target,
@@ -15,10 +16,14 @@ import { AccuracyOverTimeChart } from "@/components/quiz-bank/AccuracyOverTimeCh
 import { CategoryAccuracyChart } from "@/components/quiz-bank/CategoryAccuracyChart";
 import { FeaturedQuizCard } from "@/components/quiz-bank/FeaturedQuizCard";
 import { ModeCard } from "@/components/quiz-bank/ModeCard";
-import { getFeaturedQuiz, getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
+import { getFeaturedQuiz, getFlaggedCount, getQuizBankDashboardData } from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const [dashboard, featuredQuiz] = await Promise.all([getQuizBankDashboardData(), getFeaturedQuiz()]);
+  const [dashboard, featuredQuiz, flaggedCount] = await Promise.all([
+    getQuizBankDashboardData(),
+    getFeaturedQuiz(),
+    getFlaggedCount(),
+  ]);
   const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
   return (
@@ -68,6 +73,17 @@ export default async function QuizBankPage() {
           sublabel={stats.totalAnswered === 0 ? "Full bank available" : null}
         />
       </section>
+
+      {flaggedCount > 0 ? (
+        <Link
+          href="/quiz-bank/flagged"
+          className="mt-6 inline-flex w-full max-w-xl items-center gap-2 rounded-base border border-border-default bg-bg-warning-softer/30 px-4 py-3 text-sm font-medium text-text-heading transition-colors hover:bg-bg-warning-softer sm:w-auto"
+        >
+          <Flag className="size-4 shrink-0 text-text-fg-warning-strong" fill="currentColor" aria-hidden />
+          {flaggedCount} {flaggedCount === 1 ? "question" : "questions"} flagged for review
+          <ChevronRight className="size-4 shrink-0 text-text-muted" aria-hidden />
+        </Link>
+      ) : null}
 
       <section className="mt-12">
         <h2 className="text-xl font-bold text-text-heading">Your performance</h2>

@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { ListChecks, XCircle } from "lucide-react";
+import { Flag, ListChecks, XCircle } from "lucide-react";
 
 export type ResultsFilter = "all" | "incorrect" | "flagged";
 
@@ -10,14 +10,21 @@ type Props = {
   onChange: (filter: ResultsFilter) => void;
   allCount: number;
   incorrectCount: number;
+  flaggedCount: number;
 };
 
-export function QuizResultsFilterToggle({ value, onChange, allCount, incorrectCount }: Props) {
+export function QuizResultsFilterToggle({
+  value,
+  onChange,
+  allCount,
+  incorrectCount,
+  flaggedCount,
+}: Props) {
   return (
     <div
       role="radiogroup"
       aria-label="Filter questions by status"
-      className="inline-flex items-center rounded-base border border-border-default bg-bg-primary-soft p-1"
+      className="inline-flex flex-wrap items-center rounded-base border border-border-default bg-bg-primary-soft p-1"
     >
       <FilterButton
         active={value === "all"}
@@ -32,6 +39,13 @@ export function QuizResultsFilterToggle({ value, onChange, allCount, incorrectCo
         icon={XCircle}
         label="Incorrect"
         count={incorrectCount}
+      />
+      <FilterButton
+        active={value === "flagged"}
+        onClick={() => onChange("flagged")}
+        icon={Flag}
+        label="Flagged"
+        count={flaggedCount}
       />
     </div>
   );

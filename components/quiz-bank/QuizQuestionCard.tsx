@@ -2,6 +2,8 @@
 
 import type { QuizQuestion } from "@/lib/quiz-bank/types";
 
+import { FlagButton } from "./FlagButton";
+
 type Props = {
   question: QuizQuestion;
   questionNumber: number;
@@ -9,6 +11,8 @@ type Props = {
   selectedChoiceId: string | null;
   onSelectChoice: (choiceId: string) => void;
   locked: boolean;
+  initialFlagged: boolean;
+  onFlagToggle?: (nowFlagged: boolean) => void;
 };
 
 export function QuizQuestionCard({
@@ -18,6 +22,8 @@ export function QuizQuestionCard({
   selectedChoiceId,
   onSelectChoice,
   locked,
+  initialFlagged,
+  onFlagToggle,
 }: Props) {
   return (
     <article className="rounded-base border border-border-default bg-bg-primary-soft">
@@ -26,13 +32,21 @@ export function QuizQuestionCard({
           <p className="text-sm font-medium text-text-muted">
             Question {questionNumber} of {totalQuestions}
           </p>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
-            {question.category ? (
-              <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 font-medium text-text-fg-brand-strong">
-                {question.category.name}
-              </span>
-            ) : null}
-            <span className="capitalize">{question.difficulty}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+              {question.category ? (
+                <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 font-medium text-text-fg-brand-strong">
+                  {question.category.name}
+                </span>
+              ) : null}
+              <span className="capitalize">{question.difficulty}</span>
+            </div>
+            <FlagButton
+              questionId={question.id}
+              initialFlagged={initialFlagged}
+              variant="icon"
+              onToggle={onFlagToggle}
+            />
           </div>
         </div>
       </header>

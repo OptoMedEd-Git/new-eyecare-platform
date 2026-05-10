@@ -15,25 +15,41 @@ type Props = {
   result: QuizAttemptResult;
   pastAttempts: QuizAttempt[];
   quizSlug: string;
+  flaggedQuestionIds: string[];
 };
 
-export function QuizResultsView({ result, pastAttempts, quizSlug }: Props) {
+export function QuizResultsView({ result, pastAttempts, quizSlug, flaggedQuestionIds }: Props) {
   const [filter, setFilter] = useState<ResultsFilter>("all");
+  const [flaggedIds, setFlaggedIds] = useState(() => new Set(flaggedQuestionIds));
 
   const filteredQuestions = useMemo(() => {
     if (filter === "incorrect") {
       return result.questions.filter((q) => q.isCorrect === false || q.isCorrect === null);
     }
     if (filter === "flagged") {
-      return result.questions;
+      return result.questions.filter((q) => flaggedIds.has(q.question.id));
     }
     return result.questions;
-  }, [result.questions, filter]);
+  }, [result.questions, filter, flaggedIds]);
 
   const incorrectCount = useMemo(
     () => result.questions.filter((q) => q.isCorrect !== true).length,
     [result.questions],
   );
+
+  const flaggedCount = useMemo(
+    () => result.questions.filter((q) => flaggedIds.has(q.question.id)).length,
+    [result.questions, flaggedIds],
+  );
+
+  function handleFlagToggle(questionId: string, nowFlagged: boolean) {
+    setFlaggedIds((prev) => {
+      const next = new Set(prev);
+      if (nowFlagged) next.add(questionId);
+      else next.delete(questionId);
+      return next;
+    });
+  }
 
   const questionOrder = useMemo(() => {
     const map = new Map<string, number>();
@@ -61,6 +77,7 @@ export function QuizResultsView({ result, pastAttempts, quizSlug }: Props) {
             onChange={setFilter}
             allCount={result.questions.length}
             incorrectCount={incorrectCount}
+            flaggedCount={flaggedCount}
           />
         </div>
 
@@ -70,9 +87,11 @@ export function QuizResultsView({ result, pastAttempts, quizSlug }: Props) {
               <p className="text-base font-medium text-text-heading">
                 {filter === "incorrect"
                   ? "No incorrect answers — well done."
-                  : "No questions to display."}
+                  : filter === "flagged"
+                    ? "No flagged questions in this quiz."
+                    : "No questions to display."}
               </p>
-              {filter === "incorrect" ? (
+              {filter === "incorrect" || filter === "flagged" ? (
                 <button
                   type="button"
                   onClick={() => setFilter("all")}
@@ -88,6 +107,8 @@ export function QuizResultsView({ result, pastAttempts, quizSlug }: Props) {
                 key={entry.question.id}
                 entry={entry}
                 questionNumber={questionOrder.get(entry.question.id) ?? 0}
+                initialFlagged={flaggedIds.has(entry.question.id)}
+                onFlagToggle={(nowFlagged) => handleFlagToggle(entry.question.id, nowFlagged)}
               />
             ))
           )}
