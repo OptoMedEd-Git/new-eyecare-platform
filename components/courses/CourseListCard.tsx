@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Clock, Layers } from "lucide-react";
 import { CATEGORY_ICON_BY_NAME } from "@/lib/courses/category-icons";
 import type { CourseProgressSummary } from "@/lib/courses/progress";
 import type { Course } from "@/lib/courses/types";
+import { ProgressBar } from "@/components/shared/ProgressBar";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -88,17 +89,20 @@ export function CourseListCard({ course, progress }: Props) {
           </Link>
         </div>
 
-        {progress.hasStarted ? (
+        {progress.completedCount > 0 ? (
           <div className="mt-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-text-fg-brand-strong">{progress.percentComplete}% complete</span>
+            <div className="mb-1 flex items-center justify-between text-xs text-text-muted">
+              <span>
+                {progress.completedCount} of {progress.totalCount} lessons
+              </span>
+              <span className="font-medium text-text-heading">{progress.percentComplete}%</span>
             </div>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
-              <div
-                className="h-full rounded-full bg-bg-brand"
-                style={{ width: `${Math.min(100, Math.max(0, progress.percentComplete))}%` }}
-              />
-            </div>
+            <ProgressBar
+              value={progress.completedCount}
+              max={progress.totalCount}
+              size="sm"
+              ariaLabel={`${progress.completedCount} of ${progress.totalCount} lessons completed`}
+            />
           </div>
         ) : null}
       </div>

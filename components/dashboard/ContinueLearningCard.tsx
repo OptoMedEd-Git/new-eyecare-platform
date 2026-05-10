@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
+import { ProgressBar } from "@/components/shared/ProgressBar";
+
 type Props = {
   course: {
     id: string;
@@ -22,25 +24,22 @@ export function ContinueLearningCard({ course }: Props) {
         </div>
       </div>
 
-      {/* SAMPLE: progress bar (placeholder for real progress tracking). */}
-      <div>
-        <div className="mb-1.5 flex items-center justify-between text-xs">
-          <span className="font-medium text-text-body">
-            {course.completedLessons} of {course.totalLessons} lessons
-          </span>
-          <span className="font-semibold text-text-heading">{course.progress}%</span>
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-bg-secondary-medium">
-          <div
-            className="h-full rounded-full bg-bg-brand transition-all"
-            style={{ width: `${course.progress}%` }}
-            role="progressbar"
-            aria-valuenow={course.progress}
-            aria-valuemin={0}
-            aria-valuemax={100}
+      {course.completedLessons > 0 ? (
+        <div>
+          <div className="mb-1.5 flex items-center justify-between text-xs">
+            <span className="font-medium text-text-body">
+              {course.completedLessons} of {course.totalLessons} lessons
+            </span>
+            <span className="font-semibold text-text-heading">{course.progress}%</span>
+          </div>
+          <ProgressBar
+            value={course.completedLessons}
+            max={course.totalLessons}
+            size="sm"
+            ariaLabel={`${course.completedLessons} of ${course.totalLessons} lessons completed`}
           />
         </div>
-      </div>
+      ) : null}
 
       <Link
         href={`/courses/${course.id}`}

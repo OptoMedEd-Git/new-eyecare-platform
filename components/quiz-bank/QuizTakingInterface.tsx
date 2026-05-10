@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, Send } from "lucide-react";
 
 import { saveAnswerToAttempt, submitQuizAttempt } from "@/app/(app)/quiz-bank/quizzes/actions";
 import type { QuizAttempt, QuizWithQuestions } from "@/lib/quiz-bank/types";
+import { ProgressBar } from "@/components/shared/ProgressBar";
 
 import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizTimer } from "./QuizTimer";
@@ -100,7 +101,6 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
   }, []);
 
   const timerMinutes = attempt.timeLimitMinutes ?? quiz.timeLimitMinutes;
-  const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   if (!currentQuestion || totalQuestions === 0) {
     return (
@@ -126,19 +126,13 @@ export function QuizTakingInterface({ quiz, quizSlug, attempt, initialResponses 
           ) : null}
         </div>
 
-        <div
-          className="h-1.5 w-full overflow-hidden rounded-b-base bg-bg-secondary-soft"
-          role="progressbar"
-          aria-valuenow={answeredCount}
-          aria-valuemin={0}
-          aria-valuemax={totalQuestions}
-          aria-label={`${answeredCount} of ${totalQuestions} questions answered`}
-        >
-          <div
-            className="h-full bg-bg-brand transition-all duration-300 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
+        <ProgressBar
+          value={answeredCount}
+          max={totalQuestions}
+          showAtZero
+          flushBottom
+          ariaLabel={`${answeredCount} of ${totalQuestions} questions answered`}
+        />
       </header>
 
       {timedOut ? (

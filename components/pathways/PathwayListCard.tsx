@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock, Layers } from "lucide-react";
 
+import { ProgressBar } from "@/components/shared/ProgressBar";
 import type { SamplePathway } from "@/lib/pathways/sample-data";
 
 const AUDIENCE_LABELS: Record<NonNullable<SamplePathway["audience"]>, string> = {
@@ -26,6 +27,11 @@ function formatDuration(totalMinutes: number): string {
 
 export function PathwayListCard({ pathway }: Props) {
   const modules = pathway.modules_preview ?? [];
+  const curriculum = pathway.curriculum ?? [];
+  const completedModules = curriculum.filter((m) => m.status === "completed").length;
+  const totalModules = curriculum.length;
+  const modulesPercent =
+    totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
 
   return (
     <article className="flex flex-col gap-4 rounded-base border border-border-default bg-bg-primary-soft p-5 transition-shadow hover:shadow-md sm:flex-row">
@@ -93,22 +99,20 @@ export function PathwayListCard({ pathway }: Props) {
           </Link>
         </div>
 
-        {typeof pathway.progress_percent === "number" ? (
+        {completedModules > 0 && totalModules > 0 ? (
           <div className="mt-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-text-fg-brand-strong">
-                {Math.max(0, Math.min(100, Math.round(pathway.progress_percent)))}% complete
+            <div className="mb-1 flex items-center justify-between text-xs text-text-muted">
+              <span>
+                {completedModules} of {totalModules} modules
               </span>
+              <span className="font-medium text-text-heading">{modulesPercent}%</span>
             </div>
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
-              <div
-                className="h-full rounded-full bg-bg-brand"
-                style={{
-                  width: `${Math.max(0, Math.min(100, Math.round(pathway.progress_percent)))}%`,
-                }}
-                aria-hidden
-              />
-            </div>
+            <ProgressBar
+              value={completedModules}
+              max={totalModules}
+              size="sm"
+              ariaLabel={`${completedModules} of ${totalModules} pathway modules completed`}
+            />
           </div>
         ) : null}
       </div>

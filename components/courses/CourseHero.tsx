@@ -5,6 +5,7 @@ import { BookOpen, Clock, Layers, Play } from "lucide-react";
 import { CATEGORY_ICON_BY_NAME } from "@/lib/courses/category-icons";
 import type { CourseProgress } from "@/lib/courses/progress";
 import type { Course } from "@/lib/courses/types";
+import { ProgressBar } from "@/components/shared/ProgressBar";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -67,21 +68,26 @@ export function CourseHero({ course, progress }: Props) {
             </span>
           </div>
 
-          {progress.hasStarted ? (
-            <div className="mt-2">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="font-medium text-text-fg-brand-strong">{progress.percentComplete}% complete</span>
-                {progress.nextLesson ? (
-                  <span className="text-text-muted">Up next: {progress.nextLesson.title}</span>
-                ) : (
-                  <span className="text-text-muted">All lessons complete</span>
-                )}
+          {progress.completedCount > 0 ? (
+            <div className="mt-4 max-w-md">
+              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-sm text-text-body">
+                <span>
+                  {progress.completedCount} of {progress.totalCount} lessons completed
+                </span>
+                <span className="font-medium text-text-heading">{progress.percentComplete}%</span>
               </div>
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-bg-secondary-soft">
-                <div
-                  className="h-full rounded-full bg-bg-brand transition-[width]"
-                  style={{ width: `${Math.min(100, Math.max(0, progress.percentComplete))}%` }}
-                />
+              <ProgressBar
+                value={progress.completedCount}
+                max={progress.totalCount}
+                size="md"
+                ariaLabel={`Course progress: ${progress.percentComplete}% complete`}
+              />
+              <div className="mt-2 text-sm text-text-muted">
+                {progress.nextLesson ? (
+                  <span>Up next: {progress.nextLesson.title}</span>
+                ) : (
+                  <span>All lessons complete</span>
+                )}
               </div>
             </div>
           ) : null}
