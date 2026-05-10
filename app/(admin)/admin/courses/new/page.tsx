@@ -48,6 +48,10 @@ export default async function NewCoursePage() {
         Back to courses
       </Link>
 
+      <p className="mt-6 text-sm text-text-body">
+        Fill in the course details below. After saving, you&apos;ll be able to add and arrange lessons.
+      </p>
+
       <div className="mt-8">
         <CourseForm categories={categories} authorName={authorName} />
       </div>

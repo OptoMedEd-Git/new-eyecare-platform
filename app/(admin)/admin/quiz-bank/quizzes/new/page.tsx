@@ -34,6 +34,10 @@ export default async function NewQuizPage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <p className="text-sm text-text-body">
+        Fill in the quiz details below. After saving, you&apos;ll be able to add questions from the bank.
+      </p>
+
       <QuizForm categories={categories} authorName={authorName} />
     </div>
   );

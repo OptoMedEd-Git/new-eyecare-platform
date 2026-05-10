@@ -17,7 +17,7 @@ import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { slugifyShort } from "@/lib/blog/slugify";
 import type { AdminCourseForEdit, BlogCategoryOption } from "@/lib/courses/admin-queries";
-import { BookOpen, GraduationCap, Loader2, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowRight, BookOpen, GraduationCap, Loader2, RefreshCw, Save, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
@@ -402,8 +402,22 @@ export function CourseForm({ categories, authorName, initialCourse }: CourseForm
             disabled={saving || publishing || deleting}
             className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
           >
-            {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-            {isEdit ? "Save changes" : "Create course"}
+            {saving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                {isEdit ? "Save changes" : "Continue to lessons"}
+              </>
+            ) : isEdit ? (
+              <>
+                <Save className="size-4" aria-hidden />
+                Save changes
+              </>
+            ) : (
+              <>
+                Continue to lessons
+                <ArrowRight className="size-4" aria-hidden />
+              </>
+            )}
           </button>
         </div>
       </div>

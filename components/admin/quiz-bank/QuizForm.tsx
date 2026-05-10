@@ -15,7 +15,7 @@ import { FormInput } from "@/components/forms/FormInput";
 import { FormSelect } from "@/components/forms/FormSelect";
 import { slugifyShort } from "@/lib/blog/slugify";
 import type { AdminQuizRow } from "@/lib/quiz-bank/admin-queries";
-import { Loader2, RefreshCw, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowRight, Loader2, RefreshCw, Save, Send, Trash2, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
@@ -246,8 +246,28 @@ export function QuizForm({ categories, authorName, initialQuiz }: QuizFormProps)
             disabled={saving || publishing || deleting}
             className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
           >
-            {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
-            {isEdit ? (isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft") : "Save draft"}
+            {saving ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                {isEdit
+                  ? isPublished && dirty
+                    ? "Save changes"
+                    : isPublished
+                      ? "Saved"
+                      : "Save draft"
+                  : "Continue to questions"}
+              </>
+            ) : isEdit ? (
+              <>
+                <Save className="size-4" aria-hidden />
+                {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
+              </>
+            ) : (
+              <>
+                Continue to questions
+                <ArrowRight className="size-4" aria-hidden />
+              </>
+            )}
           </button>
           {isEdit && !isPublished ? (
             <button
