@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Home } from "lucide-react";
+import { ArrowLeft, ChevronRight, Home } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 
 import { LessonPageLayout } from "@/components/courses/LessonPageLayout";
@@ -60,17 +60,29 @@ export default async function LessonPage({
         <span className="font-medium text-text-heading">{lesson.title}</span>
       </nav>
 
-      <div className="mt-6">
-        <LessonPageLayout
-          course={course}
-          lesson={lesson}
-          previous={previous}
-          next={next}
-          renderedHtml={renderedHtml}
-          completedLessonIds={completedLessonIds}
-          isCurrentLessonCompleted={isCompleted}
-        />
-      </div>
+      <Link
+        href={`/courses/${course.slug}`}
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong hover:underline"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {course.title}
+      </Link>
+
+      <h1 className="mt-2 text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{lesson.title}</h1>
+
+      {lesson.description ? (
+        <p className="mt-3 text-base leading-relaxed text-text-body">{lesson.description}</p>
+      ) : null}
+
+      <LessonPageLayout
+        course={course}
+        lesson={lesson}
+        previous={previous}
+        next={next}
+        renderedHtml={renderedHtml}
+        completedLessonIds={completedLessonIds}
+        isCurrentLessonCompleted={isCompleted}
+      />
     </div>
   );
 }

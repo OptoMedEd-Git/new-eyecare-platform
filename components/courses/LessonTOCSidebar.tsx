@@ -15,11 +15,7 @@ export function LessonTOCSidebar({ course, currentLessonSlug, completedLessonIds
   return (
     <aside className="hidden w-72 shrink-0 xl:block">
       <div className="sticky top-24 rounded-base border border-border-default bg-bg-primary-soft p-4">
-        <Link href={`/courses/${course.slug}`} className="text-xs font-medium text-text-fg-brand-strong hover:underline">
-          ← {course.title}
-        </Link>
-
-        <h3 className="mt-2 text-sm font-bold text-text-heading">Lessons</h3>
+        <h3 className="text-sm font-bold text-text-heading">Lessons</h3>
 
         <ol className="mt-3 flex flex-col gap-1">
           {course.lessons.map((lesson, index) => {
