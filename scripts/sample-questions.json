@@ -1,0 +1,32 @@
+[
+  {
+    "vignette": "A 62-year-old woman presents with progressively worsening peripheral vision over the past 6 months. IOP is 26 mmHg OD and 24 mmHg OS. Gonioscopy shows open angles to ciliary body band. Visual fields show early superior arcuate defects bilaterally.",
+    "question_text": "Which of the following is the most appropriate first-line topical therapy?",
+    "choices": [
+      { "letter": "A", "text": "Latanoprost 0.005% once nightly", "is_correct": true },
+      { "letter": "B", "text": "Timolol 0.5% twice daily", "is_correct": false },
+      { "letter": "C", "text": "Brimonidine 0.2% three times daily", "is_correct": false },
+      { "letter": "D", "text": "Dorzolamide 2% three times daily", "is_correct": false }
+    ],
+    "explanation": "Prostaglandin analogs (latanoprost, travoprost, bimatoprost) are first-line for primary open-angle glaucoma due to their efficacy (typically 25-33% IOP reduction), once-daily dosing, and favorable systemic safety profile. Timolol is second-line and has systemic contraindications including asthma, COPD, and bradyarrhythmia.",
+    "category": "Glaucoma",
+    "audience": "practicing",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "vignette": null,
+    "question_text": "Which medication class is most often associated with worsening of myasthenia gravis symptoms?",
+    "choices": [
+      { "letter": "A", "text": "Alpha-2 agonists", "is_correct": false },
+      { "letter": "B", "text": "Beta-blockers", "is_correct": true },
+      { "letter": "C", "text": "Prostaglandin analogs", "is_correct": false },
+      { "letter": "D", "text": "Carbonic anhydrase inhibitors", "is_correct": false }
+    ],
+    "explanation": "Topical beta-blockers can be absorbed systemically and worsen myasthenia gravis by blocking neuromuscular junction beta-adrenergic effects. They should be avoided in this population. Prostaglandins, alpha-2 agonists, and CAIs are generally safer alternatives.",
+    "category": "Glaucoma",
+    "audience": "resident",
+    "difficulty": "advanced",
+    "image_suggestion": null
+  }
+]
