@@ -53,3 +53,33 @@ See `scripts/sample-questions.json` for the expected shape. Each object must inc
 
 - **Never** expose `SUPABASE_SERVICE_ROLE_KEY` in client-side code or commit it.
 - Prefer drafts + CMS review over `--publish` for bulk imports unless you fully trust the JSON.
+
+## bulk-import-flashcards.ts
+
+Imports flashcards from a JSON array into the `flashcards` table (no choices). Uses the **service role** key to bypass RLS; intended for local or controlled batch use only.
+
+### Setup
+
+Same env vars as quiz bulk import: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `BULK_IMPORT_AUTHOR_ID` in `.env.local`.
+
+### Usage
+
+```bash
+npx tsx scripts/bulk-import-flashcards.ts scripts/sample-flashcards.json --dry-run
+npx tsx scripts/bulk-import-flashcards.ts scripts/sample-flashcards.json
+npx tsx scripts/bulk-import-flashcards.ts scripts/sample-flashcards.json --publish
+```
+
+Default status is **draft**. Use `--publish` to set `status = published` and `published_at` immediately. `--dry-run` validates JSON and category names against `blog_categories` without inserting.
+
+### Input format
+
+Each object requires:
+
+- `front` — required, max 500 characters
+- `back` — required, max 1000 characters
+- `category` — display **name** matching **`blog_categories.name`** (e.g. `"Glaucoma"`, `"Diagnostics & Imaging"`)
+- `audience` — one of: `student`, `resident`, `practicing`, `all`
+- `difficulty` — one of: `foundational`, `intermediate`, `advanced`
+
+See `scripts/sample-flashcards.json` for examples.

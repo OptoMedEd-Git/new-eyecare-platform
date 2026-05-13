@@ -1,0 +1,23 @@
+[
+  {
+    "front": "Mechanism of acetazolamide in lowering IOP?",
+    "back": "Carbonic anhydrase inhibition in the ciliary body reduces aqueous humor production.",
+    "category": "Glaucoma",
+    "audience": "student",
+    "difficulty": "foundational"
+  },
+  {
+    "front": "Classic triad of acute angle-closure glaucoma?",
+    "back": "Ocular pain, blurred vision with halos, and nausea/vomiting — check mid-dilated pupil and shallow chamber.",
+    "category": "Glaucoma",
+    "audience": "resident",
+    "difficulty": "intermediate"
+  },
+  {
+    "front": "What does a full-field ERG primarily assess?",
+    "back": "Global retinal photoreceptor and inner retinal function; useful for inherited retinal dystrophies and toxic retinopathies.",
+    "category": "Diagnostics & Imaging",
+    "audience": "practicing",
+    "difficulty": "advanced"
+  }
+]

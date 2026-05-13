@@ -1,4 +1,5 @@
 import {
+  BookMarked,
   BookOpen,
   ClipboardList,
   FileCheck,
@@ -50,6 +51,7 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
   { id: "admin-posts", label: "Posts", icon: FileText, href: "/admin/blog" },
   { id: "admin-courses", label: "Courses", icon: GraduationCap, href: "/admin/courses" },
   { id: "admin-quiz-bank", label: "Quiz bank", icon: ClipboardList, href: "/admin/quiz-bank" },
+  { id: "admin-flashcards", label: "Flashcards", icon: BookMarked, href: "/admin/flashcards" },
   { id: "admin-categories", label: "Categories", icon: Tag, href: "/admin/categories" },
   { id: "admin-tags", label: "Tags", icon: Hash, href: "/admin/tags" },
   { id: "admin-users", label: "Users", icon: Users, href: "/admin/users" },
