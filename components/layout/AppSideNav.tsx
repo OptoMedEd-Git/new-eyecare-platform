@@ -1,23 +1,22 @@
 "use client";
 
+import { SidebarItem } from "@/components/layout/SidebarItem";
+import { useSidebar } from "@/components/layout/SidebarProvider";
+import { ViewSwitcherSlot } from "@/components/layout/ViewSwitcherSlot";
+import type { NavUser } from "@/lib/auth/nav-user";
 import { getNavItems } from "@/lib/nav/get-nav-items";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-import { SidebarItem } from "@/components/layout/SidebarItem";
-import { useSidebar } from "@/components/layout/SidebarProvider";
-
 export type AppSideNavProps = {
-  user: {
-    role: "admin" | "contributor" | "member";
-  };
+  user: NavUser;
 };
 
 export function AppSideNav({ user }: AppSideNavProps) {
   const pathname = usePathname();
   const { collapsed, hovered, mobileOpen, setHovered, closeMobile } = useSidebar();
 
-  const { primary, secondary } = getNavItems({ role: user.role, pathname });
+  const { primary, secondary } = getNavItems({ role: user.role, pathname, viewMode: user.viewMode });
 
   useEffect(() => {
     closeMobile();
@@ -51,6 +50,8 @@ export function AppSideNav({ user }: AppSideNavProps) {
         aria-label="Main navigation"
       >
         <div className="flex flex-col gap-6 p-5">
+          {user.role === "admin" ? <ViewSwitcherSlot currentMode={user.viewMode} /> : null}
+
           <nav className="flex w-full flex-col gap-2" aria-label="Primary">
             {primary.map((item) => (
               <SidebarItem

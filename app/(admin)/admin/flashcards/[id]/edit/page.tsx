@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import { FlashcardForm } from "@/components/admin/flashcards/FlashcardForm";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
 import { truncateLabel } from "@/lib/blog/utils";
 import { getAdminFlashcardById } from "@/lib/flashcards/admin-queries";
@@ -44,8 +47,25 @@ export default async function EditFlashcardPage({ params }: { params: Promise<{ 
     "—";
 
   return (
-    <div className="flex flex-col gap-8">
-      <FlashcardForm initialFlashcard={flashcard} categories={categories} authorName={authorName} />
+    <div className="mx-auto w-full max-w-4xl">
+      <Breadcrumb
+        showHomeIcon={false}
+        items={[
+          { label: "Admin" },
+          { label: "Flashcards", href: "/admin/flashcards" },
+          { label: "Edit flashcard" },
+        ]}
+      />
+      <Link
+        href="/admin/flashcards"
+        className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong transition-colors hover:text-text-fg-brand"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        Back to all flashcards
+      </Link>
+      <div className="mt-8">
+        <FlashcardForm initialFlashcard={flashcard} categories={categories} authorName={authorName} />
+      </div>
     </div>
   );
 }

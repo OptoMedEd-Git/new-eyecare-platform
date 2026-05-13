@@ -78,17 +78,27 @@ function AppNavInner({ user }: AppNavProps) {
             <Menu className="size-5" aria-hidden />
           </button>
 
-          <Link href="/" className="flex shrink-0 items-center gap-1 px-1.5 py-0.5 no-underline hover:no-underline">
-            <Image
-              src="/logos/logo.svg"
-              alt=""
-              width={30}
-              height={30}
-              className="size-[30px] shrink-0"
-              unoptimized
-            />
-            <span className="text-2xl font-semibold leading-6 text-[#101828] dark:text-slate-200">OptoMedEd</span>
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/" className="flex shrink-0 items-center gap-1 px-1.5 py-0.5 no-underline hover:no-underline">
+              <Image
+                src="/logos/logo.svg"
+                alt=""
+                width={30}
+                height={30}
+                className="size-[30px] shrink-0"
+                unoptimized
+              />
+              <span className="text-2xl font-semibold leading-6 text-[#101828] dark:text-slate-200">OptoMedEd</span>
+            </Link>
+            {user.showAdminBadge ? (
+              <span
+                className="inline-flex shrink-0 items-center rounded-sm bg-bg-secondary-soft px-2 py-0.5 text-xs font-medium text-text-muted"
+                aria-label="Administrator account"
+              >
+                Admin
+              </span>
+            ) : null}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

@@ -50,6 +50,8 @@ type InputFlashcard = {
   category: string;
   audience: string;
   difficulty: string;
+  image_url?: string | null;
+  image_attribution?: string | null;
 };
 
 const VALID_AUDIENCES = ["student", "resident", "practicing", "all"] as const;
@@ -75,6 +77,23 @@ function validateCard(c: unknown, index: number): string | null {
   if (!VALID_DIFFICULTIES.includes(o.difficulty as (typeof VALID_DIFFICULTIES)[number])) {
     return `Card ${index + 1}: invalid difficulty '${String(o.difficulty)}' (must be ${VALID_DIFFICULTIES.join(", ")})`;
   }
+
+  if (o.image_url !== undefined && o.image_url !== null && typeof o.image_url !== "string") {
+    return `Card ${index + 1}: image_url must be string or null`;
+  }
+  const imageUrlStr = typeof o.image_url === "string" ? o.image_url.trim() : "";
+  if (imageUrlStr && !/^(https?:\/\/|\/)/.test(imageUrlStr)) {
+    return `Card ${index + 1}: image_url must be a valid HTTP(S) URL or relative path`;
+  }
+
+  if (o.image_attribution !== undefined && o.image_attribution !== null && typeof o.image_attribution !== "string") {
+    return `Card ${index + 1}: image_attribution must be string or null`;
+  }
+  const attrStr = typeof o.image_attribution === "string" ? o.image_attribution.trim() : "";
+  if (attrStr.length > 500) {
+    return `Card ${index + 1}: image_attribution exceeds 500 characters`;
+  }
+
   return null;
 }
 
@@ -158,6 +177,9 @@ async function main() {
   for (let i = 0; i < cards.length; i++) {
     const c = cards[i];
     const categoryId = categoryMap.get(c.category.trim())!;
+    const imageUrl = typeof c.image_url === "string" && c.image_url.trim() ? c.image_url.trim() : null;
+    const imageAttribution =
+      typeof c.image_attribution === "string" && c.image_attribution.trim() ? c.image_attribution.trim() : null;
 
     const { error: insErr } = await supabase.from("flashcards").insert({
       front: c.front.trim(),
@@ -168,6 +190,8 @@ async function main() {
       status,
       published_at: publishedAt,
       author_id: AUTHOR_USER_ID,
+      image_url: imageUrl,
+      image_attribution: imageAttribution,
     });
 
     if (insErr) {

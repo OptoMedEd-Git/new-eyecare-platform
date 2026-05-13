@@ -19,6 +19,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { AdminViewMode } from "./view-mode";
+
 export type NavItem = {
   /** Stable ID for keys/active-state matching */
   id: string;
@@ -32,6 +34,11 @@ export type NavItem = {
   children?: NavItem[];
   /** Optional badge (e.g., "Coming soon", or a count) */
   badge?: { label: string; tone?: "default" | "brand" };
+  /**
+   * Which preview modes show this item. Omit to default to all three.
+   * Admin-only: `["admin"]`. Content authoring: `["admin", "contributor"]`.
+   */
+  visibleIn?: AdminViewMode[];
 };
 
 /** Member-facing nav (platform/learning pages) */
@@ -48,13 +55,55 @@ export const MEMBER_NAV_PRIMARY: NavItem[] = [
 
 /** Admin-facing nav (CMS / management pages) */
 export const ADMIN_NAV_PRIMARY: NavItem[] = [
-  { id: "admin-posts", label: "Posts", icon: FileText, href: "/admin/blog" },
-  { id: "admin-courses", label: "Courses", icon: GraduationCap, href: "/admin/courses" },
-  { id: "admin-quiz-bank", label: "Quiz bank", icon: ClipboardList, href: "/admin/quiz-bank" },
-  { id: "admin-flashcards", label: "Flashcards", icon: BookMarked, href: "/admin/flashcards" },
-  { id: "admin-categories", label: "Categories", icon: Tag, href: "/admin/categories" },
-  { id: "admin-tags", label: "Tags", icon: Hash, href: "/admin/tags" },
-  { id: "admin-users", label: "Users", icon: Users, href: "/admin/users" },
+  {
+    id: "admin-posts",
+    label: "Posts",
+    icon: FileText,
+    href: "/admin/blog",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-courses",
+    label: "Courses",
+    icon: GraduationCap,
+    href: "/admin/courses",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-quiz-bank",
+    label: "Quiz bank",
+    icon: ClipboardList,
+    href: "/admin/quiz-bank",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-flashcards",
+    label: "Flashcards",
+    icon: BookMarked,
+    href: "/admin/flashcards",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-categories",
+    label: "Categories",
+    icon: Tag,
+    href: "/admin/categories",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-tags",
+    label: "Tags",
+    icon: Hash,
+    href: "/admin/tags",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-users",
+    label: "Users",
+    icon: Users,
+    href: "/admin/users",
+    visibleIn: ["admin"],
+  },
 ];
 
 /** Shared secondary nav (below divider) — same for all users */

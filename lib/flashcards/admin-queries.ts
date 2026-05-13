@@ -9,6 +9,8 @@ export type AdminFlashcardRow = {
   id: string;
   front: string;
   back: string;
+  image_url: string | null;
+  image_attribution: string | null;
   category_id: string | null;
   category: { id: string; name: string } | null;
   target_audience: string | null;

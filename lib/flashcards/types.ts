@@ -7,6 +7,8 @@ export type Flashcard = {
   id: string;
   front: string;
   back: string;
+  imageUrl: string | null;
+  imageAttribution: string | null;
   category: { id: string; name: string } | null;
   audience: FlashcardAudience | null;
   difficulty: FlashcardDifficulty;

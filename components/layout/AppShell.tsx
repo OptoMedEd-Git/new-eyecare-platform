@@ -34,7 +34,7 @@ export function AppShell({ user, children }: { user: NavUser; children: ReactNod
           <AppNav user={user} />
         </header>
 
-        <AppSideNav user={{ role: user.role }} />
+        <AppSideNav user={user} />
 
         <AppShellMain>{children}</AppShellMain>
       </div>

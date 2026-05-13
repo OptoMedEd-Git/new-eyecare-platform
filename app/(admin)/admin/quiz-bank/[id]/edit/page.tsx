@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { QuestionForm } from "@/components/admin/quiz-bank/QuestionForm";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
 import { truncateLabel } from "@/lib/blog/utils";
 import { getAdminQuestionById } from "@/lib/quiz-bank/admin-queries";
@@ -44,7 +45,15 @@ export default async function EditQuizQuestionPage({ params }: { params: Promise
     "—";
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="mx-auto w-full max-w-5xl">
+      <Breadcrumb
+        showHomeIcon={false}
+        items={[
+          { label: "Admin" },
+          { label: "Quiz bank", href: "/admin/quiz-bank" },
+          { label: "Edit question" },
+        ]}
+      />
       <QuestionForm initialQuestion={question} categories={categories} authorName={authorName} />
     </div>
   );

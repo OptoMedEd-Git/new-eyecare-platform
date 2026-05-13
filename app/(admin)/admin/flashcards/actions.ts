@@ -33,6 +33,15 @@ function parseDifficulty(formData: FormData): (typeof DIFFICULTIES)[number] {
     : "intermediate";
 }
 
+function extractImageFields(formData: FormData) {
+  const imageUrl = String(formData.get("image_url") ?? "").trim();
+  const imageAttribution = String(formData.get("image_attribution") ?? "").trim();
+  return {
+    image_url: imageUrl || null,
+    image_attribution: imageAttribution || null,
+  };
+}
+
 function validateFlashcard(formData: FormData): string | null {
   const front = String(formData.get("front") ?? "").trim();
   const back = String(formData.get("back") ?? "").trim();
@@ -40,6 +49,17 @@ function validateFlashcard(formData: FormData): string | null {
   if (!back) return "Back text is required";
   if (front.length > 500) return "Front text is too long (max 500 characters)";
   if (back.length > 1000) return "Back text is too long (max 1000 characters)";
+
+  const imageUrl = String(formData.get("image_url") ?? "").trim();
+  if (imageUrl && !/^(https?:\/\/|\/)/.test(imageUrl)) {
+    return "Image URL must be a valid HTTP(S) URL or relative path";
+  }
+
+  const imageAttribution = String(formData.get("image_attribution") ?? "").trim();
+  if (imageAttribution.length > 500) {
+    return "Image attribution is too long (max 500 characters)";
+  }
+
   return null;
 }
 
@@ -75,6 +95,7 @@ export async function createFlashcard(formData: FormData): Promise<ActionResult<
       difficulty,
       status: "draft",
       author_id: user.id,
+      ...extractImageFields(formData),
     })
     .select("id")
     .single();
@@ -112,6 +133,7 @@ export async function updateFlashcard(id: string, formData: FormData): Promise<A
       category_id: categoryId,
       target_audience: targetAudience,
       difficulty,
+      ...extractImageFields(formData),
     })
     .eq("id", id)
     .eq("author_id", user.id);

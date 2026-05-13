@@ -82,4 +82,9 @@ Each object requires:
 - `audience` — one of: `student`, `resident`, `practicing`, `all`
 - `difficulty` — one of: `foundational`, `intermediate`, `advanced`
 
-See `scripts/sample-flashcards.json` for examples.
+Optional fields (same semantics as quiz question images in the CMS):
+
+- `image_url` — string or omitted/`null`; must be an `http(s)://` URL or a path starting with `/` when present
+- `image_attribution` — string or omitted/`null`; optional credit line (max 500 characters), shown with the image in review
+
+See `scripts/sample-flashcards.json` for examples (including one card with an image).

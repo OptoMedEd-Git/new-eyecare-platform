@@ -15,7 +15,7 @@ import { Alert } from "@/components/forms/Alert";
 import type { AdminQuestionRow } from "@/lib/quiz-bank/admin-queries";
 import type { QuizDifficulty } from "@/lib/quiz-bank/types";
 import { formatPostDate } from "@/lib/blog/utils";
-import { Loader2, Save, Send, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Send, Trash2, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -163,12 +163,13 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
   return (
     <>
       <div className="mx-auto w-full max-w-5xl">
-        <div className="mb-6">
+        <div className="mt-4 mb-6">
           <Link
             href="/admin/quiz-bank"
-            className="text-sm font-medium text-text-fg-brand-strong hover:text-text-fg-brand hover:underline"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-text-fg-brand-strong transition-colors hover:text-text-fg-brand"
           >
-            ← Back to quiz bank
+            <ArrowLeft className="size-4" aria-hidden />
+            Back to quiz bank
           </Link>
         </div>
 
@@ -199,7 +200,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 type="button"
                 onClick={() => void handleUnpublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Undo2 className="size-4" aria-hidden />
                 Unpublish
@@ -210,7 +211,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 type="button"
                 onClick={() => void handleDelete()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-fg-danger transition-colors hover:bg-bg-danger-softer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-danger-softer px-4 py-2 text-sm font-medium text-text-fg-danger transition-colors hover:bg-bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="size-4" aria-hidden />
                 Delete
@@ -219,8 +220,8 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
             <button
               type="button"
               onClick={() => void performSave()}
-                disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-secondary-soft px-4 py-2 text-sm font-medium text-text-heading transition-colors hover:bg-bg-primary-soft disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
               {isEditing ? (isPublished && dirty ? "Save changes" : "Save draft") : "Save draft"}
@@ -230,7 +231,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 type="button"
                 onClick={() => void handlePublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="size-4" aria-hidden />
                 Publish
@@ -241,7 +242,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 type="button"
                 onClick={() => void handlePublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="size-4" aria-hidden />
                 Publish changes

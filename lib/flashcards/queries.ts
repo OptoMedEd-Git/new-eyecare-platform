@@ -20,6 +20,9 @@ function rowToFlashcard(row: Record<string, unknown>): Flashcard {
     id: String(row.id),
     front: String(row.front),
     back: String(row.back),
+    imageUrl: row.image_url == null || row.image_url === "" ? null : String(row.image_url),
+    imageAttribution:
+      row.image_attribution == null || row.image_attribution === "" ? null : String(row.image_attribution),
     category: cat,
     audience: (row.target_audience as FlashcardAudience | null) ?? null,
     difficulty: row.difficulty as FlashcardDifficulty,

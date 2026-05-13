@@ -1,10 +1,18 @@
 import { ADMIN_NAV_PRIMARY, MEMBER_NAV_PRIMARY, SECONDARY_NAV, type NavItem } from "./nav-config";
+import type { AdminViewMode } from "./view-mode";
 
 export type NavContext = {
   /** User role from profiles table */
   role: "admin" | "contributor" | "member" | null;
-  /** Current pathname — used to decide admin vs. member context for users with admin access */
+  /**
+   * Retained for callers; **not** used for primary nav selection (view mode drives admin vs member).
+   */
   pathname: string;
+  /**
+   * Effective UI preview mode. Admins: from cookie. Contributors: always "contributor".
+   * Members: always "user".
+   */
+  viewMode: AdminViewMode;
 };
 
 export type ResolvedNav = {
@@ -12,37 +20,54 @@ export type ResolvedNav = {
   secondary: NavItem[];
 };
 
-/**
- * Returns the nav items for the current user + page context.
- *
- * Logic per the project's strict role separation policy:
- * - If user is on an /admin/* route AND has admin/contributor role: show ADMIN nav
- * - Otherwise: show MEMBER nav
- *
- * This means an admin viewing /dashboard sees member nav; the same admin viewing
- * /admin/blog sees admin nav. They get the right context for where they are.
- *
- * Members never see admin nav, even if they somehow land on an admin URL (the
- * route-level role gate redirects them, so this is defense-in-depth).
- */
-export function getNavItems({ role, pathname }: NavContext): ResolvedNav {
-  const isAdminContext = pathname.startsWith("/admin");
-  const hasAdminAccess = role === "admin" || role === "contributor";
-
-  if (isAdminContext && hasAdminAccess) {
-    return {
-      primary: filterAdminNavByRole(ADMIN_NAV_PRIMARY, role as "admin" | "contributor"),
-      secondary: SECONDARY_NAV,
-    };
-  }
-  return { primary: MEMBER_NAV_PRIMARY, secondary: SECONDARY_NAV };
+/** Filter nav items (and nested children) by preview mode. */
+export function filterNavItemsByViewMode(items: NavItem[], viewMode: AdminViewMode): NavItem[] {
+  const allModes: AdminViewMode[] = ["admin", "contributor", "user"];
+  return items
+    .filter((item) => {
+      const visibleIn = item.visibleIn ?? allModes;
+      return visibleIn.includes(viewMode);
+    })
+    .map((item) => {
+      if (!item.children?.length) return item;
+      const children = filterNavItemsByViewMode(item.children, viewMode);
+      return children.length ? { ...item, children } : { ...item, children: undefined };
+    });
 }
 
 /**
- * Filter admin nav items by role. Contributors don't see Users management; only admins do.
- * Used inside getNavItems when isAdminContext + hasAdminAccess.
+ * Primary nav is driven by **role + viewMode**, not pathname.
+ *
+ * - Members: member primary + secondary (`user` filter).
+ * - Contributors: admin CMS primary (contributor `visibleIn`) everywhere — not admins, no view switcher.
+ * - Admins + user preview: member nav (admin previewing learner UX).
+ * - Admins + admin or contributor preview: admin CMS primary filtered by `viewMode` (strict replacement, not merged with member).
  */
-export function filterAdminNavByRole(items: NavItem[], role: "admin" | "contributor"): NavItem[] {
-  if (role === "admin") return items;
-  return items.filter((item) => item.id !== "admin-users");
+export function getNavItems({ role, pathname, viewMode }: NavContext): ResolvedNav {
+  void pathname; // Kept on NavContext for callers; primary nav is view-mode-driven, not pathname-driven.
+  if (role === "member" || role === null) {
+    return {
+      primary: filterNavItemsByViewMode(MEMBER_NAV_PRIMARY, "user"),
+      secondary: filterNavItemsByViewMode(SECONDARY_NAV, "user"),
+    };
+  }
+
+  if (role === "contributor") {
+    return {
+      primary: filterNavItemsByViewMode(ADMIN_NAV_PRIMARY, "contributor"),
+      secondary: filterNavItemsByViewMode(SECONDARY_NAV, "contributor"),
+    };
+  }
+
+  if (role === "admin" && viewMode === "user") {
+    return {
+      primary: filterNavItemsByViewMode(MEMBER_NAV_PRIMARY, "user"),
+      secondary: filterNavItemsByViewMode(SECONDARY_NAV, "user"),
+    };
+  }
+
+  return {
+    primary: filterNavItemsByViewMode(ADMIN_NAV_PRIMARY, viewMode),
+    secondary: filterNavItemsByViewMode(SECONDARY_NAV, viewMode),
+  };
 }

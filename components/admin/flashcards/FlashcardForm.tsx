@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Save, Send, Trash2, Undo2 } from "lucide-react";
 
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import {
   createFlashcard,
@@ -29,6 +30,8 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
 
   const [front, setFront] = useState(initialFlashcard?.front ?? "");
   const [back, setBack] = useState(initialFlashcard?.back ?? "");
+  const [imageUrl, setImageUrl] = useState(initialFlashcard?.image_url ?? "");
+  const [imageAttribution, setImageAttribution] = useState(initialFlashcard?.image_attribution ?? "");
   const [categoryId, setCategoryId] = useState(initialFlashcard?.category_id ?? "");
   const [audience, setAudience] = useState(initialFlashcard?.target_audience ?? "");
   const [difficulty, setDifficulty] = useState(initialFlashcard?.difficulty ?? "intermediate");
@@ -46,6 +49,8 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
     fd.set("category_id", categoryId);
     fd.set("target_audience", audience);
     fd.set("difficulty", difficulty);
+    fd.set("image_url", imageUrl);
+    fd.set("image_attribution", imageAttribution);
     return fd;
   }
 
@@ -157,7 +162,7 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
                 type="button"
                 onClick={() => void handleUnpublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Undo2 className="size-4" aria-hidden />
                 Unpublish
@@ -168,7 +173,7 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
                 type="button"
                 onClick={() => void handleDelete()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-fg-danger-strong shadow-xs transition-colors hover:bg-bg-danger-softer disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-danger-softer px-4 py-2 text-sm font-medium text-text-fg-danger transition-colors hover:bg-bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="size-4" aria-hidden />
                 Delete
@@ -178,17 +183,17 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
               type="button"
               onClick={() => void performSave()}
               disabled={isSaving}
-              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-secondary-soft px-4 py-2 text-sm font-medium text-text-heading transition-colors hover:bg-bg-primary-soft disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
-              {isEditing ? (isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft") : "Save draft"}
+              {isEditing ? (isPublished && dirty ? "Save changes" : "Save draft") : "Save draft"}
             </button>
             {isEditing && !isPublished ? (
               <button
                 type="button"
                 onClick={() => void handlePublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="size-4" aria-hidden />
                 Publish
@@ -199,7 +204,7 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
                 type="button"
                 onClick={() => void handlePublish()}
                 disabled={isSaving}
-                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Send className="size-4" aria-hidden />
                 Publish changes
@@ -257,6 +262,45 @@ export function FlashcardForm({ initialFlashcard, categories, authorName }: Prop
               />
               <p className="mt-1 text-xs text-text-muted">{back.length}/1000</p>
             </div>
+
+            <div>
+              <label className="flex items-center gap-1 text-sm font-medium text-text-heading">Image (optional)</label>
+              <p className="mt-1 mb-2 text-xs text-text-muted">
+                Add a clinical diagram, OCT scan, or anatomical reference. Best for cards where the visual is the
+                point.
+              </p>
+              <ImageUpload
+                currentImageUrl={imageUrl || null}
+                currentImagePath={null}
+                disabled={isSaving}
+                onChange={(result) => {
+                  setImageUrl(result.url ?? "");
+                  markDirty();
+                }}
+              />
+            </div>
+
+            {imageUrl ? (
+              <div>
+                <label htmlFor="image_attribution" className="text-sm font-medium text-text-heading">
+                  Image attribution (optional)
+                </label>
+                <p className="mt-1 mb-2 text-xs text-text-muted">
+                  Credit the photographer, journal, or source. Displayed below the image on review.
+                </p>
+                <input
+                  id="image_attribution"
+                  type="text"
+                  value={imageAttribution}
+                  onChange={(e) => {
+                    setImageAttribution(e.target.value);
+                    markDirty();
+                  }}
+                  placeholder="e.g., Adapted from [Source Name], 2024"
+                  className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading shadow-xs focus:border-border-brand focus:outline-none focus:ring-4 focus:ring-ring-brand"
+                />
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-6">
