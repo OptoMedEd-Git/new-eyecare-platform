@@ -1,16 +1,16 @@
 import { notFound, redirect } from "next/navigation";
 
 import { QuizTakingInterface } from "@/components/quiz-bank/QuizTakingInterface";
-import { createClient } from "@/lib/supabase/server";
 import {
   getFlaggedQuestionIds,
-  getPublishedQuizBySlug,
   getQuizAttemptWithResponses,
   getUserActiveAttemptForQuiz,
+  getUserGeneratedQuizById,
 } from "@/lib/quiz-bank/queries";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function QuizTakePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export default async function MyQuizTakePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
 
   const supabase = await createClient();
   const {
@@ -18,12 +18,12 @@ export default async function QuizTakePage({ params }: { params: Promise<{ slug:
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const quiz = await getPublishedQuizBySlug(slug);
+  const quiz = await getUserGeneratedQuizById(id);
   if (!quiz) notFound();
 
   const activeAttempt = await getUserActiveAttemptForQuiz(quiz.id);
   if (!activeAttempt) {
-    redirect(`/quiz-bank/quizzes/${slug}`);
+    redirect(`/quiz-bank/my-quizzes/${id}`);
   }
 
   const [attemptData, flaggedIds] = await Promise.all([
@@ -31,7 +31,7 @@ export default async function QuizTakePage({ params }: { params: Promise<{ slug:
     getFlaggedQuestionIds(),
   ]);
   if (!attemptData) {
-    redirect(`/quiz-bank/quizzes/${slug}`);
+    redirect(`/quiz-bank/my-quizzes/${id}`);
   }
 
   return (

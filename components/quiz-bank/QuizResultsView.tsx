@@ -14,11 +14,10 @@ import { RetakeQuizCard } from "./RetakeQuizCard";
 type Props = {
   result: QuizAttemptResult;
   pastAttempts: QuizAttempt[];
-  quizSlug: string;
   flaggedQuestionIds: string[];
 };
 
-export function QuizResultsView({ result, pastAttempts, quizSlug, flaggedQuestionIds }: Props) {
+export function QuizResultsView({ result, pastAttempts, flaggedQuestionIds }: Props) {
   const [filter, setFilter] = useState<ResultsFilter>("all");
   const [flaggedIds, setFlaggedIds] = useState(() => new Set(flaggedQuestionIds));
 
@@ -63,11 +62,7 @@ export function QuizResultsView({ result, pastAttempts, quizSlug, flaggedQuestio
     <div className="space-y-6">
       <QuizResultsHero result={result} />
 
-      <PastAttemptsSection
-        pastAttempts={pastAttempts}
-        currentAttemptId={result.attempt.id}
-        quizSlug={quizSlug}
-      />
+      <PastAttemptsSection pastAttempts={pastAttempts} currentAttemptId={result.attempt.id} quiz={result.quiz} />
 
       <section>
         <div className="flex flex-wrap items-center justify-between gap-3">

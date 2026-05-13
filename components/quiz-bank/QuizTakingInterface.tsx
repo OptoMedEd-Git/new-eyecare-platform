@@ -14,19 +14,12 @@ import { SubmitConfirmDialog } from "./SubmitConfirmDialog";
 
 type Props = {
   quiz: QuizWithQuestions;
-  quizSlug: string;
   attempt: QuizAttempt;
   initialResponses: { questionId: string; choiceId: string }[];
   initialFlaggedIds: string[];
 };
 
-export function QuizTakingInterface({
-  quiz,
-  quizSlug,
-  attempt,
-  initialResponses,
-  initialFlaggedIds,
-}: Props) {
+export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFlaggedIds }: Props) {
   const router = useRouter();
 
   const [answers, setAnswers] = useState<Map<string, string>>(() => {
@@ -110,7 +103,14 @@ export function QuizTakingInterface({
         setError(result.error);
         return;
       }
-      router.push(`/quiz-bank/quizzes/${quizSlug}/results/${result.data!.attemptId}`);
+      const attemptId = result.data!.attemptId;
+      const resultsPath =
+        quiz.kind === "user_generated"
+          ? `/quiz-bank/my-quizzes/${quiz.id}/results/${attemptId}`
+          : quiz.slug
+            ? `/quiz-bank/quizzes/${quiz.slug}/results/${attemptId}`
+            : "/quiz-bank/quizzes";
+      router.push(resultsPath);
     });
   }
 

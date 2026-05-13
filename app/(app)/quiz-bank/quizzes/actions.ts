@@ -169,6 +169,7 @@ export async function submitQuizAttempt(
   }
 
   revalidatePath("/quiz-bank");
+  revalidatePath("/quiz-bank/my-quizzes");
 
   return {
     success: true,

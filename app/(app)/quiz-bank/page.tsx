@@ -4,7 +4,7 @@ import {
   ClipboardList,
   CircleHelp,
   Home,
-  Layers,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -137,10 +137,12 @@ export default async function QuizBankPage() {
             ctaLabel="Browse quizzes"
           />
           <ModeCard
-            variant="coming-soon"
-            icon={Layers}
+            variant="interactive"
+            href="/quiz-bank/build"
+            icon={Sparkles}
             title="Build your own quiz"
-            description="Assemble a custom set from the bank when this workflow is ready."
+            description="Pick categories, number of questions, and timing to generate a custom quiz."
+            ctaLabel="Build a quiz"
           />
         </div>
       </section>

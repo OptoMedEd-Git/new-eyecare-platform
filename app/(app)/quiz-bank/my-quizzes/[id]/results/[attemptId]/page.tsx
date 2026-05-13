@@ -1,21 +1,21 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
+import { notFound, redirect } from "next/navigation";
 
 import { QuizResultsView } from "@/components/quiz-bank/QuizResultsView";
-import { createClient } from "@/lib/supabase/server";
 import {
   getFlaggedQuestionIds,
   getQuizResultsForAttempt,
   getUserAttemptsForQuiz,
 } from "@/lib/quiz-bank/queries";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function QuizResultsPage({
+export default async function MyQuizResultsPage({
   params,
 }: {
-  params: Promise<{ slug: string; attemptId: string }>;
+  params: Promise<{ id: string; attemptId: string }>;
 }) {
-  const { slug, attemptId } = await params;
+  const { id, attemptId } = await params;
 
   const supabase = await createClient();
   const {
@@ -28,11 +28,9 @@ export default async function QuizResultsPage({
     getFlaggedQuestionIds(),
   ]);
   if (!result) notFound();
-
-  if (result.quiz.slug !== slug) notFound();
-
+  if (result.quiz.id !== id) notFound();
   if (result.attempt.status !== "submitted") {
-    redirect(`/quiz-bank/quizzes/${slug}`);
+    redirect(`/quiz-bank/my-quizzes/${id}`);
   }
 
   const pastAttempts = await getUserAttemptsForQuiz(result.quiz.id);
@@ -52,26 +50,22 @@ export default async function QuizResultsPage({
           Quiz bank
         </Link>
         <ChevronRight className="size-4 text-text-muted" aria-hidden />
-        <Link href="/quiz-bank/quizzes" className="text-text-muted transition-colors hover:text-text-heading">
-          Curated quizzes
+        <Link href="/quiz-bank/my-quizzes" className="text-text-muted transition-colors hover:text-text-heading">
+          My quizzes
         </Link>
         <ChevronRight className="size-4 text-text-muted" aria-hidden />
         <Link
-          href={`/quiz-bank/quizzes/${slug}`}
-          className="text-text-muted transition-colors hover:text-text-heading"
+          href={`/quiz-bank/my-quizzes/${id}`}
+          className="line-clamp-1 max-w-[12rem] text-text-muted transition-colors hover:text-text-heading sm:max-w-md"
         >
           {result.quiz.title}
         </Link>
-        <ChevronRight className="size-4 text-text-muted" aria-hidden />
+        <ChevronRight className="size-4 shrink-0 text-text-muted" aria-hidden />
         <span className="font-medium text-text-heading">Results</span>
       </nav>
 
       <div className="mt-6">
-        <QuizResultsView
-          result={result}
-          pastAttempts={pastAttempts}
-          flaggedQuestionIds={Array.from(flaggedIds)}
-        />
+        <QuizResultsView result={result} pastAttempts={pastAttempts} flaggedQuestionIds={Array.from(flaggedIds)} />
       </div>
     </div>
   );

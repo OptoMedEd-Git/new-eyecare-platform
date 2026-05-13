@@ -4,15 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight, ChevronUp, History } from "lucide-react";
 
-import type { QuizAttempt } from "@/lib/quiz-bank/types";
+import type { Quiz, QuizAttempt } from "@/lib/quiz-bank/types";
 
 type Props = {
   pastAttempts: QuizAttempt[];
   currentAttemptId: string;
-  quizSlug: string;
+  quiz: Quiz;
 };
 
-export function PastAttemptsSection({ pastAttempts, currentAttemptId, quizSlug }: Props) {
+function attemptResultsHref(quiz: Quiz, attemptId: string): string {
+  if (quiz.kind === "user_generated") {
+    return `/quiz-bank/my-quizzes/${quiz.id}/results/${attemptId}`;
+  }
+  if (quiz.slug) {
+    return `/quiz-bank/quizzes/${quiz.slug}/results/${attemptId}`;
+  }
+  return "/quiz-bank/quizzes";
+}
+
+export function PastAttemptsSection({ pastAttempts, currentAttemptId, quiz }: Props) {
   const others = pastAttempts.filter((a) => a.id !== currentAttemptId);
   const [expanded, setExpanded] = useState(false);
 
@@ -47,7 +57,7 @@ export function PastAttemptsSection({ pastAttempts, currentAttemptId, quizSlug }
             return (
               <li key={attempt.id}>
                 <Link
-                  href={`/quiz-bank/quizzes/${quizSlug}/results/${attempt.id}`}
+                  href={attemptResultsHref(quiz, attempt.id)}
                   className="flex items-center justify-between gap-3 px-5 py-3 text-sm transition-colors hover:bg-bg-secondary-soft"
                 >
                   <div>

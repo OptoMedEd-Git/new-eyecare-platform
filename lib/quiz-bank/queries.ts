@@ -1024,3 +1024,239 @@ export async function getLastQuizAttempt(): Promise<LastQuizAttemptSummary | nul
     submittedAt: String(row.submitted_at),
   };
 }
+
+/** Filters for the user-generated quiz builder (category / audience / difficulty / flags). */
+export type QuizBuilderFilters = {
+  categoryIds: string[];
+  audiences: QuestionAudience[];
+  difficulties: QuizDifficulty[];
+  onlyFlagged: boolean;
+  onlyUnanswered: boolean;
+};
+
+/**
+ * Count how many published questions match the given filters (client preview).
+ */
+export async function countMatchingQuestions(filters: QuizBuilderFilters): Promise<number> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  let query = supabase.from("quiz_questions").select("id").eq("status", "published");
+
+  if (filters.categoryIds.length > 0) {
+    query = query.in("category_id", filters.categoryIds);
+  }
+  if (filters.audiences.length > 0) {
+    query = query.in("target_audience", filters.audiences);
+  }
+  if (filters.difficulties.length > 0) {
+    query = query.in("difficulty", filters.difficulties);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) return 0;
+
+  let matching = data.map((r) => String((r as { id: string }).id));
+
+  if (filters.onlyFlagged) {
+    const { data: flagged } = await supabase
+      .from("flagged_questions")
+      .select("question_id")
+      .eq("user_id", user.id);
+    const flaggedSet = new Set((flagged ?? []).map((f) => f.question_id as string));
+    matching = matching.filter((id) => flaggedSet.has(id));
+  }
+
+  if (filters.onlyUnanswered) {
+    const { data: answered } = await supabase
+      .from("question_responses")
+      .select("question_id")
+      .eq("user_id", user.id);
+    const answeredSet = new Set((answered ?? []).map((r) => r.question_id as string));
+    matching = matching.filter((id) => !answeredSet.has(id));
+  }
+
+  return matching.length;
+}
+
+/**
+ * Sample N random question IDs matching filters (for quiz_items inserts).
+ */
+export async function pickMatchingQuestionIds(
+  filters: QuizBuilderFilters,
+  count: number,
+): Promise<string[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  let query = supabase.from("quiz_questions").select("id").eq("status", "published");
+
+  if (filters.categoryIds.length > 0) query = query.in("category_id", filters.categoryIds);
+  if (filters.audiences.length > 0) query = query.in("target_audience", filters.audiences);
+  if (filters.difficulties.length > 0) query = query.in("difficulty", filters.difficulties);
+
+  const { data, error } = await query;
+  if (error || !data) return [];
+
+  let matching = data.map((r) => String((r as { id: string }).id));
+
+  if (filters.onlyFlagged) {
+    const { data: flagged } = await supabase
+      .from("flagged_questions")
+      .select("question_id")
+      .eq("user_id", user.id);
+    const flaggedSet = new Set((flagged ?? []).map((f) => f.question_id as string));
+    matching = matching.filter((id) => flaggedSet.has(id));
+  }
+
+  if (filters.onlyUnanswered) {
+    const { data: answered } = await supabase
+      .from("question_responses")
+      .select("question_id")
+      .eq("user_id", user.id);
+    const answeredSet = new Set((answered ?? []).map((r) => r.question_id as string));
+    matching = matching.filter((id) => !answeredSet.has(id));
+  }
+
+  const shuffled = [...matching];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const a = shuffled[i];
+    const b = shuffled[j];
+    if (a !== undefined && b !== undefined) {
+      shuffled[i] = b;
+      shuffled[j] = a;
+    }
+  }
+
+  return shuffled.slice(0, count);
+}
+
+export type UserQuizListItem = {
+  quiz: QuizListing;
+  latestAttempt: QuizAttempt | null;
+};
+
+export async function getUserGeneratedQuizzes(): Promise<UserQuizListItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("quizzes")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name),
+      items:quiz_items(count)
+    `,
+    )
+    .eq("kind", "user_generated")
+    .eq("author_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const quizIds = data.map((q) => (q as Record<string, unknown>).id as string);
+  if (quizIds.length === 0) return [];
+
+  const { data: attemptRows } = await supabase
+    .from("quiz_attempts")
+    .select("*")
+    .eq("user_id", user.id)
+    .in("quiz_id", quizIds)
+    .order("started_at", { ascending: false });
+
+  const latestByQuiz = new Map<string, Record<string, unknown>>();
+  for (const a of attemptRows ?? []) {
+    const row = a as Record<string, unknown>;
+    const qid = String(row.quiz_id);
+    if (!latestByQuiz.has(qid)) latestByQuiz.set(qid, row);
+  }
+
+  return data.map((raw) => {
+    const row = raw as Record<string, unknown>;
+    const itemsEmbed = row.items as unknown;
+    const countRow = Array.isArray(itemsEmbed) ? (itemsEmbed[0] as { count?: number } | undefined) : undefined;
+    const questionCount = typeof countRow?.count === "number" ? countRow.count : 0;
+
+    const quiz: QuizListing = {
+      ...rowToQuiz(row),
+      questionCount,
+    };
+
+    const aRow = latestByQuiz.get(String(row.id));
+    const latestAttempt: QuizAttempt | null = aRow ? rowToAttempt(aRow) : null;
+
+    return { quiz, latestAttempt };
+  });
+}
+
+export async function getUserGeneratedQuizById(quizId: string): Promise<QuizWithQuestions | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: quizRow, error: qErr } = await supabase
+    .from("quizzes")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name)
+    `,
+    )
+    .eq("id", quizId)
+    .eq("kind", "user_generated")
+    .eq("author_id", user.id)
+    .maybeSingle();
+
+  if (qErr || !quizRow) return null;
+
+  const { data: itemsData, error: iErr } = await supabase
+    .from("quiz_items")
+    .select(
+      `
+      position,
+      question:quiz_questions(
+        *,
+        category:blog_categories(id, name),
+        choices:quiz_question_choices(id, position, text, is_correct)
+      )
+    `,
+    )
+    .eq("quiz_id", quizId)
+    .order("position", { ascending: true });
+
+  if (iErr || !itemsData) return null;
+
+  const questions: QuizQuestion[] = [];
+
+  for (const item of itemsData as Array<Record<string, unknown>>) {
+    const qRaw = item.question;
+    const questionRow = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    if (!questionRow || typeof questionRow !== "object") continue;
+
+    const q = questionRow as Record<string, unknown>;
+    const choicesRaw = q.choices;
+    const choiceRows = (
+      Array.isArray(choicesRaw) ? choicesRaw : choicesRaw ? [choicesRaw] : []
+    ) as Array<Record<string, unknown>>;
+
+    questions.push(rowToQuizQuestion(q, choiceRows));
+  }
+
+  return {
+    ...rowToQuiz(quizRow as Record<string, unknown>),
+    questions,
+  };
+}
