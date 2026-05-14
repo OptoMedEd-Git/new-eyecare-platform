@@ -6,7 +6,7 @@ import { CurriculumStepper } from "@/components/pathways/CurriculumStepper";
 import { PathwayHero } from "@/components/pathways/PathwayHero";
 import { renderContent } from "@/lib/blog/render-content";
 import { getModuleCompletions } from "@/lib/pathways/completion";
-import { getPublicPathwayModules, getPublishedPathwayBySlug } from "@/lib/pathways/queries";
+import { getPublishedPathwayBySlug } from "@/lib/pathways/queries";
 import { pathwayWithModulesToHero, type PublicPathwayModuleForStepper } from "@/lib/pathways/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,7 +30,7 @@ export default async function PathwayDetailPage({ params }: Props) {
     notFound();
   }
 
-  const modulesRaw = await getPublicPathwayModules(pathway.id);
+  const modulesRaw = pathway.phases.flatMap((p) => p.modules);
   const modules: PublicPathwayModuleForStepper[] = modulesRaw.map((m) => ({
     ...m,
     renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,

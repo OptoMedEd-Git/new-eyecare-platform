@@ -7,9 +7,25 @@ export type PathwayStatus = "draft" | "published";
 
 export type PathwayModuleType = "course" | "quiz" | "flashcard_deck" | "blog_post" | "external_resource";
 
+/** One ordered phase within a pathway (V2-A). */
+export type PathwayPhase = {
+  id: string;
+  pathwayId: string;
+  position: number;
+  title: string;
+  description: string | null;
+};
+
+/** Public phase with nested modules (ordered by `position` within the phase). */
+export type PublicPathwayPhase = PathwayPhase & {
+  modules: PublicPathwayModuleRow[];
+};
+
 /** Public pathway module row for curriculum UI (joined + orphan rules in `getPublicPathwayModules`). */
 export type PublicPathwayModuleRow = {
   id: string;
+  /** Owning phase; module positions are unique within this phase. */
+  phase_id: string;
   position: number;
   module_type: PathwayModuleType;
   title: string;
@@ -70,7 +86,10 @@ export type PathwayListing = {
 };
 
 export type PathwayWithModules = PathwayListing & {
+  /** Legacy flat record shape — unused on public detail; prefer `phases` (V2-A). */
   modules: PathwayModuleRecord[];
+  /** Ordered phases, each with ordered modules (V2-A). Empty until loaded from DB. */
+  phases: PublicPathwayPhase[];
 };
 
 /** Props for PathwayHero when driven by DB pathways (no sample curriculum). */

@@ -90,6 +90,7 @@ export async function getAdminPathwayById(id: string, userId: string): Promise<A
 
 export type AdminPathwayModuleRow = {
   id: string;
+  phase_id: string;
   position: number;
   title: string;
   context_markdown: string | null;
@@ -100,12 +101,31 @@ export type AdminPathwayModuleRow = {
   is_orphaned: boolean;
 };
 
+/** Admin phase with nested modules (V2-B will manage phases). */
+export type AdminPathwayPhase = {
+  id: string;
+  pathwayId: string;
+  position: number;
+  title: string;
+  description: string | null;
+  modules: AdminPathwayModuleRow[];
+};
+
 type LinkedEmbed = {
   id: string;
   title: string;
   slug: string;
   category: { name: string } | { name: string }[] | null;
 } | null;
+
+type PhasePositionEmbed = { position: number } | { position: number }[] | null;
+
+function phaseSortKey(raw: Record<string, unknown>): number {
+  const ph = raw.phase as PhasePositionEmbed | undefined;
+  if (!ph) return 0;
+  const el = Array.isArray(ph) ? ph[0] : ph;
+  return el ? Number(el.position) : 0;
+}
 
 type LinkedCategory = { name: string } | { name: string }[] | null;
 
@@ -123,6 +143,7 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
     .select(
       `
       id,
+      phase_id,
       position,
       title,
       context_markdown,
@@ -133,21 +154,29 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
       blog_post_id,
       external_url,
       external_label,
+      phase:pathway_phases!inner(position),
       course:courses(id, title, slug, category:blog_categories(name)),
       quiz:quizzes(id, title, slug, category:blog_categories(name)),
       flashcard_deck:flashcard_decks(id, title, slug, category:blog_categories(name)),
       blog_post:blog_posts(id, title, slug, category:blog_categories!blog_posts_category_id_fkey(name))
     `,
     )
-    .eq("pathway_id", pathwayId)
-    .order("position", { ascending: true });
+    .eq("pathway_id", pathwayId);
 
   if (error) {
     console.error("[pathways admin] modules", error.message);
     return [];
   }
 
-  return (data ?? []).map((raw) => {
+  const rows = [...(data ?? [])] as Record<string, unknown>[];
+
+  rows.sort((a, b) => {
+    const dp = phaseSortKey(a) - phaseSortKey(b);
+    if (dp !== 0) return dp;
+    return Number(a.position) - Number(b.position);
+  });
+
+  return rows.map((raw) => {
     const row = raw as Record<string, unknown> & {
       module_type: string;
       external_url: string | null;
@@ -215,6 +244,7 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
 
     return {
       id: row.id as string,
+      phase_id: String(row.phase_id),
       position: row.position as number,
       title: row.title as string,
       context_markdown: (row.context_markdown as string | null) ?? null,
@@ -225,4 +255,42 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
       is_orphaned,
     };
   });
+}
+
+/** Grouped view for future V2-B; double-fetches modules today. */
+export async function getAdminPathwayPhases(pathwayId: string): Promise<AdminPathwayPhase[]> {
+  const supabase = await createClient();
+
+  const { data: phaseRows, error: pErr } = await supabase
+    .from("pathway_phases")
+    .select("id, pathway_id, position, title, description")
+    .eq("pathway_id", pathwayId)
+    .order("position", { ascending: true });
+
+  if (pErr) {
+    console.error("[pathways admin] phases", pErr.message);
+    return [];
+  }
+
+  const modulesFlat = await getAdminPathwayModules(pathwayId);
+  const byPhase = new Map<string, AdminPathwayModuleRow[]>();
+  for (const p of phaseRows ?? []) {
+    byPhase.set(String(p.id), []);
+  }
+  for (const m of modulesFlat) {
+    const bucket = byPhase.get(m.phase_id);
+    if (bucket) bucket.push(m);
+  }
+  for (const list of byPhase.values()) {
+    list.sort((a, b) => a.position - b.position);
+  }
+
+  return (phaseRows ?? []).map((pr) => ({
+    id: String(pr.id),
+    pathwayId: String(pr.pathway_id),
+    position: Number(pr.position),
+    title: String(pr.title),
+    description: pr.description == null ? null : String(pr.description),
+    modules: byPhase.get(String(pr.id)) ?? [],
+  }));
 }

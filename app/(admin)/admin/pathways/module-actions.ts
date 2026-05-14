@@ -22,6 +22,21 @@ export type AddModuleInput = {
 
 const TEMP_POSITION = 999_999;
 
+async function getFirstPhaseIdForPathway(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  pathwayId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("pathway_phases")
+    .select("id")
+    .eq("pathway_id", pathwayId)
+    .order("position", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data.id as string;
+}
+
 function revalidatePathwayEdit(pathwayId: string) {
   revalidatePath(`/admin/pathways/${pathwayId}/edit`);
 }
@@ -41,6 +56,9 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
 
   if (!pathway) return { success: false, error: "Pathway not found" };
   if (pathway.author_id !== user.id) return { success: false, error: "Not authorized" };
+
+  const phaseId = await getFirstPhaseIdForPathway(supabase, input.pathwayId);
+  if (!phaseId) return { success: false, error: "Pathway has no phases — run migrations or add a phase." };
 
   const title = input.title.trim();
   if (!title) return { success: false, error: "Module title is required" };
@@ -69,7 +87,7 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
   const { data: lastRow } = await supabase
     .from("pathway_modules")
     .select("position")
-    .eq("pathway_id", input.pathwayId)
+    .eq("phase_id", phaseId)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -80,6 +98,7 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
     .from("pathway_modules")
     .insert({
       pathway_id: input.pathwayId,
+      phase_id: phaseId,
       position: nextPosition,
       title,
       context_markdown: input.contextMarkdown?.trim() || null,
@@ -112,7 +131,7 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
 
   const { data: mod, error: modErr } = await supabase
     .from("pathway_modules")
-    .select("id, pathway_id, position")
+    .select("id, pathway_id, position, phase_id")
     .eq("id", moduleId)
     .maybeSingle();
 
@@ -128,6 +147,7 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
 
   const pathwayId = mod.pathway_id;
   const deletedPosition = mod.position;
+  const phaseId = mod.phase_id as string;
 
   const { error: deleteError } = await supabase.from("pathway_modules").delete().eq("id", moduleId);
 
@@ -136,7 +156,7 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
   const { data: toUpdate } = await supabase
     .from("pathway_modules")
     .select("id, position")
-    .eq("pathway_id", pathwayId)
+    .eq("phase_id", phaseId)
     .gt("position", deletedPosition)
     .order("position", { ascending: true });
 
@@ -168,16 +188,32 @@ export async function reorderPathwayModules(
 
   if (fromPosition === toPosition) return { success: true };
 
-  const { data: source, error: sErr } = await supabase
+  const { data: srcRows, error: srcErr } = await supabase
+    .from("pathway_modules")
+    .select("id, phase_id")
+    .eq("pathway_id", pathwayId)
+    .eq("position", fromPosition);
+
+  if (srcErr || !srcRows?.length) return { success: false, error: "Source module not found" };
+  if (srcRows.length > 1) {
+    return { success: false, error: "Ambiguous reorder — multiple modules share this position across phases." };
+  }
+
+  const sourceRow = srcRows[0] as { id: string; phase_id: string };
+  const sourceId = sourceRow.id;
+  const phaseId = sourceRow.phase_id;
+
+  const { data: tgtRow } = await supabase
     .from("pathway_modules")
     .select("id")
     .eq("pathway_id", pathwayId)
-    .eq("position", fromPosition)
+    .eq("phase_id", phaseId)
+    .eq("position", toPosition)
     .maybeSingle();
 
-  if (sErr || !source) return { success: false, error: "Source module not found" };
+  if (!tgtRow) return { success: false, error: "Target module not found" };
 
-  let err = (await supabase.from("pathway_modules").update({ position: TEMP_POSITION }).eq("id", source.id)).error;
+  let err = (await supabase.from("pathway_modules").update({ position: TEMP_POSITION }).eq("id", sourceId)).error;
   if (err) return { success: false, error: "Reorder step 1 failed" };
 
   if (fromPosition < toPosition) {
@@ -185,6 +221,7 @@ export async function reorderPathwayModules(
       .from("pathway_modules")
       .select("id, position")
       .eq("pathway_id", pathwayId)
+      .eq("phase_id", phaseId)
       .gt("position", fromPosition)
       .lte("position", toPosition)
       .order("position", { ascending: true });
@@ -198,6 +235,7 @@ export async function reorderPathwayModules(
       .from("pathway_modules")
       .select("id, position")
       .eq("pathway_id", pathwayId)
+      .eq("phase_id", phaseId)
       .gte("position", toPosition)
       .lt("position", fromPosition)
       .order("position", { ascending: false });
@@ -208,7 +246,7 @@ export async function reorderPathwayModules(
     }
   }
 
-  err = (await supabase.from("pathway_modules").update({ position: toPosition }).eq("id", source.id)).error;
+  err = (await supabase.from("pathway_modules").update({ position: toPosition }).eq("id", sourceId)).error;
   if (err) return { success: false, error: "Reorder step 3 failed" };
 
   revalidatePathwayEdit(pathwayId);
