@@ -46,7 +46,7 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
           <tr className="border-b border-border-default">
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
+              className="min-w-0 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
             >
               Vignette
             </th>
@@ -102,15 +102,17 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
 
             return (
               <tr key={q.id} className={rowClassName}>
-                <td className="px-6 py-4">
+                <td className="min-w-0 px-6 py-4">
                   <Link
                     href={`/admin/quiz-bank/${q.id}/edit`}
-                    className="block text-sm font-medium text-text-heading hover:underline"
+                    className="block truncate text-sm font-medium text-text-heading hover:underline"
                     title={rowPreview(q)}
                   >
-                    {vignetteExcerpt(rowPreview(q))}
+                    {rowPreview(q)}
                   </Link>
-                  <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.questionText}</p>
+                  {q.questionText.trim() ? (
+                    <p className="mt-1 truncate text-xs text-text-muted">{q.questionText}</p>
+                  ) : null}
                 </td>
                 <td className="px-6 py-4 align-top text-sm text-text-body">
                   {q.questionType === "true_false"
