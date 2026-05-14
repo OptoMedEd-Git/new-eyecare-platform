@@ -8,21 +8,12 @@ import Link from "next/link";
 type SectionProps = {
   attempts: PastQuizAttemptSummary[];
   hasMore: boolean;
-  /**
-   * When true, this panel spans the full width on large screens. Set false when a sibling
-   * (e.g. future "Review answered questions") shares the row — then both omit this.
-   */
-  fullWidthOnLarge?: boolean;
 };
 
-export function ReviewPreviousQuizzesSection({ attempts, hasMore, fullWidthOnLarge = true }: SectionProps) {
-  const gridClass = fullWidthOnLarge ? "lg:col-span-2" : "";
-
+export function ReviewPreviousQuizzesSection({ attempts, hasMore }: SectionProps) {
   if (attempts.length === 0) {
     return (
-      <article
-        className={`flex min-w-0 flex-col rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-6 ${gridClass}`}
-      >
+      <article className="flex min-w-0 flex-col rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-6">
         <h2 className="text-xl font-bold text-text-heading">Review previous quizzes</h2>
         <p className="mt-2 text-sm text-text-body">
           You haven&apos;t completed any quizzes yet. When you finish a curated or custom quiz, it will show up here
@@ -48,9 +39,7 @@ export function ReviewPreviousQuizzesSection({ attempts, hasMore, fullWidthOnLar
   }
 
   return (
-    <article
-      className={`flex min-w-0 flex-col rounded-base border border-border-default bg-bg-primary-soft p-6 ${gridClass}`}
-    >
+    <article className="flex min-w-0 flex-col rounded-base border border-border-default bg-bg-primary-soft p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold text-text-heading">Review previous quizzes</h2>

@@ -11,3 +11,11 @@ export const QUIZ_BANK_CHART_COLORS = {
   axis: "#94a3b8",
   surface: "#ffffff",
 } as const;
+
+/** Recharts fills for answer-outcome donut (aligned to `app/globals.css` semantic hex). */
+export const ANSWER_BREAKDOWN_CHART_COLORS = {
+  correct: "#007a55",
+  incorrect: "#e7000b",
+  flagged: "#d08700",
+  notAttempted: "#94a3b8",
+} as const;

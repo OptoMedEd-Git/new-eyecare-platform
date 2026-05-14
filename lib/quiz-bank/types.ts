@@ -134,6 +134,17 @@ export type PastQuizAttemptSummary = {
   submittedAt: string;
 };
 
+/** Mutually exclusive buckets over published bank questions (see getUserQuestionAnswerBreakdown). */
+export type QuizBankAnswerBreakdown = {
+  totalPublished: number;
+  correctCount: number;
+  incorrectCount: number;
+  flaggedCount: number;
+  notAttemptedCount: number;
+  /** correct / (correct + incorrect); null when denominator is zero. */
+  accuracyPercent: number | null;
+};
+
 export type QuizAttempt = {
   id: string;
   userId: string;

@@ -12,6 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { AccuracyOverTimeChart } from "@/components/quiz-bank/AccuracyOverTimeChart";
+import { AnswerBreakdownChart } from "@/components/quiz-bank/AnswerBreakdownChart";
 import { CategoryAccuracyChart } from "@/components/quiz-bank/CategoryAccuracyChart";
 import { ContinueLearningCard } from "@/components/quiz-bank/ContinueLearningCard";
 import { FeaturedQuizCard } from "@/components/quiz-bank/FeaturedQuizCard";
@@ -26,10 +27,11 @@ import {
   getRecentFlaggedQuestions,
   getRecentPastQuizAttemptsForDashboard,
   getRecentPracticeActivity,
+  getUserQuestionAnswerBreakdown,
 } from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const [dashboard, featuredQuiz, flaggedCount, recentFlagged, recentPractice, lastQuizAttempt, pastAttempts] =
+  const [dashboard, featuredQuiz, flaggedCount, recentFlagged, recentPractice, lastQuizAttempt, pastAttempts, answerBreakdown] =
     await Promise.all([
       getQuizBankDashboardData(),
       getFeaturedQuiz(),
@@ -38,6 +40,7 @@ export default async function QuizBankPage() {
       getRecentPracticeActivity(3),
       getLastQuizAttempt(),
       getRecentPastQuizAttemptsForDashboard(),
+      getUserQuestionAnswerBreakdown(),
     ]);
   const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
@@ -109,12 +112,9 @@ export default async function QuizBankPage() {
       </section>
 
       <section className="mt-10">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-          <ReviewPreviousQuizzesSection
-            attempts={pastAttempts.attempts}
-            hasMore={pastAttempts.hasMore}
-            fullWidthOnLarge
-          />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+          <ReviewPreviousQuizzesSection attempts={pastAttempts.attempts} hasMore={pastAttempts.hasMore} />
+          <AnswerBreakdownChart breakdown={answerBreakdown} />
         </div>
       </section>
 

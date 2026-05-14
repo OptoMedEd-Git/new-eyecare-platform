@@ -11,6 +11,7 @@ import type {
   QuizAttempt,
   QuizChoice,
   QuizDifficulty,
+  QuizBankAnswerBreakdown,
   QuizBankCategoryAccuracyRow,
   QuizBankDailyAccuracyRow,
   QuizBankDashboardData,
@@ -801,6 +802,105 @@ export async function getPublishedQuizQuestionCount(): Promise<number> {
     .eq("status", "published");
   if (error) return 0;
   return count ?? 0;
+}
+
+/**
+ * Outcome breakdown over the published question bank for the current user.
+ *
+ * Mutually exclusive partition of published questions:
+ * - Flagged: in `flagged_questions` for this user and the question is still published.
+ * - Correct: not flagged, and the user has at least one `question_responses` row with `is_correct` true
+ *   (practice or quiz; ever-correct wins if they later fix a miss).
+ * - Incorrect: not flagged, user has at least one response, never `is_correct` true.
+ * - Not attempted: published, not flagged, no responses.
+ *
+ * `accuracyPercent` is correct / (correct + incorrect) among questions that have been answered
+ * (excluding flagged-only and not-attempted), null when that denominator is zero.
+ */
+export async function getUserQuestionAnswerBreakdown(): Promise<QuizBankAnswerBreakdown> {
+  const empty = (): QuizBankAnswerBreakdown => ({
+    totalPublished: 0,
+    correctCount: 0,
+    incorrectCount: 0,
+    flaggedCount: 0,
+    notAttemptedCount: 0,
+    accuracyPercent: null,
+  });
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const totalPublished = await getPublishedQuizQuestionCount();
+  if (!user) {
+    return { ...empty(), totalPublished };
+  }
+
+  const [flaggedRes, responsesRes] = await Promise.all([
+    supabase
+      .from("flagged_questions")
+      .select(
+        `
+        question_id,
+        question:quiz_questions(status)
+      `,
+      )
+      .eq("user_id", user.id),
+    supabase
+      .from("question_responses")
+      .select(
+        `
+        question_id,
+        is_correct,
+        question:quiz_questions(status)
+      `,
+      )
+      .eq("user_id", user.id),
+  ]);
+
+  const flaggedPublished = new Set<string>();
+  for (const row of flaggedRes.data ?? []) {
+    const qRaw = (row as { question?: unknown }).question;
+    const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    const status = q && typeof q === "object" && "status" in q ? String((q as { status: string }).status) : "";
+    if (status === "published") {
+      flaggedPublished.add(String((row as { question_id: string }).question_id));
+    }
+  }
+
+  const everCorrectByQuestion = new Map<string, boolean>();
+  for (const row of responsesRes.data ?? []) {
+    const qRaw = (row as { question?: unknown }).question;
+    const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+    const status = q && typeof q === "object" && "status" in q ? String((q as { status: string }).status) : "";
+    if (status !== "published") continue;
+    const qid = String((row as { question_id: string }).question_id);
+    const ok = Boolean((row as { is_correct: boolean }).is_correct);
+    everCorrectByQuestion.set(qid, (everCorrectByQuestion.get(qid) ?? false) || ok);
+  }
+
+  let correctCount = 0;
+  let incorrectCount = 0;
+  for (const [qid, everCorrect] of everCorrectByQuestion) {
+    if (flaggedPublished.has(qid)) continue;
+    if (everCorrect) correctCount += 1;
+    else incorrectCount += 1;
+  }
+
+  const flaggedCount = flaggedPublished.size;
+  const answeredUnflagged = correctCount + incorrectCount;
+  const notAttemptedCount = Math.max(0, totalPublished - flaggedCount - answeredUnflagged);
+  const denom = correctCount + incorrectCount;
+  const accuracyPercent = denom > 0 ? Math.round((correctCount / denom) * 100) : null;
+
+  return {
+    totalPublished,
+    correctCount,
+    incorrectCount,
+    flaggedCount,
+    notAttemptedCount,
+    accuracyPercent,
+  };
 }
 
 type PracticeResponseRow = {
