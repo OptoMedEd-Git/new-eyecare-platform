@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { Clock, Layers as LayersIcon, Play, Sparkles } from "lucide-react";
 
 import type { PathwayHeroModel } from "@/lib/pathways/types";
+import { ProgressBar } from "@/components/shared/ProgressBar";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -13,12 +14,16 @@ const AUDIENCE_LABELS = {
 
 type Props = {
   pathway: PathwayHeroModel;
+  /** Non-orphaned module counts only; omit or pass totalCount 0 to hide aggregate progress. */
+  completedCount?: number;
+  totalCount?: number;
 };
 
-export function PathwayHero({ pathway }: Props) {
+export function PathwayHero({ pathway, completedCount = 0, totalCount = 0 }: Props) {
   const audienceLabel = pathway.audience ? AUDIENCE_LABELS[pathway.audience] : "—";
 
-  const ctaLabel = pathway.progress_percent !== undefined ? "Continue learning" : "Start pathway";
+  const hasProgressStarted = pathway.progress_percent !== undefined || completedCount > 0;
+  const ctaLabel = hasProgressStarted ? "Continue learning" : "Start pathway";
 
   const iconLg = createElement(Sparkles, {
     className: "size-24 text-text-fg-brand-strong/40",
@@ -54,6 +59,21 @@ export function PathwayHero({ pathway }: Props) {
               {pathway.durationLabel}
             </span>
           </div>
+
+          {totalCount > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium text-text-body">
+                {completedCount} of {totalCount} modules complete
+              </p>
+              <ProgressBar
+                value={completedCount}
+                max={totalCount}
+                showAtZero
+                size="sm"
+                ariaLabel={`${completedCount} of ${totalCount} pathway modules complete`}
+              />
+            </div>
+          ) : null}
 
           {pathway.progress_percent !== undefined ? (
             <div className="mt-2">

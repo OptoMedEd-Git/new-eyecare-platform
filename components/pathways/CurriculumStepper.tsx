@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ClipboardList, ExternalLink, FileText, GraduationCap, Layers } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, ClipboardList, ExternalLink, FileText, GraduationCap, Layers } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import type { ModuleCompletionState } from "@/lib/pathways/completion";
+import { usesManualPathwayCompletion } from "@/lib/pathways/manual-completion";
 import type { PathwayModuleType, PublicPathwayModuleForStepper } from "@/lib/pathways/types";
+
+import { ModuleCompleteToggle } from "./ModuleCompleteToggle";
 
 const BLOG_BASE = "/blog";
 
@@ -32,6 +36,7 @@ const CONTEXT_PROSE_CLASS =
 type Props = {
   modules: PublicPathwayModuleForStepper[];
   pathwaySlug: string;
+  completions: ModuleCompletionState[];
 };
 
 function buildInternalHref(type: PathwayModuleType, slug: string, pathwaySlug: string): string {
@@ -69,6 +74,7 @@ function ModuleHeader({
   TypeIcon,
   navigable,
   href,
+  isComplete,
 }: {
   mod: PublicPathwayModuleForStepper;
   title: string;
@@ -76,6 +82,7 @@ function ModuleHeader({
   TypeIcon: LucideIcon;
   navigable: boolean;
   href: string | null;
+  isComplete: boolean;
 }) {
   const chipRow = (
     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -85,6 +92,11 @@ function ModuleHeader({
       {mod.is_orphaned ? (
         <span className="inline-flex items-center rounded-sm bg-bg-secondary-medium px-2 py-0.5 text-xs font-medium text-text-muted">
           Content unavailable
+        </span>
+      ) : null}
+      {!mod.is_orphaned && isComplete ? (
+        <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
+          Completed
         </span>
       ) : null}
     </div>
@@ -98,7 +110,7 @@ function ModuleHeader({
     </>
   );
 
-  const headerPad = "block w-full p-4 text-left transition-colors";
+  const headerPad = "block min-w-0 flex-1 p-4 text-left transition-colors";
 
   if (!navigable || !href) {
     return <div className={headerPad}>{titleBlock}</div>;
@@ -119,8 +131,10 @@ function ModuleHeader({
   );
 }
 
-export function CurriculumStepper({ modules, pathwaySlug }: Props) {
+export function CurriculumStepper({ modules, pathwaySlug, completions }: Props) {
   const [openContextId, setOpenContextId] = useState<string | null>(null);
+
+  const completionById = useMemo(() => new Map(completions.map((c) => [c.module_id, c])), [completions]);
 
   if (modules.length === 0) {
     return (
@@ -166,37 +180,65 @@ export function CurriculumStepper({ modules, pathwaySlug }: Props) {
             }
           }
 
+          const rowComplete = !mod.is_orphaned && completionById.get(mod.id)?.is_complete === true;
+          const showManualToggle = !mod.is_orphaned && usesManualPathwayCompletion(mod.module_type);
+
           const shellClass = [
             "overflow-hidden rounded-base border text-left transition-all",
             mod.is_orphaned || !navigable
               ? "border-border-default bg-bg-secondary-soft text-text-muted"
-              : "border-border-default bg-bg-primary-soft hover:border-border-brand-subtle hover:shadow-sm",
+              : rowComplete
+                ? "border-border-brand-subtle bg-bg-brand-softer/40 hover:border-border-brand-subtle hover:shadow-sm"
+                : "border-border-default bg-bg-primary-soft hover:border-border-brand-subtle hover:shadow-sm",
           ].join(" ");
 
-          const stepMarker = (
-            <div
-              className={[
-                "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-4 ring-bg-primary-soft",
-                mod.is_orphaned || !navigable ? "bg-bg-secondary-medium text-text-muted" : "bg-bg-brand-softer text-text-fg-brand-strong",
-              ].join(" ")}
-              aria-hidden
-            >
-              {stepNumber(mod.position)}
-            </div>
-          );
+          const stepMarker =
+            rowComplete && !mod.is_orphaned ? (
+              <div
+                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bg-brand text-text-on-brand ring-4 ring-bg-primary-soft"
+                aria-hidden
+              >
+                <Check className="size-4" aria-hidden />
+              </div>
+            ) : (
+              <div
+                className={[
+                  "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-4 ring-bg-primary-soft",
+                  mod.is_orphaned || !navigable ? "bg-bg-secondary-medium text-text-muted" : "bg-bg-brand-softer text-text-fg-brand-strong",
+                ].join(" ")}
+                aria-hidden
+              >
+                {stepNumber(mod.position)}
+              </div>
+            );
+
+          const initialManualComplete = Boolean(completionById.get(mod.id)?.is_complete);
 
           return (
             <li key={mod.id} className="flex gap-4">
               {stepMarker}
               <div className={`min-w-0 flex-1 ${shellClass}`}>
-                <ModuleHeader
-                  mod={mod}
-                  title={title}
-                  typeLabel={typeLabel}
-                  TypeIcon={TypeIcon}
-                  navigable={navigable}
-                  href={href}
-                />
+                <div className="flex min-w-0 flex-row items-stretch">
+                  <div className="min-w-0 flex-1">
+                    <ModuleHeader
+                      mod={mod}
+                      title={title}
+                      typeLabel={typeLabel}
+                      TypeIcon={TypeIcon}
+                      navigable={navigable}
+                      href={href}
+                      isComplete={rowComplete}
+                    />
+                  </div>
+                  {showManualToggle ? (
+                    <ModuleCompleteToggle
+                      key={`${mod.id}-${initialManualComplete}`}
+                      pathwaySlug={pathwaySlug}
+                      moduleId={mod.id}
+                      initialComplete={initialManualComplete}
+                    />
+                  ) : null}
+                </div>
 
                 {hasContext ? (
                   <div className="border-t border-border-default px-4 pb-4 pt-2">

@@ -17,6 +17,11 @@ export type PublicPathwayModuleRow = {
   is_orphaned: boolean;
   linked_slug: string | null;
   linked_title: string | null;
+  /** Populated when linked published content exists (used for completion queries). */
+  linked_course_id: string | null;
+  linked_quiz_id: string | null;
+  linked_flashcard_deck_id: string | null;
+  linked_blog_post_id: string | null;
   external_url: string | null;
   external_label: string | null;
 };

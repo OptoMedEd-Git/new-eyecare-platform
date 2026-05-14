@@ -90,6 +90,10 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
 
     let linked_slug: string | null = null;
     let linked_title: string | null = null;
+    let linked_course_id: string | null = null;
+    let linked_quiz_id: string | null = null;
+    let linked_flashcard_deck_id: string | null = null;
+    let linked_blog_post_id: string | null = null;
     let is_orphaned = false;
 
     switch (row.module_type) {
@@ -100,6 +104,7 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
         } else {
           linked_slug = c.slug;
           linked_title = c.title;
+          linked_course_id = c.id;
         }
         break;
       }
@@ -110,6 +115,7 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
         } else {
           linked_slug = q.slug;
           linked_title = q.title;
+          linked_quiz_id = q.id;
         }
         break;
       }
@@ -120,6 +126,7 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
         } else {
           linked_slug = d.slug;
           linked_title = d.title;
+          linked_flashcard_deck_id = d.id;
         }
         break;
       }
@@ -130,6 +137,7 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
         } else {
           linked_slug = p.slug;
           linked_title = p.title;
+          linked_blog_post_id = p.id;
         }
         break;
       }
@@ -155,6 +163,10 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
       is_orphaned,
       linked_slug,
       linked_title,
+      linked_course_id,
+      linked_quiz_id,
+      linked_flashcard_deck_id,
+      linked_blog_post_id,
       external_url: row.external_url == null ? null : String(row.external_url),
       external_label: row.external_label == null ? null : String(row.external_label),
     };

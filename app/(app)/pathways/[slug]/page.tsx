@@ -5,6 +5,7 @@ import { ChevronRight, Home } from "lucide-react";
 import { CurriculumStepper } from "@/components/pathways/CurriculumStepper";
 import { PathwayHero } from "@/components/pathways/PathwayHero";
 import { renderContent } from "@/lib/blog/render-content";
+import { getModuleCompletions } from "@/lib/pathways/completion";
 import { getPublicPathwayModules, getPublishedPathwayBySlug } from "@/lib/pathways/queries";
 import { pathwayWithModulesToHero, type PublicPathwayModuleForStepper } from "@/lib/pathways/types";
 import { createClient } from "@/lib/supabase/server";
@@ -35,6 +36,12 @@ export default async function PathwayDetailPage({ params }: Props) {
     renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,
   }));
 
+  const completions = await getModuleCompletions(pathway.id, user.id);
+  const eligibleModules = modules.filter((m) => !m.is_orphaned);
+  const eligibleIds = new Set(eligibleModules.map((m) => m.id));
+  const completedCount = completions.filter((c) => c.is_complete && eligibleIds.has(c.module_id)).length;
+  const totalCount = eligibleModules.length;
+
   const hero = pathwayWithModulesToHero({ ...pathway, moduleCount: modules.length });
 
   return (
@@ -56,11 +63,11 @@ export default async function PathwayDetailPage({ params }: Props) {
       </nav>
 
       <div className="mt-6">
-        <PathwayHero pathway={hero} />
+        <PathwayHero pathway={hero} completedCount={completedCount} totalCount={totalCount} />
       </div>
 
       <div className="mt-10">
-        <CurriculumStepper modules={modules} pathwaySlug={pathway.slug} />
+        <CurriculumStepper modules={modules} pathwaySlug={pathway.slug} completions={completions} />
       </div>
     </div>
   );
