@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Check, ChevronsUpDown } from "lucide-react";
 
 import { setViewMode } from "@/app/actions/view-mode-actions";
@@ -9,6 +9,7 @@ import {
   type AdminViewMode,
   VIEW_MODE_DESCRIPTIONS,
   VIEW_MODE_LABELS,
+  dashboardHrefForViewMode,
 } from "@/lib/nav/view-mode";
 
 type Props = { currentMode: AdminViewMode };
@@ -17,6 +18,7 @@ const ORDER: AdminViewMode[] = ["admin", "contributor", "user"];
 
 export function ViewSwitcher({ currentMode }: Props) {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,9 +50,14 @@ export function ViewSwitcher({ currentMode }: Props) {
     }
     startTransition(async () => {
       const result = await setViewMode(mode);
-      if (result.success) {
-        setOpen(false);
+      if (!result.success) return;
+      setOpen(false);
+      const href = dashboardHrefForViewMode(mode);
+      // Cookie is set by the server action before we return; then navigate (or refresh if already on target) so the shell matches the new mode.
+      if (pathname === href) {
         router.refresh();
+      } else {
+        router.push(href);
       }
     });
   }

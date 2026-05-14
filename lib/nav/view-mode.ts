@@ -18,3 +18,11 @@ export const VIEW_MODE_DESCRIPTIONS: Record<AdminViewMode, string> = {
 export function isValidViewMode(value: unknown): value is AdminViewMode {
   return value === "admin" || value === "contributor" || value === "user";
 }
+
+/**
+ * Default dashboard for a preview mode after the view switcher changes mode.
+ * Admin and contributor both use the admin shell (`/admin/dashboard`) for now.
+ */
+export function dashboardHrefForViewMode(mode: AdminViewMode): string {
+  return mode === "user" ? "/dashboard" : "/admin/dashboard";
+}
