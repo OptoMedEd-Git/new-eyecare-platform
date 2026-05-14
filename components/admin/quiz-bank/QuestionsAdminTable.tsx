@@ -39,16 +39,23 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
     });
   }
 
+  /*
+   * Column width math (Tailwind w-* at 1rem=16px): Type 128 + Status 112 + Category 144 + Audience 112 +
+   * Difficulty 128 + Updated 144 + Actions 160 = 928px fixed. With table-fixed and w-full, column 1 was the
+   * remainder; when the admin main column is narrower than ~928px (sidebar open), remainder collapsed and
+   * overflow:visible let column 1 paint into column 2. min-w-[1128px] = 928 + 200px floor for column 1;
+   * overflow-x-auto scrolls when the container is narrower than that floor.
+   */
   return (
-    <div className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft shadow-xs">
-      <table className="w-full table-fixed">
+    <div className="overflow-x-auto rounded-base border border-border-default bg-bg-primary-soft shadow-xs">
+      <table className="w-full min-w-[1128px] table-fixed">
         <thead className="bg-bg-secondary-soft">
           <tr className="border-b border-border-default">
             <th
               scope="col"
-              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
+              className="overflow-hidden px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
             >
-              Vignette
+              <span className="block truncate">Vignette</span>
             </th>
             <th
               scope="col"
@@ -102,10 +109,10 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
 
             return (
               <tr key={q.id} className={rowClassName}>
-                <td className="px-6 py-4">
+                <td className="overflow-hidden px-6 py-4">
                   <Link
                     href={`/admin/quiz-bank/${q.id}/edit`}
-                    className="block text-sm font-medium text-text-heading hover:underline"
+                    className="block truncate text-sm font-medium text-text-heading hover:underline"
                     title={rowPreview(q)}
                   >
                     {vignetteExcerpt(rowPreview(q))}
