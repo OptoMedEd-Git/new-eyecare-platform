@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps, ReactNode } from "react";
+import type { ChangeEvent, ComponentProps, ReactNode } from "react";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 
 export interface FormSelectOption {
@@ -56,8 +56,12 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
 
     // Allow passing common HTML attributes (e.g. `disabled`, `data-*`) without
     // letting `<select>`-typed event handlers conflict with our `<button>`.
-    const { onClick: _ignoredOnClick, onKeyDown: _ignoredOnKeyDown, ...restSelectProps } =
-      selectProps as unknown as ComponentProps<"select">;
+    const {
+      onClick: _ignoredOnClick,
+      onKeyDown: _ignoredOnKeyDown,
+      onChange: selectOnChange,
+      ...restSelectProps
+    } = selectProps as unknown as ComponentProps<"select">;
     const buttonProps = restSelectProps as unknown as ComponentProps<"button">;
 
     useEffect(() => {
@@ -75,6 +79,10 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
     }, [open]);
 
     useEffect(() => {
+      setValue(defaultValue ?? "");
+    }, [defaultValue]);
+
+    useEffect(() => {
       if (!open) return;
       // Ensure an active option when opening.
       const idx = options.findIndex((o) => o.value === value);
@@ -86,7 +94,13 @@ export const FormSelect = forwardRef<HTMLButtonElement, FormSelectProps>(
     function selectAtIndex(idx: number) {
       const opt = options[idx];
       if (!opt) return;
-      setValue(opt.value);
+      const next = opt.value;
+      if (next !== value) {
+        setValue(next);
+        selectOnChange?.({
+          target: { name, value: next },
+        } as ChangeEvent<HTMLSelectElement>);
+      }
       setOpen(false);
       setActiveIndex(-1);
       queueMicrotask(() => buttonRef.current?.focus());

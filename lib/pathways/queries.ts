@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 
+import {
+  materializePublicModulesFromSnapshot,
+  parsePublishedStructure,
+  publicPhasesFromSnapshot,
+} from "./snapshot";
 import type {
   PathwayListing,
   PathwayWithModules,
@@ -160,6 +165,23 @@ function mapRawToPublicPathwayModule(
 export async function getPublicPathwayModules(pathwayId: string): Promise<PublicPathwayModuleRow[]> {
   const supabase = await createClient();
 
+  const { data: pw, error: pwErr } = await supabase
+    .from("pathways")
+    .select("status, published_structure")
+    .eq("id", pathwayId)
+    .maybeSingle();
+
+  if (pwErr) {
+    console.error("[pathways] getPublicPathwayModules pathway", pwErr.message);
+  }
+
+  if (pw?.status === "published") {
+    const parsed = parsePublishedStructure(pw.published_structure);
+    if (parsed) {
+      return materializePublicModulesFromSnapshot(supabase, parsed);
+    }
+  }
+
   const { data, error } = await supabase
     .from("pathway_modules")
     .select(
@@ -172,21 +194,26 @@ export async function getPublicPathwayModules(pathwayId: string): Promise<Public
       module_type,
       external_url,
       external_label,
-      phase:pathway_phases!inner(position),
+      phase:pathway_phases!inner(position, removed_at),
       course:courses(id, title, slug, status, category:blog_categories(name)),
       quiz:quizzes(id, title, slug, status, category:blog_categories(name)),
       flashcard_deck:flashcard_decks(id, title, slug, status, category:blog_categories(name)),
       blog_post:blog_posts(id, title, slug, status, category:blog_categories!blog_posts_category_id_fkey(name))
     `,
     )
-    .eq("pathway_id", pathwayId);
+    .eq("pathway_id", pathwayId)
+    .is("removed_at", null);
 
   if (error) {
     console.error("[pathways] getPublicPathwayModules", error.message);
     return [];
   }
 
-  const rows = [...(data ?? [])] as Array<
+  const rows = [...(data ?? [])].filter((raw) => {
+    const ph = raw.phase as { removed_at?: string | null } | { removed_at?: string | null }[] | null | undefined;
+    const el = Array.isArray(ph) ? ph[0] : ph;
+    return el != null && (el.removed_at == null || el.removed_at === "");
+  }) as Array<
     Record<string, unknown> & { module_type: string; external_url: string | null; external_label: string | null }
   >;
 
@@ -213,6 +240,7 @@ export async function getPublicPathwayPhases(
     .from("pathway_phases")
     .select("id, pathway_id, position, title, description")
     .eq("pathway_id", pathwayId)
+    .is("removed_at", null)
     .order("position", { ascending: true });
 
   if (pErr) {
@@ -264,7 +292,10 @@ export async function getPublishedPathways(): Promise<PathwayListing[]> {
     return [];
   }
 
-  return (data as Record<string, unknown>[]).map((row) => rowToListing(row));
+  return (data as Record<string, unknown>[]).map((row) => {
+    const parsed = parsePublishedStructure(row.published_structure);
+    return rowToListing(row, parsed ? parsed.modules.length : undefined);
+  });
 }
 
 export async function getPublishedPathwayBySlug(slug: string): Promise<PathwayWithModules | null> {
@@ -289,7 +320,18 @@ export async function getPublishedPathwayBySlug(slug: string): Promise<PathwayWi
   }
 
   const pr = pathwayRow as Record<string, unknown>;
-  const listing = rowToListing(pr);
+  const parsed = parsePublishedStructure(pr.published_structure);
+  const listing = rowToListing(pr, parsed ? parsed.modules.length : undefined);
+
+  if (parsed) {
+    const modulesFlat = await materializePublicModulesFromSnapshot(supabase, parsed);
+    const phases = publicPhasesFromSnapshot(parsed, listing.id, modulesFlat);
+    return {
+      ...listing,
+      modules: [],
+      phases,
+    };
+  }
 
   const modulesFlat = await getPublicPathwayModules(listing.id);
   const phases = await getPublicPathwayPhases(listing.id, modulesFlat);

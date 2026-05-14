@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { removePathwayModule } from "@/app/(admin)/admin/pathways/module-actions";
 import { createClient } from "@/lib/supabase/server";
 
 export type PhaseActionResult = { success: true } | { success: false; error: string };
@@ -44,6 +45,7 @@ export async function addPhase(
     .from("pathway_phases")
     .select("position")
     .eq("pathway_id", pathwayId)
+    .is("removed_at", null)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -84,22 +86,49 @@ export async function removePhase(phaseId: string): Promise<PhaseActionResult> {
   const auth = await assertPathwayAuthor(supabase, phase.pathway_id, user.id);
   if (!auth.ok) return { success: false, error: auth.error };
 
-  const { data: anyModule } = await supabase.from("pathway_modules").select("id").eq("phase_id", phaseId).limit(1).maybeSingle();
+  const { data: pathwayRow } = await supabase
+    .from("pathways")
+    .select("status")
+    .eq("id", phase.pathway_id)
+    .maybeSingle();
+  const isPublished = pathwayRow?.status === "published";
 
-  if (anyModule) {
-    return {
-      success: false,
-      error: "Remove or move this phase's modules before deleting it.",
-    };
+  const { data: activeMods } = await supabase
+    .from("pathway_modules")
+    .select("id")
+    .eq("phase_id", phaseId)
+    .is("removed_at", null)
+    .order("position", { ascending: false });
+
+  if ((activeMods?.length ?? 0) > 0) {
+    if (!isPublished) {
+      return {
+        success: false,
+        error: "Remove or move this phase's modules before deleting it.",
+      };
+    }
+    for (const m of activeMods ?? []) {
+      const r = await removePathwayModule(String(m.id));
+      if (!r.success) return r;
+    }
   }
 
-  const { error: delErr } = await supabase.from("pathway_phases").delete().eq("id", phaseId);
-  if (delErr) return { success: false, error: "Could not delete phase" };
+  if (isPublished) {
+    const { error: uErr } = await supabase
+      .from("pathway_phases")
+      .update({ removed_at: new Date().toISOString() })
+      .eq("id", phaseId);
+    if (uErr) return { success: false, error: "Could not remove phase" };
+  } else {
+    const { error: delErr } = await supabase.from("pathway_phases").delete().eq("id", phaseId);
+    if (delErr) return { success: false, error: "Could not delete phase" };
+  }
 
   const { data: toUpdate } = await supabase
     .from("pathway_phases")
     .select("id, position")
     .eq("pathway_id", phase.pathway_id)
+    .is("removed_at", null)
     .gt("position", phase.position)
     .order("position", { ascending: true });
 
@@ -123,6 +152,7 @@ export async function reorderPhase(phaseId: string, direction: -1 | 1): Promise<
     .from("pathway_phases")
     .select("id, pathway_id, position")
     .eq("id", phaseId)
+    .is("removed_at", null)
     .maybeSingle();
 
   if (srcErr || !srcPhase) return { success: false, error: "Phase not found" };
@@ -137,6 +167,7 @@ export async function reorderPhase(phaseId: string, direction: -1 | 1): Promise<
     .from("pathway_phases")
     .select("id")
     .eq("pathway_id", srcPhase.pathway_id)
+    .is("removed_at", null)
     .eq("position", toPosition)
     .maybeSingle();
 
@@ -154,6 +185,7 @@ export async function reorderPhase(phaseId: string, direction: -1 | 1): Promise<
       .from("pathway_phases")
       .select("id, position")
       .eq("pathway_id", srcPhase.pathway_id)
+      .is("removed_at", null)
       .gt("position", fromPosition)
       .lte("position", toPosition)
       .order("position", { ascending: true });
@@ -167,6 +199,7 @@ export async function reorderPhase(phaseId: string, direction: -1 | 1): Promise<
       .from("pathway_phases")
       .select("id, position")
       .eq("pathway_id", srcPhase.pathway_id)
+      .is("removed_at", null)
       .gte("position", toPosition)
       .lt("position", fromPosition)
       .order("position", { ascending: false });

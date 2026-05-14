@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { ensureUniqueSlug, slugify, slugifyShort } from "@/lib/blog/slugify";
+import { deleteTombstonedStructureRows, serializeLivePathwayStructure } from "@/lib/pathways/snapshot";
 import { createClient } from "@/lib/supabase/server";
 
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error: string };
@@ -163,14 +164,24 @@ export async function publishPathway(id: string): Promise<ActionResult> {
   if (!user) return { success: false, error: "Not authenticated" };
 
   const { data: row } = await supabase.from("pathways").select("slug").eq("id", id).eq("author_id", user.id).maybeSingle();
+  if (!row) return { success: false, error: "Pathway not found" };
+
+  const structure = await serializeLivePathwayStructure(supabase, id);
+  const publishedAt = new Date().toISOString();
 
   const { error } = await supabase
     .from("pathways")
-    .update({ status: "published", published_at: new Date().toISOString() })
+    .update({
+      status: "published",
+      published_at: publishedAt,
+      published_structure: structure as unknown as Record<string, unknown>,
+    })
     .eq("id", id)
     .eq("author_id", user.id);
 
   if (error) return { success: false, error: "Could not publish" };
+
+  await deleteTombstonedStructureRows(supabase, id);
 
   revalidatePathwayPaths(row?.slug as string | undefined);
   revalidatePath(`/admin/pathways/${id}/edit`);
@@ -192,15 +203,19 @@ export async function unpublishPathway(id: string): Promise<ActionResult> {
 
   const { data: row } = await supabase.from("pathways").select("slug").eq("id", id).eq("author_id", user.id).maybeSingle();
 
+  if (!row) return { success: false, error: "Pathway not found" };
+
+  await deleteTombstonedStructureRows(supabase, id);
+
   const { error } = await supabase
     .from("pathways")
-    .update({ status: "draft", published_at: null })
+    .update({ status: "draft", published_at: null, published_structure: null })
     .eq("id", id)
     .eq("author_id", user.id);
 
   if (error) return { success: false, error: "Could not unpublish" };
 
-  revalidatePathwayPaths(row?.slug as string | undefined);
+  revalidatePathwayPaths(row.slug as string | undefined);
   revalidatePath(`/admin/pathways/${id}/edit`);
   return { success: true };
 }

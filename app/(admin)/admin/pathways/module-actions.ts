@@ -81,6 +81,7 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
     .from("pathway_modules")
     .select("position")
     .eq("phase_id", phaseId)
+    .is("removed_at", null)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -132,7 +133,7 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
 
   const { data: pathway } = await supabase
     .from("pathways")
-    .select("author_id")
+    .select("author_id, status")
     .eq("id", mod.pathway_id)
     .maybeSingle();
 
@@ -141,15 +142,24 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
   const pathwayId = mod.pathway_id;
   const deletedPosition = mod.position;
   const phaseId = mod.phase_id as string;
+  const isPublished = pathway.status === "published";
 
-  const { error: deleteError } = await supabase.from("pathway_modules").delete().eq("id", moduleId);
-
-  if (deleteError) return { success: false, error: "Could not delete module" };
+  if (isPublished) {
+    const { error: softErr } = await supabase
+      .from("pathway_modules")
+      .update({ removed_at: new Date().toISOString() })
+      .eq("id", moduleId);
+    if (softErr) return { success: false, error: "Could not remove module" };
+  } else {
+    const { error: deleteError } = await supabase.from("pathway_modules").delete().eq("id", moduleId);
+    if (deleteError) return { success: false, error: "Could not delete module" };
+  }
 
   const { data: toUpdate } = await supabase
     .from("pathway_modules")
     .select("id, position")
     .eq("phase_id", phaseId)
+    .is("removed_at", null)
     .gt("position", deletedPosition)
     .order("position", { ascending: true });
 
@@ -195,6 +205,7 @@ export async function reorderPathwayModules(
     .from("pathway_modules")
     .select("id")
     .eq("phase_id", phaseId)
+    .is("removed_at", null)
     .eq("position", fromPosition)
     .maybeSingle();
 
@@ -206,6 +217,7 @@ export async function reorderPathwayModules(
     .from("pathway_modules")
     .select("id")
     .eq("phase_id", phaseId)
+    .is("removed_at", null)
     .eq("position", toPosition)
     .maybeSingle();
 
@@ -219,6 +231,7 @@ export async function reorderPathwayModules(
       .from("pathway_modules")
       .select("id, position")
       .eq("phase_id", phaseId)
+      .is("removed_at", null)
       .gt("position", fromPosition)
       .lte("position", toPosition)
       .order("position", { ascending: true });
@@ -232,6 +245,7 @@ export async function reorderPathwayModules(
       .from("pathway_modules")
       .select("id, position")
       .eq("phase_id", phaseId)
+      .is("removed_at", null)
       .gte("position", toPosition)
       .lt("position", fromPosition)
       .order("position", { ascending: false });

@@ -7,6 +7,7 @@ import { PathwayForm } from "@/components/admin/pathways/PathwayForm";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
 import { getAdminPathwayById, getAdminPathwayPhases } from "@/lib/pathways/admin-queries";
+import { pathwayHasStructuralPendingChanges } from "@/lib/pathways/structural-pending";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -47,6 +48,12 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
   const pathway = await getAdminPathwayById(id, user.id);
   if (!pathway) notFound();
 
+  const structuralPending = await pathwayHasStructuralPendingChanges(
+    pathway.id,
+    pathway.published_at,
+    pathway.status,
+  );
+
   const phases = await getAdminPathwayPhases(id);
 
   const authorName =
@@ -74,7 +81,14 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
       </Link>
 
       <div className="mt-8">
-        <PathwayForm categories={categories} authorName={authorName} initialPathway={pathway} showBackLink={false} />
+        <PathwayForm
+          key={`${pathway.id}-${pathway.updated_at}-${pathway.status}`}
+          categories={categories}
+          authorName={authorName}
+          initialPathway={pathway}
+          showBackLink={false}
+          hasStructuralChangesPending={structuralPending}
+        />
       </div>
 
       <div className="mt-8">

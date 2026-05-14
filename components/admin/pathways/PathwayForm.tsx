@@ -27,6 +27,8 @@ type Props = {
   authorName: string;
   initialPathway?: AdminPathwayRow;
   showBackLink?: boolean;
+  /** Live structure changed after last publish; republish to update learner snapshot (V2-D-pre). */
+  hasStructuralChangesPending?: boolean;
 };
 
 const AUDIENCE_OPTIONS = [
@@ -44,7 +46,13 @@ const DIFFICULTY_OPTIONS = [
   { value: "advanced", label: "Advanced" },
 ];
 
-export function PathwayForm({ categories, authorName, initialPathway, showBackLink = true }: Props) {
+export function PathwayForm({
+  categories,
+  authorName,
+  initialPathway,
+  showBackLink = true,
+  hasStructuralChangesPending = false,
+}: Props) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const isEdit = Boolean(initialPathway);
@@ -217,6 +225,11 @@ export function PathwayForm({ categories, authorName, initialPathway, showBackLi
                 Unsaved changes
               </span>
             ) : null}
+            {hasStructuralChangesPending ? (
+              <span className="inline-flex items-center rounded-sm bg-bg-secondary-medium px-2 py-0.5 text-xs font-medium text-text-muted">
+                Unpublished structural changes
+              </span>
+            ) : null}
           </div>
         ) : (
           <div>
@@ -231,7 +244,7 @@ export function PathwayForm({ categories, authorName, initialPathway, showBackLi
                 type="button"
                 onClick={() => void handleUnpublish()}
                 disabled={publishing || saving || deleting}
-                className="inline-flex items-center gap-1.5 rounded-base border border-border-default px-3 py-1.5 text-sm text-text-body transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-base border border-border-default-medium bg-bg-primary-soft px-3 py-1.5 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
               >
                 <Undo2 className="size-4" aria-hidden />
                 Unpublish
@@ -249,18 +262,18 @@ export function PathwayForm({ categories, authorName, initialPathway, showBackLi
             <button
               type="button"
               onClick={() => void performSave()}
-              disabled={saving || publishing || deleting}
+              disabled={saving || publishing || deleting || (isPublished && !dirty)}
               className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-heading shadow-xs transition-colors hover:bg-bg-secondary-soft disabled:opacity-50"
             >
               {saving ? (
                 <>
                   <Loader2 className="size-4 animate-spin" aria-hidden />
-                  {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
+                  {isPublished ? "Save changes" : "Save draft"}
                 </>
               ) : (
                 <>
                   <Save className="size-4" aria-hidden />
-                  {isPublished && dirty ? "Save changes" : isPublished ? "Saved" : "Save draft"}
+                  {isPublished ? "Save changes" : "Save draft"}
                 </>
               )}
             </button>
@@ -274,18 +287,17 @@ export function PathwayForm({ categories, authorName, initialPathway, showBackLi
                 {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
                 Publish
               </button>
-            ) : null}
-            {isPublished && dirty ? (
+            ) : (
               <button
                 type="button"
                 onClick={() => void handlePublish()}
-                disabled={publishing || saving || deleting}
+                disabled={publishing || saving || deleting || (!dirty && !hasStructuralChangesPending)}
                 className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
               >
                 {publishing ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Send className="size-4" aria-hidden />}
-                Publish changes
+                Publish
               </button>
-            ) : null}
+            )}
           </div>
         ) : null}
       </div>

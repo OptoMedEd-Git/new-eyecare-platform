@@ -154,21 +154,26 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
       blog_post_id,
       external_url,
       external_label,
-      phase:pathway_phases!inner(position),
+      phase:pathway_phases!inner(position, removed_at),
       course:courses(id, title, slug, category:blog_categories(name)),
       quiz:quizzes(id, title, slug, category:blog_categories(name)),
       flashcard_deck:flashcard_decks(id, title, slug, category:blog_categories(name)),
       blog_post:blog_posts(id, title, slug, category:blog_categories!blog_posts_category_id_fkey(name))
     `,
     )
-    .eq("pathway_id", pathwayId);
+    .eq("pathway_id", pathwayId)
+    .is("removed_at", null);
 
   if (error) {
     console.error("[pathways admin] modules", error.message);
     return [];
   }
 
-  const rows = [...(data ?? [])] as Record<string, unknown>[];
+  const rows = [...(data ?? [])].filter((raw) => {
+    const ph = raw.phase as { removed_at?: string | null } | { removed_at?: string | null }[] | null | undefined;
+    const el = Array.isArray(ph) ? ph[0] : ph;
+    return el != null && (el.removed_at == null || el.removed_at === "");
+  }) as Record<string, unknown>[];
 
   rows.sort((a, b) => {
     const dp = phaseSortKey(a) - phaseSortKey(b);
@@ -265,6 +270,7 @@ export async function getAdminPathwayPhases(pathwayId: string): Promise<AdminPat
     .from("pathway_phases")
     .select("id, pathway_id, position, title, description")
     .eq("pathway_id", pathwayId)
+    .is("removed_at", null)
     .order("position", { ascending: true });
 
   if (pErr) {
