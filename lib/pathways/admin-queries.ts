@@ -87,3 +87,142 @@ export async function getAdminPathwayById(id: string, userId: string): Promise<A
 
   return mapRow(data as Record<string, unknown>);
 }
+
+export type AdminPathwayModuleRow = {
+  id: string;
+  position: number;
+  title: string;
+  context_markdown: string | null;
+  module_type: string;
+  linked_title: string | null;
+  linked_meta: string | null;
+  linked_url: string | null;
+  is_orphaned: boolean;
+};
+
+type LinkedEmbed = {
+  id: string;
+  title: string;
+  slug: string;
+  category: { name: string } | { name: string }[] | null;
+} | null;
+
+type LinkedCategory = { name: string } | { name: string }[] | null;
+
+function catName(cat: LinkedCategory): string | null {
+  if (!cat) return null;
+  const c = Array.isArray(cat) ? cat[0] : cat;
+  return c?.name ?? null;
+}
+
+export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPathwayModuleRow[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("pathway_modules")
+    .select(
+      `
+      id,
+      position,
+      title,
+      context_markdown,
+      module_type,
+      course_id,
+      quiz_id,
+      flashcard_deck_id,
+      blog_post_id,
+      external_url,
+      external_label,
+      course:courses(id, title, slug, category:blog_categories(name)),
+      quiz:quizzes(id, title, slug, category:blog_categories(name)),
+      flashcard_deck:flashcard_decks(id, title, slug, category:blog_categories(name)),
+      blog_post:blog_posts(id, title, slug, category:blog_categories!blog_posts_category_id_fkey(name))
+    `,
+    )
+    .eq("pathway_id", pathwayId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    console.error("[pathways admin] modules", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((raw) => {
+    const row = raw as Record<string, unknown> & {
+      module_type: string;
+      external_url: string | null;
+      external_label: string | null;
+    };
+
+    let linked_title: string | null = null;
+    let linked_meta: string | null = null;
+    let linked_url: string | null = null;
+    let is_orphaned = false;
+
+    switch (row.module_type) {
+      case "course": {
+        const c = single(row.course as LinkedEmbed);
+        if (c) {
+          linked_title = c.title;
+          linked_meta = catName(c.category);
+          linked_url = `/courses/${c.slug}`;
+        } else {
+          is_orphaned = true;
+        }
+        break;
+      }
+      case "quiz": {
+        const q = single(row.quiz as LinkedEmbed);
+        if (q) {
+          linked_title = q.title;
+          linked_meta = catName(q.category);
+          linked_url = `/quiz-bank/quizzes/${q.slug}`;
+        } else {
+          is_orphaned = true;
+        }
+        break;
+      }
+      case "flashcard_deck": {
+        const d = single(row.flashcard_deck as LinkedEmbed);
+        if (d) {
+          linked_title = d.title;
+          linked_meta = catName(d.category);
+          linked_url = `/flashcards/decks/${d.slug}`;
+        } else {
+          is_orphaned = true;
+        }
+        break;
+      }
+      case "blog_post": {
+        const p = single(row.blog_post as LinkedEmbed);
+        if (p) {
+          linked_title = p.title;
+          linked_meta = catName(p.category);
+          linked_url = `/blog/${p.slug}`;
+        } else {
+          is_orphaned = true;
+        }
+        break;
+      }
+      case "external_resource":
+        linked_title = row.external_label;
+        linked_meta = null;
+        linked_url = row.external_url;
+        break;
+      default:
+        break;
+    }
+
+    return {
+      id: row.id as string,
+      position: row.position as number,
+      title: row.title as string,
+      context_markdown: (row.context_markdown as string | null) ?? null,
+      module_type: row.module_type,
+      linked_title,
+      linked_meta,
+      linked_url,
+      is_orphaned,
+    };
+  });
+}

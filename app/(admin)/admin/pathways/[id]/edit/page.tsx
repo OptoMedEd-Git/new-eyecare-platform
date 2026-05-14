@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { ModuleManager } from "@/components/admin/pathways/ModuleManager";
 import { PathwayForm } from "@/components/admin/pathways/PathwayForm";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
-import { getAdminPathwayById } from "@/lib/pathways/admin-queries";
+import { getAdminPathwayById, getAdminPathwayModules } from "@/lib/pathways/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -46,6 +47,8 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
   const pathway = await getAdminPathwayById(id, user.id);
   if (!pathway) notFound();
 
+  const modules = await getAdminPathwayModules(id);
+
   const authorName =
     [profile.first_name, profile.last_name].filter((x): x is string => Boolean(x?.trim())).join(" ").trim() || "—";
 
@@ -74,12 +77,12 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
         <PathwayForm categories={categories} authorName={authorName} initialPathway={pathway} showBackLink={false} />
       </div>
 
-      <div className="mt-8 rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-8 text-center">
-        <h3 className="text-base font-bold text-text-heading">Modules</h3>
-        <p className="mt-2 text-sm text-text-body">
-          Module management coming in the next session. For now, save your pathway metadata and modules will be added
-          in P2.
-        </p>
+      <div className="mt-8">
+        <ModuleManager
+          key={modules.map((m) => `${m.id}:${m.position}`).join(",")}
+          pathwayId={pathway.id}
+          initialModules={modules}
+        />
       </div>
     </div>
   );
