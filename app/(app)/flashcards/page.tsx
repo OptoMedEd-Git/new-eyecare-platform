@@ -2,7 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, ChevronRight, Home } from "lucide-react";
 
-import { getFlashcardReviewStats } from "@/lib/flashcards/queries";
+import { FlaggedFlashcardsSummaryCard } from "@/components/flashcards/FlaggedFlashcardsSummaryCard";
+import {
+  getFlashcardReviewStats,
+  getFlaggedFlashcardCount,
+  getRecentFlaggedFlashcards,
+} from "@/lib/flashcards/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Flashcards" };
@@ -14,7 +19,11 @@ export default async function FlashcardsLandingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const stats = await getFlashcardReviewStats();
+  const [stats, flaggedCount, recentFlagged] = await Promise.all([
+    getFlashcardReviewStats(),
+    getFlaggedFlashcardCount(),
+    getRecentFlaggedFlashcards(3),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
@@ -50,6 +59,10 @@ export default async function FlashcardsLandingPage() {
           value={(stats.lastRatingDistribution.again + stats.lastRatingDistribution.hard).toString()}
           colorClass="text-text-fg-warning-strong"
         />
+      </section>
+
+      <section className="mt-10">
+        <FlaggedFlashcardsSummaryCard totalCount={flaggedCount} recent={recentFlagged} />
       </section>
 
       <section className="mt-10">

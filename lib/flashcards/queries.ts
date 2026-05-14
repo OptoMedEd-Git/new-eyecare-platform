@@ -203,3 +203,128 @@ export async function isFlashcardFlagged(flashcardId: string): Promise<boolean> 
 
   return data != null;
 }
+
+export type FlaggedFlashcardEntry = {
+  flashcard: Flashcard;
+  flaggedAt: string;
+  note: string | null;
+};
+
+/**
+ * All flagged flashcards for the current user with full card data. Newest-flagged first.
+ */
+export async function getFlaggedFlashcardsForUser(): Promise<FlaggedFlashcardEntry[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("flagged_flashcards")
+    .select(
+      `
+      flagged_at,
+      note,
+      flashcard:flashcards(
+        *,
+        category:blog_categories(id, name)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .order("flagged_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const out: FlaggedFlashcardEntry[] = [];
+
+  for (const row of data as Array<{
+    flagged_at: string;
+    note: string | null;
+    flashcard: Record<string, unknown> | Record<string, unknown>[] | null;
+  }>) {
+    const fRaw = row.flashcard;
+    const f = Array.isArray(fRaw) ? fRaw[0] : fRaw;
+    if (!f || typeof f !== "object") continue;
+    out.push({
+      flashcard: rowToFlashcard(f),
+      flaggedAt: row.flagged_at,
+      note: row.note,
+    });
+  }
+
+  return out;
+}
+
+/** Count of flagged flashcards for the current user (cheap head request). */
+export async function getFlaggedFlashcardCount(): Promise<number> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from("flagged_flashcards")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (error) return 0;
+  return count ?? 0;
+}
+
+export type RecentFlaggedFlashcardItem = {
+  flashcardId: string;
+  front: string;
+  category: { id: string; name: string } | null;
+  flaggedAt: string;
+};
+
+/** Last N flagged flashcards for landing previews. */
+export async function getRecentFlaggedFlashcards(limit: number = 3): Promise<RecentFlaggedFlashcardItem[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("flagged_flashcards")
+    .select(
+      `
+      flagged_at,
+      flashcard:flashcards(
+        id,
+        front,
+        category:blog_categories(id, name)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .order("flagged_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) return [];
+
+  const out: RecentFlaggedFlashcardItem[] = [];
+
+  for (const row of data as Array<{
+    flagged_at: string;
+    flashcard: Record<string, unknown> | Record<string, unknown>[] | null;
+  }>) {
+    const fRaw = row.flashcard;
+    const f = Array.isArray(fRaw) ? fRaw[0] : fRaw;
+    if (!f || typeof f !== "object") continue;
+    const fr = f as Record<string, unknown>;
+    const cat = single(fr.category as { id: string; name: string } | { id: string; name: string }[] | null);
+    out.push({
+      flashcardId: String(fr.id),
+      front: String(fr.front),
+      category: cat,
+      flaggedAt: row.flagged_at,
+    });
+  }
+
+  return out;
+}
