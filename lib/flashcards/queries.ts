@@ -65,7 +65,15 @@ export async function getRandomFlashcard(filters: ReviewFilters): Promise<Flashc
   const { data: matching, error } = await query;
   if (error || !matching?.length) return null;
 
-  const rows = matching as Record<string, unknown>[];
+  let rows = matching as Record<string, unknown>[];
+
+  if (filters.onlyFlagged) {
+    if (!user) return null;
+    const { data: flagged } = await supabase.from("flagged_flashcards").select("flashcard_id").eq("user_id", user.id);
+    const flaggedSet = new Set((flagged ?? []).map((f) => String((f as { flashcard_id: string }).flashcard_id)));
+    rows = rows.filter((c) => flaggedSet.has(String(c.id)));
+    if (rows.length === 0) return null;
+  }
 
   let reviewedIds = new Set<string>();
   if (user) {
@@ -81,6 +89,40 @@ export async function getRandomFlashcard(filters: ReviewFilters): Promise<Flashc
 
   const picked = pool[Math.floor(Math.random() * pool.length)] as Record<string, unknown>;
   return rowToFlashcard(picked);
+}
+
+/** Count of published flashcards matching filters (and flagged subset when onlyFlagged). */
+export async function countMatchingFlashcards(filters: ReviewFilters): Promise<number> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let query = supabase.from("flashcards").select("id").eq("status", "published");
+
+  if (filters.categoryIds.length > 0) {
+    query = query.in("category_id", filters.categoryIds);
+  }
+  if (filters.audiences.length > 0) {
+    query = query.in("target_audience", filters.audiences);
+  }
+  if (filters.difficulties.length > 0) {
+    query = query.in("difficulty", filters.difficulties);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) return 0;
+
+  let ids = data.map((c) => String((c as { id: string }).id));
+
+  if (filters.onlyFlagged) {
+    if (!user) return 0;
+    const { data: flagged } = await supabase.from("flagged_flashcards").select("flashcard_id").eq("user_id", user.id);
+    const flaggedSet = new Set((flagged ?? []).map((f) => String((f as { flashcard_id: string }).flashcard_id)));
+    ids = ids.filter((id) => flaggedSet.has(id));
+  }
+
+  return ids.length;
 }
 
 export async function getFlashcardReviewStats(): Promise<FlashcardReviewStats> {

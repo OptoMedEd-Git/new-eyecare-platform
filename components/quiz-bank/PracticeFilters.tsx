@@ -1,6 +1,7 @@
 "use client";
 
 import { Filter, X } from "lucide-react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 
 export type PracticeCategoryOption = { id: string; name: string; count: number };
@@ -13,6 +14,12 @@ type Props = {
   onAudiencesChange: (audiences: string[]) => void;
   selectedDifficulties: string[];
   onDifficultiesChange: (difficulties: string[]) => void;
+  /** Optional block rendered after core filters (e.g. flashcard “Only flagged”). */
+  targetedSection?: ReactNode;
+  /** Adds to the “N active” badge for filters not represented as chips (e.g. only flagged). */
+  supplementalActiveCount?: number;
+  /** Called after category/audience/difficulty clear (e.g. reset flashcard-only toggles). */
+  onAfterClearAll?: () => void;
 };
 
 const AUDIENCES = [
@@ -36,11 +43,17 @@ export function PracticeFilters({
   onAudiencesChange,
   selectedDifficulties,
   onDifficultiesChange,
+  targetedSection,
+  supplementalActiveCount = 0,
+  onAfterClearAll,
 }: Props) {
   const [open, setOpen] = useState(false);
 
   const totalActive =
-    selectedCategoryIds.length + selectedAudiences.length + selectedDifficulties.length;
+    selectedCategoryIds.length +
+    selectedAudiences.length +
+    selectedDifficulties.length +
+    supplementalActiveCount;
 
   function toggle<T extends string>(arr: T[], value: T, setter: (v: T[]) => void) {
     setter(arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]);
@@ -50,6 +63,7 @@ export function PracticeFilters({
     onCategoriesChange([]);
     onAudiencesChange([]);
     onDifficultiesChange([]);
+    onAfterClearAll?.();
   }
 
   return (
@@ -150,6 +164,13 @@ export function PracticeFilters({
               })}
             </div>
           </div>
+
+          {targetedSection ? (
+            <section className="mt-4 border-t border-border-default pt-4">
+              <h3 className="mb-2 text-sm font-semibold text-text-heading">Targeted practice</h3>
+              {targetedSection}
+            </section>
+          ) : null}
 
           {totalActive > 0 ? (
             <button

@@ -31,6 +31,8 @@ export type ReviewFilters = {
   categoryIds: string[];
   audiences: FlashcardAudience[];
   difficulties: FlashcardDifficulty[];
+  /** When true, only flashcards the user has flagged (intersected with other filters). */
+  onlyFlagged: boolean;
 };
 
 export type FlashcardReviewStats = {

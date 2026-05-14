@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Inbox, Loader2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Flag, Inbox, Loader2, X } from "lucide-react";
 
-import { fetchNextFlashcard } from "@/app/(app)/flashcards/actions";
+import { countMatchingFlashcardsAction, fetchNextFlashcard } from "@/app/(app)/flashcards/actions";
 import { PracticeFilters } from "@/components/quiz-bank/PracticeFilters";
 import type { Flashcard, FlashcardAudience, FlashcardDifficulty, FlashcardRating, ReviewFilters } from "@/lib/flashcards/types";
 
@@ -25,6 +25,7 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
+  const [onlyFlagged, setOnlyFlagged] = useState(false);
 
   const [entries, setEntries] = useState<SessionEntry[]>([]);
   const [cursor, setCursor] = useState(0);
@@ -35,14 +36,51 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
 
   const [flaggedIds, setFlaggedIds] = useState(() => new Set(initialFlaggedFlashcardIds));
 
+  const [availableCount, setAvailableCount] = useState<number | null>(null);
+  const [isCounting, setIsCounting] = useState(false);
+  const countGenRef = useRef(0);
+
   const filters: ReviewFilters = useMemo(
     () => ({
       categoryIds: selectedCategoryIds,
       audiences: selectedAudiences as FlashcardAudience[],
       difficulties: selectedDifficulties as FlashcardDifficulty[],
+      onlyFlagged,
     }),
-    [selectedCategoryIds, selectedAudiences, selectedDifficulties],
+    [selectedCategoryIds, selectedAudiences, selectedDifficulties, onlyFlagged],
   );
+
+  useEffect(() => {
+    if (!onlyFlagged) {
+      countGenRef.current += 1;
+      const frame = requestAnimationFrame(() => {
+        setAvailableCount(null);
+        setIsCounting(false);
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+
+    const gen = ++countGenRef.current;
+    const handle = setTimeout(() => {
+      setIsCounting(true);
+      void (async () => {
+        try {
+          const c = await countMatchingFlashcardsAction(filters);
+          if (countGenRef.current !== gen) return;
+          setAvailableCount(c);
+        } catch {
+          if (countGenRef.current !== gen) return;
+          setAvailableCount(null);
+        } finally {
+          if (countGenRef.current === gen) setIsCounting(false);
+        }
+      })();
+    }, 300);
+
+    return () => {
+      clearTimeout(handle);
+    };
+  }, [filters, onlyFlagged]);
 
   const sessionStats = useMemo(() => {
     let good = 0;
@@ -164,6 +202,41 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
           onAudiencesChange={setSelectedAudiences}
           selectedDifficulties={selectedDifficulties}
           onDifficultiesChange={setSelectedDifficulties}
+          supplementalActiveCount={onlyFlagged ? 1 : 0}
+          onAfterClearAll={() => {
+            setOnlyFlagged(false);
+            setAvailableCount(null);
+            setIsCounting(false);
+          }}
+          targetedSection={
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={onlyFlagged}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setOnlyFlagged(checked);
+                  if (!checked) {
+                    setAvailableCount(null);
+                    setIsCounting(false);
+                  }
+                }}
+                className="mt-0.5 size-4 rounded-sm border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
+              />
+              <div>
+                <p className="text-sm font-medium text-text-heading">Only flagged cards</p>
+                <p className="mt-0.5 text-xs text-text-muted">
+                  Review only cards you&apos;ve flagged for review.
+                  {onlyFlagged && isCounting ? <span className="ml-1">(…)</span> : null}
+                  {!isCounting && onlyFlagged && availableCount !== null ? (
+                    <span className="ml-1">
+                      ({availableCount} {availableCount === 1 ? "card" : "cards"} available)
+                    </span>
+                  ) : null}
+                </p>
+              </div>
+            </label>
+          }
         />
       ) : null}
 
@@ -172,6 +245,14 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
       ) : isLoading ? (
         <div className="flex items-center justify-center rounded-base border border-border-default bg-bg-primary-soft p-12 shadow-xs">
           <Loader2 className="size-6 animate-spin text-text-muted" aria-hidden />
+        </div>
+      ) : empty && onlyFlagged ? (
+        <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
+          <Flag className="mx-auto size-8 text-text-muted" aria-hidden />
+          <p className="mt-3 text-base font-medium text-text-heading">No flagged cards match these filters</p>
+          <p className="mt-1 text-sm text-text-body">
+            Either flag some cards during a regular review session, or adjust your other filters.
+          </p>
         </div>
       ) : empty ? (
         <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">

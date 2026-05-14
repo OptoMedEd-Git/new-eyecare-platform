@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getRandomFlashcard } from "@/lib/flashcards/queries";
+import { countMatchingFlashcards, getRandomFlashcard } from "@/lib/flashcards/queries";
 import type { FlashcardRating, ReviewFilters } from "@/lib/flashcards/types";
 
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error: string };
@@ -49,4 +49,8 @@ export async function submitFlashcardReview(flashcardId: string, rating: Flashca
 
 export async function fetchNextFlashcard(filters: ReviewFilters) {
   return getRandomFlashcard(filters);
+}
+
+export async function countMatchingFlashcardsAction(filters: ReviewFilters): Promise<number> {
+  return countMatchingFlashcards(filters);
 }
