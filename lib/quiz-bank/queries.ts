@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-import { parseQuestionAnswerPayload } from "./answer-payload";
+import { parseQuestionAnswerPayload, submittedAnswerFromPayload } from "./answer-payload";
 import { evaluateQuestionAnswer } from "./scoring";
 import type {
   PracticeFilters,
@@ -17,11 +17,13 @@ import type {
   QuizBankDashboardData,
   PastQuizAttemptSummary,
   QuizKind,
+  QuizAttemptSavedResponse,
   QuizListing,
   QuizQuestion,
   QuizQuestionBase,
   QuizQuestionType,
   QuizWithQuestions,
+  SubmittedQuestionAnswer,
 } from "./types";
 
 export type FlaggedQuestionEntry = {
@@ -45,6 +47,16 @@ function mapChoiceRows(choiceRows: Array<Record<string, unknown>>): QuizChoice[]
       isCorrect: Boolean(c.is_correct),
     }))
     .sort((a, b) => a.position - b.position);
+}
+
+/** Normalize Supabase embed `true_false` (object or one-element array) to a boolean or null. */
+function trueFalseCorrectFromRow(row: Record<string, unknown>): boolean | null {
+  const raw = row.true_false;
+  if (raw == null) return null;
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const first = arr[0] as Record<string, unknown> | undefined;
+  if (!first || first.correct_answer == null) return null;
+  return Boolean(first.correct_answer);
 }
 
 function rowToQuizQuestionBase(row: Record<string, unknown>): QuizQuestionBase {
@@ -86,6 +98,14 @@ export function rowToQuizQuestion(
         questionType: "single_best_answer",
         choices: mapChoiceRows(choiceRows),
       };
+    case "true_false": {
+      const correctAnswer = trueFalseCorrectFromRow(row) ?? false;
+      return {
+        ...base,
+        questionType: "true_false",
+        correctAnswer,
+      };
+    }
     default:
       return {
         ...base,
@@ -238,7 +258,8 @@ export async function getPublishedQuizBySlug(slug: string): Promise<QuizWithQues
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct)
+        choices:quiz_question_choices(id, position, text, is_correct),
+        true_false:quiz_question_true_false(question_id, correct_answer)
       )
     `,
     )
@@ -292,7 +313,7 @@ export async function getUserActiveAttemptForQuiz(quizId: string): Promise<QuizA
 
 export async function getQuizAttemptWithResponses(attemptId: string): Promise<{
   attempt: QuizAttempt;
-  responses: { questionId: string; choiceId: string }[];
+  responses: QuizAttemptSavedResponse[];
 } | null> {
   const supabase = await createClient();
   const {
@@ -311,7 +332,7 @@ export async function getQuizAttemptWithResponses(attemptId: string): Promise<{
 
   const { data: responsesData, error: rErr } = await supabase
     .from("question_responses")
-    .select("question_id, choice_id")
+    .select("question_id, choice_id, answer_payload")
     .eq("quiz_attempt_id", attemptId)
     .eq("user_id", user.id);
 
@@ -319,12 +340,34 @@ export async function getQuizAttemptWithResponses(attemptId: string): Promise<{
     return { attempt: rowToAttempt(attemptData as Record<string, unknown>), responses: [] };
   }
 
+  const responses: QuizAttemptSavedResponse[] = [];
+  for (const r of responsesData ?? []) {
+    const row = r as {
+      question_id: string;
+      choice_id: string | null;
+      answer_payload?: unknown;
+    };
+    const parsed = parseQuestionAnswerPayload(row.answer_payload ?? null, row.choice_id);
+    const sub = submittedAnswerFromPayload(parsed, row.choice_id);
+    if (!sub) continue;
+    if (sub.type === "single_best_answer") {
+      responses.push({
+        questionId: row.question_id,
+        kind: "single_best_answer",
+        choiceId: sub.selectedChoiceId,
+      });
+    } else {
+      responses.push({
+        questionId: row.question_id,
+        kind: "true_false",
+        value: sub.value,
+      });
+    }
+  }
+
   return {
     attempt: rowToAttempt(attemptData as Record<string, unknown>),
-    responses: (responsesData ?? []).map((r) => ({
-      questionId: String((r as { question_id: string }).question_id),
-      choiceId: String((r as { choice_id: string }).choice_id),
-    })),
+    responses,
   };
 }
 
@@ -467,6 +510,34 @@ export async function getRandomPracticeQuestion(filters: PracticeFilters): Promi
   const pool = unanswered.length > 0 ? unanswered : rows;
 
   const picked = pool[Math.floor(Math.random() * pool.length)] as Record<string, unknown>;
+  const pickedId = String(picked.id);
+  const pickedType = (picked.question_type as QuizQuestionType) ?? "single_best_answer";
+
+  if (pickedType === "true_false") {
+    const { data: tfRow, error: tfErr } = await supabase
+      .from("quiz_question_true_false")
+      .select("correct_answer")
+      .eq("question_id", pickedId)
+      .maybeSingle();
+
+    if (tfErr || tfRow == null) return null;
+
+    const rowWithTf: Record<string, unknown> = {
+      ...picked,
+      true_false: [{ question_id: pickedId, correct_answer: tfRow.correct_answer }],
+    };
+
+    const previouslyAnswered = answeredIds.has(pickedId);
+    const previousResult = previouslyAnswered ? await getLatestResponseForQuestion(pickedId) : null;
+    const isFlagged = user ? await isQuestionFlagged(pickedId) : false;
+
+    return {
+      question: rowToQuizQuestion(rowWithTf, []),
+      previouslyAnswered,
+      previousResult: previousResult ? { wasCorrect: previousResult.wasCorrect } : undefined,
+      isFlagged,
+    };
+  }
 
   const { data: choices, error: cErr } = await supabase
     .from("quiz_question_choices")
@@ -526,7 +597,7 @@ export type QuizAttemptResult = {
   quiz: Quiz;
   questions: Array<{
     question: QuizQuestion;
-    userChoiceId: string | null;
+    userAnswer: SubmittedQuestionAnswer | null;
     isCorrect: boolean | null;
   }>;
   totalTimeSeconds: number | null;
@@ -571,7 +642,8 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct, question_id)
+        choices:quiz_question_choices(id, position, text, is_correct, question_id),
+        true_false:quiz_question_true_false(question_id, correct_answer)
       )
     `,
     )
@@ -593,11 +665,11 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
     .eq("quiz_attempt_id", attemptId)
     .eq("user_id", user.id);
 
-  const responseByQuestion = new Map<string, { choiceId: string; answerPayload: unknown }>();
+  const responseByQuestion = new Map<string, { choiceId: string | null; answerPayload: unknown }>();
   for (const r of responsesData ?? []) {
     const row = r as {
       question_id: string;
-      choice_id: string;
+      choice_id: string | null;
       answer_payload?: unknown;
     };
     responseByQuestion.set(row.question_id, {
@@ -624,13 +696,12 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
     const payload = response
       ? parseQuestionAnswerPayload(response.answerPayload ?? null, response.choiceId)
       : null;
-    const userChoiceId = payload?.selectedChoiceId ?? response?.choiceId ?? null;
-    const isCorrect =
-      response && userChoiceId != null ? evaluateQuestionAnswer(question, userChoiceId) : null;
+    const userAnswer = submittedAnswerFromPayload(payload, response?.choiceId ?? null);
+    const isCorrect = userAnswer !== null ? evaluateQuestionAnswer(question, userAnswer) : null;
 
     questions.push({
       question,
-      userChoiceId,
+      userAnswer,
       isCorrect,
     });
   }
@@ -1055,7 +1126,8 @@ export async function getFlaggedQuestionsForUser(): Promise<FlaggedQuestionEntry
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct)
+        choices:quiz_question_choices(id, position, text, is_correct),
+        true_false:quiz_question_true_false(question_id, correct_answer)
       )
     `,
     )
@@ -1498,7 +1570,8 @@ export async function getUserGeneratedQuizById(quizId: string): Promise<QuizWith
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct)
+        choices:quiz_question_choices(id, position, text, is_correct),
+        true_false:quiz_question_true_false(question_id, correct_answer)
       )
     `,
     )

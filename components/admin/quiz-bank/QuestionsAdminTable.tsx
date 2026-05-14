@@ -52,6 +52,12 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
             </th>
             <th
               scope="col"
+              className="w-32 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
+            >
+              Type
+            </th>
+            <th
+              scope="col"
               className="w-28 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
             >
               Status
@@ -105,6 +111,9 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                     {vignetteExcerpt(rowPreview(q))}
                   </Link>
                   <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.questionText}</p>
+                </td>
+                <td className="px-6 py-4 align-top text-sm text-text-body">
+                  {q.questionType === "true_false" ? "True / False" : "Multiple choice"}
                 </td>
                 <td className="px-6 py-4 align-top">
                   <PostStatusPill status={q.status === "published" ? "published" : "draft"} />

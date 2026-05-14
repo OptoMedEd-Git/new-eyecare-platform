@@ -70,7 +70,8 @@ export async function getAllAdminQuestions(userId: string): Promise<AdminQuestio
       *,
       category:blog_categories(id, name),
       author:profiles!quiz_questions_author_id_fkey(id, first_name, last_name),
-      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
     `,
     )
     .eq("author_id", userId)
@@ -98,7 +99,8 @@ export async function getAdminQuestionById(id: string, userId: string): Promise<
       *,
       category:blog_categories(id, name),
       author:profiles!quiz_questions_author_id_fkey(id, first_name, last_name),
-      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
     `,
     )
     .eq("id", id)
@@ -229,7 +231,8 @@ export async function getAdminQuizById(
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct, question_id)
+        choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
       )
     `,
     )
@@ -281,7 +284,8 @@ export async function getAvailableQuestionsForPicker(
       `
       *,
       category:blog_categories(id, name),
-      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
     `,
     )
     .eq("status", "published");

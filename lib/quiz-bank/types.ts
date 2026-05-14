@@ -1,7 +1,7 @@
 export type QuizDifficulty = "foundational" | "intermediate" | "advanced";
 
 /** Matches DB enum `quiz_question_type`; extend when new types ship. */
-export type QuizQuestionType = "single_best_answer";
+export type QuizQuestionType = "single_best_answer" | "true_false";
 
 export type QuestionAudience = "student" | "resident" | "practicing" | "all";
 export type QuestionStatus = "draft" | "published";
@@ -38,10 +38,30 @@ export type SingleBestAnswerSatellite = {
   choices: QuizChoice[];
 };
 
-/** Fully loaded question for the app (discriminated union — add arms per new question_type). */
-export type SingleBestAnswerQuestion = QuizQuestionBase & SingleBestAnswerSatellite;
+/** Satellite: quiz_question_true_false for true_false. */
+export type TrueFalseSatellite = {
+  correctAnswer: boolean;
+};
 
-export type QuizQuestion = SingleBestAnswerQuestion;
+/** Fully loaded question for the app (discriminated union — add arms per new question_type). */
+export type SingleBestAnswerQuestion = QuizQuestionBase & SingleBestAnswerSatellite & { questionType: "single_best_answer" };
+
+export type TrueFalseQuestion = QuizQuestionBase & TrueFalseSatellite & { questionType: "true_false" };
+
+export type QuizQuestion = SingleBestAnswerQuestion | TrueFalseQuestion;
+
+export function isSingleBestAnswerQuestion(q: QuizQuestion): q is SingleBestAnswerQuestion {
+  return q.questionType === "single_best_answer";
+}
+
+export function isTrueFalseQuestion(q: QuizQuestion): q is TrueFalseQuestion {
+  return q.questionType === "true_false";
+}
+
+/** What the learner submitted, used by scoring and results (generalizes beyond choice id). */
+export type SubmittedQuestionAnswer =
+  | { type: "single_best_answer"; selectedChoiceId: string }
+  | { type: "true_false"; value: boolean };
 
 /** Stored in question_responses.answer_payload (jsonb). */
 export type SingleBestAnswerPayload = {
@@ -52,14 +72,20 @@ export type SingleBestAnswerPayload = {
   partialCredit?: { earned: number; max: number };
 };
 
-export type QuestionAnswerPayload = SingleBestAnswerPayload;
+export type TrueFalsePayload = {
+  type: "true_false";
+  version?: number;
+  answer: boolean;
+};
+
+export type QuestionAnswerPayload = SingleBestAnswerPayload | TrueFalsePayload;
 
 export type QuestionResponse = {
   id: string;
   userId: string;
   questionId: string;
-  /** Denormalized FK for single_best_answer; future types may deprecate. */
-  choiceId: string;
+  /** Denormalized FK for single_best_answer; null for true_false. */
+  choiceId: string | null;
   answerPayload: QuestionAnswerPayload;
   isCorrect: boolean;
   answeredAt: string;
@@ -196,3 +222,8 @@ export type QuizBankDashboardData = {
   categoryAccuracy: QuizBankCategoryAccuracyRow[];
   accuracyOverTime: QuizBankDailyAccuracyRow[];
 };
+
+/** One saved answer when resuming a quiz attempt (curated or user-generated). */
+export type QuizAttemptSavedResponse =
+  | { questionId: string; kind: "single_best_answer"; choiceId: string }
+  | { questionId: string; kind: "true_false"; value: boolean };

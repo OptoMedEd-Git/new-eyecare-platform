@@ -1,6 +1,12 @@
-import type { QuestionAnswerPayload, SingleBestAnswerPayload } from "./types";
+import type {
+  QuestionAnswerPayload,
+  SingleBestAnswerPayload,
+  SubmittedQuestionAnswer,
+  TrueFalsePayload,
+} from "./types";
 
 const SINGLE_BEST = "single_best_answer" as const;
+const TRUE_FALSE = "true_false" as const;
 
 /** Build JSONB payload for a single-best-answer submission (stored in question_responses.answer_payload). */
 export function buildSingleBestAnswerPayload(choiceId: string): SingleBestAnswerPayload {
@@ -8,6 +14,15 @@ export function buildSingleBestAnswerPayload(choiceId: string): SingleBestAnswer
     type: SINGLE_BEST,
     version: 1,
     selectedChoiceId: choiceId,
+  };
+}
+
+/** Build JSONB payload for a true/false submission. */
+export function buildTrueFalsePayload(value: boolean): TrueFalsePayload {
+  return {
+    type: TRUE_FALSE,
+    version: 1,
+    answer: value,
   };
 }
 
@@ -39,9 +54,31 @@ export function parseQuestionAnswerPayload(
         partialCredit,
       };
     }
+    if (t === TRUE_FALSE && typeof o.answer === "boolean") {
+      return {
+        type: TRUE_FALSE,
+        version: typeof o.version === "number" ? o.version : 1,
+        answer: o.answer,
+      };
+    }
   }
   if (fallbackChoiceId) {
     return buildSingleBestAnswerPayload(fallbackChoiceId);
   }
   return null;
+}
+
+/** Map stored payload (+ legacy choice_id) to the shape used by scoring and results. */
+export function submittedAnswerFromPayload(
+  parsed: QuestionAnswerPayload | null,
+  fallbackChoiceId: string | null,
+): SubmittedQuestionAnswer | null {
+  if (!parsed && fallbackChoiceId) {
+    return { type: "single_best_answer", selectedChoiceId: fallbackChoiceId };
+  }
+  if (!parsed) return null;
+  if (parsed.type === "single_best_answer") {
+    return { type: "single_best_answer", selectedChoiceId: parsed.selectedChoiceId };
+  }
+  return { type: "true_false", value: parsed.answer };
 }

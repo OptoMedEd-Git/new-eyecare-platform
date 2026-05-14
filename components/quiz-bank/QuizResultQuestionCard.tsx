@@ -1,6 +1,7 @@
 import { Check, X, AlertCircle } from "lucide-react";
 
 import type { QuizAttemptResult } from "@/lib/quiz-bank/queries";
+import { isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
 
 import { FlagButton } from "./FlagButton";
 
@@ -12,14 +13,17 @@ type Props = {
 };
 
 export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, onFlagToggle }: Props) {
-  const { question, userChoiceId, isCorrect } = entry;
-  const wasAnswered = userChoiceId !== null;
+  const { question, userAnswer, isCorrect } = entry;
+  const wasAnswered = userAnswer !== null;
 
   const borderClass = wasAnswered
     ? isCorrect
       ? "border-border-success"
       : "border-border-danger"
     : "border-border-default";
+
+  const userChoiceId = userAnswer?.type === "single_best_answer" ? userAnswer.selectedChoiceId : null;
+  const userTf = userAnswer?.type === "true_false" ? userAnswer.value : null;
 
   return (
     <article className={`rounded-base border bg-bg-primary-soft ${borderClass}`}>
@@ -69,53 +73,115 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        <ol className="space-y-2">
-          {question.choices.map((choice, i) => {
-            const letter = String.fromCharCode(65 + i);
-            const isUserChoice = wasAnswered && userChoiceId === choice.id;
-            const isCorrectChoice = choice.isCorrect;
-            /** Green "you earned it" styling only when the user submitted an answer (right or wrong). Unanswered: show correct key in neutral/info style so it does not read as a correct *attempt*. */
-            const correctChoiceEarnedSuccess = isCorrectChoice && wasAnswered;
-            const correctChoiceUnansweredReveal = isCorrectChoice && !wasAnswered;
+        {isSingleBestAnswerQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const isUserChoice = wasAnswered && userChoiceId === choice.id;
+              const isCorrectChoice = choice.isCorrect;
+              /** Green "you earned it" styling only when the user submitted an answer (right or wrong). Unanswered: show correct key in neutral/info style so it does not read as a correct *attempt*. */
+              const correctChoiceEarnedSuccess = isCorrectChoice && wasAnswered;
+              const correctChoiceUnansweredReveal = isCorrectChoice && !wasAnswered;
 
-            let classes = "flex items-start gap-3 rounded-base border px-4 py-3 text-sm";
-            if (correctChoiceEarnedSuccess) {
-              classes += " border-border-success bg-bg-success-softer";
-            } else if (correctChoiceUnansweredReveal) {
-              classes += " border-border-brand-subtle bg-bg-brand-softer";
-            } else if (isUserChoice) {
-              classes += " border-border-danger bg-bg-danger-softer";
-            } else {
-              classes += " border-border-default bg-bg-primary-soft";
-            }
+              let classes = "flex items-start gap-3 rounded-base border px-4 py-3 text-sm";
+              if (correctChoiceEarnedSuccess) {
+                classes += " border-border-success bg-bg-success-softer";
+              } else if (correctChoiceUnansweredReveal) {
+                classes += " border-border-brand-subtle bg-bg-brand-softer";
+              } else if (isUserChoice) {
+                classes += " border-border-danger bg-bg-danger-softer";
+              } else {
+                classes += " border-border-default bg-bg-primary-soft";
+              }
 
-            return (
-              <li key={choice.id} className={classes}>
-                <span
-                  className={[
-                    "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                    correctChoiceEarnedSuccess
-                      ? "bg-bg-success text-text-on-brand"
-                      : isUserChoice
-                        ? "bg-bg-danger text-text-on-brand"
-                        : "bg-bg-secondary-soft text-text-muted",
-                  ].join(" ")}
-                >
-                  {correctChoiceEarnedSuccess ? (
-                    <Check className="size-3.5" aria-hidden />
-                  ) : isUserChoice ? (
-                    <X className="size-3.5" aria-hidden />
-                  ) : (
-                    letter
-                  )}
-                </span>
-                <div className="flex-1 leading-relaxed text-text-heading">
-                  {choice.text}
-                  <span className="ml-2 inline-flex items-center gap-2 text-xs">
-                    {isCorrectChoice ? (
+              return (
+                <li key={choice.id} className={classes}>
+                  <span
+                    className={[
+                      "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      correctChoiceEarnedSuccess
+                        ? "bg-bg-success text-text-on-brand"
+                        : isUserChoice
+                          ? "bg-bg-danger text-text-on-brand"
+                          : "bg-bg-secondary-soft text-text-muted",
+                    ].join(" ")}
+                  >
+                    {correctChoiceEarnedSuccess ? (
+                      <Check className="size-3.5" aria-hidden />
+                    ) : isUserChoice ? (
+                      <X className="size-3.5" aria-hidden />
+                    ) : (
+                      letter
+                    )}
+                  </span>
+                  <div className="flex-1 leading-relaxed text-text-heading">
+                    {choice.text}
+                    <span className="ml-2 inline-flex items-center gap-2 text-xs">
+                      {isCorrectChoice ? (
+                        <span
+                          className={
+                            correctChoiceUnansweredReveal
+                              ? "font-medium text-text-fg-brand-strong"
+                              : "font-medium text-text-fg-success-strong"
+                          }
+                        >
+                          Correct answer
+                        </span>
+                      ) : null}
+                      {isUserChoice && !isCorrectChoice ? (
+                        <span className="font-medium text-text-fg-danger">Your answer</span>
+                      ) : null}
+                      {isUserChoice && isCorrectChoice ? (
+                        <span className="font-medium text-text-fg-success-strong">Your answer</span>
+                      ) : null}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
+        {isTrueFalseQuestion(question) ? (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {([true, false] as const).map((value) => {
+              const label = value ? "True" : "False";
+              const isCorrectOption = value === question.correctAnswer;
+              const isUserChoice = wasAnswered && userTf === value;
+              const correctEarned = isCorrectOption && wasAnswered;
+              const correctUnansweredReveal = isCorrectOption && !wasAnswered;
+
+              let classes = "flex items-center justify-center gap-2 rounded-base border px-4 py-4 text-sm font-semibold";
+              if (correctEarned) {
+                classes += " border-border-success bg-bg-success-softer";
+              } else if (correctUnansweredReveal) {
+                classes += " border-border-brand-subtle bg-bg-brand-softer";
+              } else if (isUserChoice) {
+                classes += " border-border-danger bg-bg-danger-softer";
+              } else {
+                classes += " border-border-default bg-bg-primary-soft";
+              }
+
+              return (
+                <div key={label} className={classes}>
+                  <span
+                    className={[
+                      "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      correctEarned
+                        ? "bg-bg-success text-text-on-brand"
+                        : isUserChoice
+                          ? "bg-bg-danger text-text-on-brand"
+                          : "bg-bg-secondary-soft text-text-muted",
+                    ].join(" ")}
+                  >
+                    {correctEarned ? <Check className="size-3.5" aria-hidden /> : isUserChoice ? <X className="size-3.5" aria-hidden /> : null}
+                  </span>
+                  <span className="text-text-heading">{label}</span>
+                  <span className="ml-auto flex flex-wrap items-center gap-2 text-xs">
+                    {isCorrectOption ? (
                       <span
                         className={
-                          correctChoiceUnansweredReveal
+                          correctUnansweredReveal
                             ? "font-medium text-text-fg-brand-strong"
                             : "font-medium text-text-fg-success-strong"
                         }
@@ -123,18 +189,18 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
                         Correct answer
                       </span>
                     ) : null}
-                    {isUserChoice && !isCorrectChoice ? (
+                    {isUserChoice && !isCorrectOption ? (
                       <span className="font-medium text-text-fg-danger">Your answer</span>
                     ) : null}
-                    {isUserChoice && isCorrectChoice ? (
+                    {isUserChoice && isCorrectOption ? (
                       <span className="font-medium text-text-fg-success-strong">Your answer</span>
                     ) : null}
                   </span>
                 </div>
-              </li>
-            );
-          })}
-        </ol>
+              );
+            })}
+          </div>
+        ) : null}
 
         <div className="rounded-base border border-border-default bg-bg-secondary-soft p-4">
           <h3 className="text-sm font-bold text-text-heading">Explanation</h3>

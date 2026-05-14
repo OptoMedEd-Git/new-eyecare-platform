@@ -1,7 +1,8 @@
 "use client";
 
 import { submitQuestionResponse } from "@/app/(app)/quiz-bank/actions";
-import type { PracticeQuestionResult } from "@/lib/quiz-bank/types";
+import type { PracticeQuestionResult, SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
+import { isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
 import { ArrowRight, Check, History, X } from "lucide-react";
 
 import { FlagButton } from "./FlagButton";
@@ -14,34 +15,68 @@ type Props = {
   onAnswered: (wasCorrect: boolean) => void;
 };
 
+type SubmissionState =
+  | {
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "single_best_answer";
+      correctChoiceId: string;
+    }
+  | {
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "true_false";
+      correctAnswer: boolean;
+    };
+
 export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
   const { question, previouslyAnswered, previousResult, isFlagged } = result;
 
-  const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
-  const [submission, setSubmission] = useState<{
-    isCorrect: boolean;
-    correctChoiceId: string;
-    explanation: string;
-  } | null>(null);
+  const [selectedMcId, setSelectedMcId] = useState<string | null>(null);
+  const [selectedTf, setSelectedTf] = useState<boolean | null>(null);
+  const [submission, setSubmission] = useState<SubmissionState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const submitted = Boolean(submission);
 
+  function buildPendingAnswer(): SubmittedQuestionAnswer | null {
+    if (isSingleBestAnswerQuestion(question)) {
+      if (!selectedMcId) return null;
+      return { type: "single_best_answer", selectedChoiceId: selectedMcId };
+    }
+    if (isTrueFalseQuestion(question)) {
+      if (selectedTf === null) return null;
+      return { type: "true_false", value: selectedTf };
+    }
+    return null;
+  }
+
   function handleSubmit() {
-    if (!selectedChoiceId || submitted) return;
+    const pending = buildPendingAnswer();
+    if (!pending || submitted) return;
     setError(null);
     startTransition(async () => {
-      const r = await submitQuestionResponse(question.id, selectedChoiceId);
+      const r = await submitQuestionResponse(question.id, pending);
       if (!r.success) {
         setError(r.error);
         return;
       }
-      setSubmission({
-        isCorrect: r.isCorrect,
-        correctChoiceId: r.correctChoiceId,
-        explanation: r.explanation,
-      });
+      if (r.questionType === "single_best_answer") {
+        setSubmission({
+          isCorrect: r.isCorrect,
+          correctChoiceId: r.correctChoiceId,
+          explanation: r.explanation,
+          questionType: "single_best_answer",
+        });
+      } else {
+        setSubmission({
+          isCorrect: r.isCorrect,
+          correctAnswer: r.correctAnswer,
+          explanation: r.explanation,
+          questionType: "true_false",
+        });
+      }
       onAnswered(r.isCorrect);
     });
   }
@@ -102,57 +137,123 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        <ol className="space-y-2">
-          {question.choices.map((choice, i) => {
-            const letter = String.fromCharCode(65 + i);
-            const isSelected = selectedChoiceId === choice.id;
-            const showCorrect = submission && choice.id === submission.correctChoiceId;
-            const showIncorrectPick =
-              submission && !submission.isCorrect && selectedChoiceId === choice.id;
+        {isSingleBestAnswerQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const isSelected = selectedMcId === choice.id;
+              const showCorrect =
+                submission?.questionType === "single_best_answer" && choice.id === submission.correctChoiceId;
+              const showIncorrectPick =
+                submission &&
+                !submission.isCorrect &&
+                submission.questionType === "single_best_answer" &&
+                selectedMcId === choice.id;
 
-            let classes =
-              "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
-            if (submitted) {
-              if (showCorrect) {
-                classes +=
-                  " border-border-success-subtle bg-bg-success-softer text-text-heading";
-              } else if (showIncorrectPick) {
-                classes +=
-                  " border-border-danger-subtle bg-bg-danger-softer text-text-heading";
+              let classes =
+                "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
+              if (submitted) {
+                if (showCorrect) {
+                  classes +=
+                    " border-border-success-subtle bg-bg-success-softer text-text-heading";
+                } else if (showIncorrectPick) {
+                  classes +=
+                    " border-border-danger-subtle bg-bg-danger-softer text-text-heading";
+                } else {
+                  classes +=
+                    " border-border-default bg-bg-primary-soft text-text-body opacity-60";
+                }
+              } else if (isSelected) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
               } else {
                 classes +=
-                  " border-border-default bg-bg-primary-soft text-text-body opacity-60";
+                  " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
               }
-            } else if (isSelected) {
-              classes += " border-border-brand bg-bg-brand-softer text-text-heading";
-            } else {
-              classes +=
-                " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
-            }
 
-            return (
-              <li key={choice.id}>
+              return (
+                <li key={choice.id}>
+                  <button
+                    type="button"
+                    onClick={() => !submitted && setSelectedMcId(choice.id)}
+                    disabled={submitted}
+                    className={classes}
+                  >
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-secondary-soft text-xs font-bold text-text-muted">
+                      {submitted && showCorrect ? (
+                        <Check className="size-3.5 text-text-fg-success-strong" aria-hidden />
+                      ) : submitted && showIncorrectPick ? (
+                        <X className="size-3.5 text-text-fg-danger-strong" aria-hidden />
+                      ) : (
+                        letter
+                      )}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
+        {isTrueFalseQuestion(question) ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {([true, false] as const).map((value) => {
+              const label = value ? "True" : "False";
+              const isSelected = selectedTf === value;
+              const showCorrect =
+                submission?.questionType === "true_false" && value === submission.correctAnswer;
+              const showIncorrectPick =
+                submission &&
+                !submission.isCorrect &&
+                submission.questionType === "true_false" &&
+                selectedTf === value;
+
+              let classes =
+                "flex w-full items-center justify-center rounded-base border px-4 py-4 text-sm font-semibold transition-colors";
+              if (submitted) {
+                if (showCorrect) {
+                  classes +=
+                    " border-border-success-subtle bg-bg-success-softer text-text-heading";
+                } else if (showIncorrectPick) {
+                  classes +=
+                    " border-border-danger-subtle bg-bg-danger-softer text-text-heading";
+                } else {
+                  classes +=
+                    " border-border-default bg-bg-primary-soft text-text-body opacity-60";
+                }
+              } else if (isSelected) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
+              } else {
+                classes +=
+                  " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
+              }
+
+              return (
                 <button
+                  key={label}
                   type="button"
-                  onClick={() => !submitted && setSelectedChoiceId(choice.id)}
+                  onClick={() => !submitted && setSelectedTf(value)}
                   disabled={submitted}
                   className={classes}
                 >
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-secondary-soft text-xs font-bold text-text-muted">
-                    {submitted && showCorrect ? (
-                      <Check className="size-3.5 text-text-fg-success-strong" aria-hidden />
-                    ) : submitted && showIncorrectPick ? (
-                      <X className="size-3.5 text-text-fg-danger-strong" aria-hidden />
-                    ) : (
-                      letter
-                    )}
-                  </span>
-                  <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  {submitted && showCorrect ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Check className="size-4 text-text-fg-success-strong" aria-hidden />
+                      {label}
+                    </span>
+                  ) : submitted && showIncorrectPick ? (
+                    <span className="inline-flex items-center gap-2">
+                      <X className="size-4 text-text-fg-danger-strong" aria-hidden />
+                      {label}
+                    </span>
+                  ) : (
+                    label
+                  )}
                 </button>
-              </li>
-            );
-          })}
-        </ol>
+              );
+            })}
+          </div>
+        ) : null}
 
         {error ? <p className="text-sm text-text-fg-danger-strong">{error}</p> : null}
 
@@ -161,7 +262,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={!selectedChoiceId || isPending}
+              disabled={(isSingleBestAnswerQuestion(question) ? !selectedMcId : selectedTf === null) || isPending}
               className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Submitting..." : "Submit answer"}

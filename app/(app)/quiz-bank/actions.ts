@@ -3,15 +3,32 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { buildSingleBestAnswerPayload } from "@/lib/quiz-bank/answer-payload";
+import { buildSingleBestAnswerPayload, buildTrueFalsePayload } from "@/lib/quiz-bank/answer-payload";
 import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
 import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
+import { isSingleBestAnswerQuestion, isTrueFalseQuestion, type SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
 
 type SubmitResult =
-  | { success: true; isCorrect: boolean; correctChoiceId: string; explanation: string }
-  | { success: false; error: string };
+  | { success: false; error: string }
+  | {
+      success: true;
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "single_best_answer";
+      correctChoiceId: string;
+    }
+  | {
+      success: true;
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "true_false";
+      correctAnswer: boolean;
+    };
 
-export async function submitQuestionResponse(questionId: string, choiceId: string): Promise<SubmitResult> {
+export async function submitQuestionResponse(
+  questionId: string,
+  answer: SubmittedQuestionAnswer,
+): Promise<SubmitResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,7 +41,8 @@ export async function submitQuestionResponse(questionId: string, choiceId: strin
       `
       *,
       category:blog_categories(id, name),
-      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
     `,
     )
     .eq("id", questionId)
@@ -40,33 +58,74 @@ export async function submitQuestionResponse(questionId: string, choiceId: strin
   ) as Array<Record<string, unknown>>;
 
   const quizQuestion = rowToQuizQuestion(row, choiceRows);
-  const selected = quizQuestion.choices.find((c) => c.id === choiceId);
-  if (!selected) return { success: false, error: "Invalid choice" };
+  const explanation = String(row.explanation);
 
-  const correctChoice = quizQuestion.choices.find((c) => c.isCorrect);
-  if (!correctChoice) return { success: false, error: "Question has no correct answer set" };
+  if (isSingleBestAnswerQuestion(quizQuestion)) {
+    if (answer.type !== "single_best_answer") {
+      return { success: false, error: "This question expects a multiple-choice answer" };
+    }
+    const selected = quizQuestion.choices.find((c) => c.id === answer.selectedChoiceId);
+    if (!selected) return { success: false, error: "Invalid choice" };
 
-  const isCorrect = evaluateQuestionAnswer(quizQuestion, choiceId);
+    const correctChoice = quizQuestion.choices.find((c) => c.isCorrect);
+    if (!correctChoice) return { success: false, error: "Question has no correct answer set" };
 
-  const { error: insErr } = await supabase.from("question_responses").insert({
-    user_id: user.id,
-    question_id: questionId,
-    choice_id: choiceId,
-    is_correct: isCorrect,
-    answer_payload: buildSingleBestAnswerPayload(choiceId),
-  });
+    const isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
 
-  if (insErr) {
-    console.error("Failed to save response:", insErr);
+    const { error: insErr } = await supabase.from("question_responses").insert({
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: answer.selectedChoiceId,
+      is_correct: isCorrect,
+      answer_payload: buildSingleBestAnswerPayload(answer.selectedChoiceId),
+    });
+
+    if (insErr) {
+      console.error("Failed to save response:", insErr);
+    }
+
+    revalidatePath("/quiz-bank");
+    revalidatePath("/quiz-bank/practice");
+
+    return {
+      success: true,
+      isCorrect,
+      correctChoiceId: correctChoice.id,
+      explanation,
+      questionType: "single_best_answer",
+    };
   }
 
-  revalidatePath("/quiz-bank");
-  revalidatePath("/quiz-bank/practice");
+  if (isTrueFalseQuestion(quizQuestion)) {
+    if (answer.type !== "true_false") {
+      return { success: false, error: "This question expects a true/false answer" };
+    }
 
-  return {
-    success: true,
-    isCorrect,
-    correctChoiceId: correctChoice.id,
-    explanation: String(row.explanation),
-  };
+    const isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
+
+    const { error: insErr } = await supabase.from("question_responses").insert({
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: null,
+      is_correct: isCorrect,
+      answer_payload: buildTrueFalsePayload(answer.value),
+    });
+
+    if (insErr) {
+      console.error("Failed to save response:", insErr);
+    }
+
+    revalidatePath("/quiz-bank");
+    revalidatePath("/quiz-bank/practice");
+
+    return {
+      success: true,
+      isCorrect,
+      correctAnswer: quizQuestion.correctAnswer,
+      explanation,
+      questionType: "true_false",
+    };
+  }
+
+  return { success: false, error: "Unsupported question type" };
 }

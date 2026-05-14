@@ -5,26 +5,34 @@ import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, Send } from "lucide-react";
 
 import { saveAnswerToAttempt, submitQuizAttempt } from "@/app/(app)/quiz-bank/quizzes/actions";
-import type { QuizAttempt, QuizWithQuestions } from "@/lib/quiz-bank/types";
+import type { QuizAttempt, QuizAttemptSavedResponse, QuizWithQuestions } from "@/lib/quiz-bank/types";
+import type { SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
 import { ProgressBar } from "@/components/shared/ProgressBar";
 
 import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizTimer } from "./QuizTimer";
 import { SubmitConfirmDialog } from "./SubmitConfirmDialog";
 
+function savedResponseToSubmitted(r: QuizAttemptSavedResponse): SubmittedQuestionAnswer {
+  if (r.kind === "single_best_answer") {
+    return { type: "single_best_answer", selectedChoiceId: r.choiceId };
+  }
+  return { type: "true_false", value: r.value };
+}
+
 type Props = {
   quiz: QuizWithQuestions;
   attempt: QuizAttempt;
-  initialResponses: { questionId: string; choiceId: string }[];
+  initialResponses: QuizAttemptSavedResponse[];
   initialFlaggedIds: string[];
 };
 
 export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFlaggedIds }: Props) {
   const router = useRouter();
 
-  const [answers, setAnswers] = useState<Map<string, string>>(() => {
-    const m = new Map<string, string>();
-    for (const r of initialResponses) m.set(r.questionId, r.choiceId);
+  const [answers, setAnswers] = useState<Map<string, SubmittedQuestionAnswer>>(() => {
+    const m = new Map<string, SubmittedQuestionAnswer>();
+    for (const r of initialResponses) m.set(r.questionId, savedResponseToSubmitted(r));
     return m;
   });
 
@@ -42,7 +50,7 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
   const answeredCount = answers.size;
   const allAnswered = totalQuestions > 0 && answeredCount === totalQuestions;
 
-  function handleSelectChoice(choiceId: string) {
+  function handleSelectAnswer(answer: SubmittedQuestionAnswer) {
     if (timedOut || !currentQuestion) return;
 
     const questionId = currentQuestion.id;
@@ -50,13 +58,13 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
 
     setAnswers((prev) => {
       const next = new Map(prev);
-      next.set(questionId, choiceId);
+      next.set(questionId, answer);
       return next;
     });
     setError(null);
 
     startSaving(async () => {
-      const result = await saveAnswerToAttempt(attempt.id, questionId, choiceId);
+      const result = await saveAnswerToAttempt(attempt.id, questionId, answer);
       if (!result.success) {
         setAnswers((prev) => {
           const next = new Map(prev);
@@ -172,8 +180,8 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
           question={currentQuestion}
           questionNumber={currentIndex + 1}
           totalQuestions={totalQuestions}
-          selectedChoiceId={answers.get(currentQuestion.id) ?? null}
-          onSelectChoice={handleSelectChoice}
+          selectedAnswer={answers.get(currentQuestion.id) ?? null}
+          onSelectAnswer={handleSelectAnswer}
           locked={timedOut}
           initialFlagged={flaggedIds.has(currentQuestion.id)}
           onFlagToggle={(nowFlagged) => handleFlagToggle(currentQuestion.id, nowFlagged)}

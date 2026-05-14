@@ -1,6 +1,11 @@
 "use client";
 
-import type { QuizQuestion } from "@/lib/quiz-bank/types";
+import {
+  isSingleBestAnswerQuestion,
+  isTrueFalseQuestion,
+  type QuizQuestion,
+  type SubmittedQuestionAnswer,
+} from "@/lib/quiz-bank/types";
 
 import { FlagButton } from "./FlagButton";
 
@@ -8,8 +13,8 @@ type Props = {
   question: QuizQuestion;
   questionNumber: number;
   totalQuestions: number;
-  selectedChoiceId: string | null;
-  onSelectChoice: (choiceId: string) => void;
+  selectedAnswer: SubmittedQuestionAnswer | null;
+  onSelectAnswer: (answer: SubmittedQuestionAnswer) => void;
   locked: boolean;
   initialFlagged: boolean;
   onFlagToggle?: (nowFlagged: boolean) => void;
@@ -19,8 +24,8 @@ export function QuizQuestionCard({
   question,
   questionNumber,
   totalQuestions,
-  selectedChoiceId,
-  onSelectChoice,
+  selectedAnswer,
+  onSelectAnswer,
   locked,
   initialFlagged,
   onFlagToggle,
@@ -72,44 +77,81 @@ export function QuizQuestionCard({
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        <ol className="space-y-2">
-          {question.choices.map((choice, i) => {
-            const letter = String.fromCharCode(65 + i);
-            const isSelected = selectedChoiceId === choice.id;
+        {isSingleBestAnswerQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const isSelected =
+                selectedAnswer?.type === "single_best_answer" && selectedAnswer.selectedChoiceId === choice.id;
 
-            let classes =
-              "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
-            if (isSelected) {
-              classes += " border-border-brand bg-bg-brand-softer text-text-heading";
-            } else {
-              classes += " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
-            }
-            if (locked) {
-              classes += " cursor-not-allowed";
-            }
+              let classes =
+                "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
+              if (isSelected) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
+              } else {
+                classes += " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
+              }
+              if (locked) {
+                classes += " cursor-not-allowed";
+              }
 
-            return (
-              <li key={choice.id}>
+              return (
+                <li key={choice.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      !locked && onSelectAnswer({ type: "single_best_answer", selectedChoiceId: choice.id })
+                    }
+                    disabled={locked}
+                    className={classes}
+                  >
+                    <span
+                      className={[
+                        "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                        isSelected ? "bg-bg-brand text-text-on-brand" : "bg-bg-secondary-soft text-text-muted",
+                      ].join(" ")}
+                    >
+                      {letter}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
+        {isTrueFalseQuestion(question) ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {([true, false] as const).map((value) => {
+              const label = value ? "True" : "False";
+              const isSelected = selectedAnswer?.type === "true_false" && selectedAnswer.value === value;
+
+              let classes =
+                "flex w-full items-center justify-center rounded-base border px-4 py-4 text-sm font-semibold transition-colors";
+              if (isSelected) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
+              } else {
+                classes += " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
+              }
+              if (locked) {
+                classes += " cursor-not-allowed";
+              }
+
+              return (
                 <button
+                  key={label}
                   type="button"
-                  onClick={() => !locked && onSelectChoice(choice.id)}
+                  onClick={() => !locked && onSelectAnswer({ type: "true_false", value })}
                   disabled={locked}
                   className={classes}
                 >
-                  <span
-                    className={[
-                      "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                      isSelected ? "bg-bg-brand text-text-on-brand" : "bg-bg-secondary-soft text-text-muted",
-                    ].join(" ")}
-                  >
-                    {letter}
-                  </span>
-                  <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  {label}
                 </button>
-              </li>
-            );
-          })}
-        </ol>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </article>
   );

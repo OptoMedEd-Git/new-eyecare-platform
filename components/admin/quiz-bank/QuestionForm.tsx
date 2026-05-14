@@ -13,7 +13,7 @@ import { ImageUpload } from "@/components/admin/ImageUpload";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
 import type { AdminQuestionRow } from "@/lib/quiz-bank/admin-queries";
-import type { QuizDifficulty } from "@/lib/quiz-bank/types";
+import type { QuizDifficulty, QuizQuestionType } from "@/lib/quiz-bank/types";
 import { formatPostDate } from "@/lib/blog/utils";
 import { ArrowLeft, Loader2, Save, Send, Trash2, Undo2 } from "lucide-react";
 import Link from "next/link";
@@ -45,7 +45,17 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     (initialQuestion?.difficulty as QuizDifficulty | undefined) ?? "intermediate",
   );
 
-  const initialChoices = initialQuestion?.choices ?? [];
+  const lockedQuestionType: QuizQuestionType = (initialQuestion?.questionType as QuizQuestionType | undefined) ?? "single_best_answer";
+  const [questionType, setQuestionType] = useState<QuizQuestionType>(() =>
+    initialQuestion ? lockedQuestionType : "single_best_answer",
+  );
+
+  const [correctTf, setCorrectTf] = useState<boolean>(() => {
+    if (initialQuestion?.questionType === "true_false") return initialQuestion.correctAnswer;
+    return true;
+  });
+
+  const initialChoices = initialQuestion?.questionType === "single_best_answer" ? initialQuestion.choices : [];
   const [choices, setChoices] = useState<string[]>([
     initialChoices[0]?.text ?? "",
     initialChoices[1]?.text ?? "",
@@ -82,8 +92,13 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     fd.set("category_id", categoryId);
     fd.set("target_audience", audience);
     fd.set("difficulty", difficulty);
-    fd.set("correct_choice", String(correctIndex));
-    choices.forEach((c, i) => fd.set(`choice_${i}`, c));
+    fd.set("question_type", isEditing ? lockedQuestionType : questionType);
+    if (isEditing ? lockedQuestionType === "single_best_answer" : questionType === "single_best_answer") {
+      fd.set("correct_choice", String(correctIndex));
+      choices.forEach((c, i) => fd.set(`choice_${i}`, c));
+    } else {
+      fd.set("correct_true_false", correctTf ? "true" : "false");
+    }
     return fd;
   }
 
@@ -303,6 +318,36 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
               />
             </div>
 
+            {!isEditing ? (
+              <div>
+                <label htmlFor="question_type" className="text-sm font-medium text-text-heading">
+                  Question type
+                </label>
+                <p className="mt-1 mb-2 text-xs text-text-muted">
+                  Multiple choice uses four answer options. True/False uses a single boolean correct answer.
+                </p>
+                <select
+                  id="question_type"
+                  name="question_type"
+                  value={questionType}
+                  onChange={(e) => {
+                    setQuestionType(e.target.value as QuizQuestionType);
+                    markDirty();
+                  }}
+                  className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading shadow-xs outline-none transition-colors focus:border-border-brand focus:ring-4 focus:ring-ring-brand"
+                >
+                  <option value="single_best_answer">Multiple choice (single best answer)</option>
+                  <option value="true_false">True / False</option>
+                </select>
+              </div>
+            ) : (
+              <div className="rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-body">
+                <span className="font-medium text-text-heading">Question type:</span>{" "}
+                {lockedQuestionType === "true_false" ? "True / False" : "Multiple choice (single best answer)"}
+              </div>
+            )}
+
+            {(isEditing ? lockedQuestionType === "single_best_answer" : questionType === "single_best_answer") ? (
             <div>
               <span className="text-sm font-medium text-text-heading">
                 Answer choices <span className="text-text-fg-danger">*</span>
@@ -338,6 +383,42 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 ))}
               </ol>
             </div>
+            ) : (
+              <div>
+                <span className="text-sm font-medium text-text-heading">
+                  Correct answer <span className="text-text-fg-danger">*</span>
+                </span>
+                <p className="mt-1 mb-3 text-xs text-text-muted">Select whether True or False is correct for this statement.</p>
+                <div className="flex flex-wrap gap-4">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-body">
+                    <input
+                      type="radio"
+                      name="correct_true_false"
+                      checked={correctTf === true}
+                      onChange={() => {
+                        setCorrectTf(true);
+                        markDirty();
+                      }}
+                      className="size-4 border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
+                    />
+                    True
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-text-body">
+                    <input
+                      type="radio"
+                      name="correct_true_false"
+                      checked={correctTf === false}
+                      onChange={() => {
+                        setCorrectTf(false);
+                        markDirty();
+                      }}
+                      className="size-4 border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
+                    />
+                    False
+                  </label>
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="explanation" className="text-sm font-medium text-text-heading">

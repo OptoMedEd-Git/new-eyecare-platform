@@ -3,9 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { buildSingleBestAnswerPayload } from "@/lib/quiz-bank/answer-payload";
+import { buildSingleBestAnswerPayload, buildTrueFalsePayload } from "@/lib/quiz-bank/answer-payload";
 import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
 import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
+import { isSingleBestAnswerQuestion, isTrueFalseQuestion, type SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
 
 type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -65,7 +66,7 @@ export async function startOrResumeQuizAttempt(
 export async function saveAnswerToAttempt(
   attemptId: string,
   questionId: string,
-  choiceId: string,
+  answer: SubmittedQuestionAnswer,
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -91,7 +92,8 @@ export async function saveAnswerToAttempt(
       `
       *,
       category:blog_categories(id, name),
-      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id),
+      true_false:quiz_question_true_false(question_id, correct_answer)
     `,
     )
     .eq("id", questionId)
@@ -106,10 +108,48 @@ export async function saveAnswerToAttempt(
   ) as Array<Record<string, unknown>>;
 
   const quizQuestion = rowToQuizQuestion(row, choiceRows);
-  const selected = quizQuestion.choices.find((c) => c.id === choiceId);
-  if (!selected) return { success: false, error: "Invalid choice" };
 
-  const isCorrect = evaluateQuestionAnswer(quizQuestion, choiceId);
+  let isCorrect: boolean;
+  let insertRow: {
+    user_id: string;
+    question_id: string;
+    choice_id: string | null;
+    is_correct: boolean;
+    quiz_attempt_id: string;
+    answer_payload: ReturnType<typeof buildSingleBestAnswerPayload> | ReturnType<typeof buildTrueFalsePayload>;
+  };
+
+  if (isSingleBestAnswerQuestion(quizQuestion)) {
+    if (answer.type !== "single_best_answer") {
+      return { success: false, error: "This question expects a multiple-choice answer" };
+    }
+    const selected = quizQuestion.choices.find((c) => c.id === answer.selectedChoiceId);
+    if (!selected) return { success: false, error: "Invalid choice" };
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
+    insertRow = {
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: answer.selectedChoiceId,
+      is_correct: isCorrect,
+      quiz_attempt_id: attemptId,
+      answer_payload: buildSingleBestAnswerPayload(answer.selectedChoiceId),
+    };
+  } else if (isTrueFalseQuestion(quizQuestion)) {
+    if (answer.type !== "true_false") {
+      return { success: false, error: "This question expects a true/false answer" };
+    }
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
+    insertRow = {
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: null,
+      is_correct: isCorrect,
+      quiz_attempt_id: attemptId,
+      answer_payload: buildTrueFalsePayload(answer.value),
+    };
+  } else {
+    return { success: false, error: "Unsupported question type" };
+  }
 
   const { error: delErr } = await supabase
     .from("question_responses")
@@ -123,14 +163,7 @@ export async function saveAnswerToAttempt(
     return { success: false, error: "Could not save answer" };
   }
 
-  const { error: insErr } = await supabase.from("question_responses").insert({
-    user_id: user.id,
-    question_id: questionId,
-    choice_id: choiceId,
-    is_correct: isCorrect,
-    quiz_attempt_id: attemptId,
-    answer_payload: buildSingleBestAnswerPayload(choiceId),
-  });
+  const { error: insErr } = await supabase.from("question_responses").insert(insertRow);
 
   if (insErr) {
     console.error("saveAnswerToAttempt error:", insErr);
