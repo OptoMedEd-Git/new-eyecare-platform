@@ -7,7 +7,7 @@ import type { LucideIcon } from "lucide-react";
 
 import type { ModuleCompletionState } from "@/lib/pathways/completion";
 import { usesManualPathwayCompletion } from "@/lib/pathways/manual-completion";
-import type { PathwayModuleType, PublicPathwayModuleForStepper } from "@/lib/pathways/types";
+import type { PathwayModuleType, PublicPathwayModuleForStepper, PublicPathwayPhaseForStepper } from "@/lib/pathways/types";
 
 import { ModuleCompleteToggle } from "./ModuleCompleteToggle";
 
@@ -34,7 +34,7 @@ const CONTEXT_PROSE_CLASS =
   "blog-content prose prose-sm max-w-none text-text-body prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-gray-900 prose-p:leading-relaxed prose-a:text-brand prose-a:no-underline hover:prose-a:underline prose-blockquote:border-brand prose-strong:text-gray-900 prose-ul:my-2 prose-ol:my-2 dark:prose-invert dark:prose-headings:text-white";
 
 type Props = {
-  modules: PublicPathwayModuleForStepper[];
+  phases: PublicPathwayPhaseForStepper[];
   pathwaySlug: string;
   completions: ModuleCompletionState[];
 };
@@ -61,10 +61,6 @@ function displayTitle(m: PublicPathwayModuleForStepper): string {
   const lt = m.linked_title?.trim();
   if (lt) return lt;
   return "Untitled module";
-}
-
-function stepNumber(position: number): number {
-  return position + 1;
 }
 
 function ModuleHeader({
@@ -131,12 +127,137 @@ function ModuleHeader({
   );
 }
 
-export function CurriculumStepper({ modules, pathwaySlug, completions }: Props) {
+function CurriculumModuleStep({
+  mod,
+  pathwaySlug,
+  completionById,
+  openContextId,
+  setOpenContextId,
+  displayStepOneBased,
+}: {
+  mod: PublicPathwayModuleForStepper;
+  pathwaySlug: string;
+  completionById: Map<string, ModuleCompletionState>;
+  openContextId: string | null;
+  setOpenContextId: (id: string | null) => void;
+  /** 1-based step index across the whole pathway (continuous across phases). */
+  displayStepOneBased: number;
+}) {
+  const TypeIcon = MODULE_ICONS[mod.module_type];
+  const typeLabel = MODULE_TYPE_LABELS[mod.module_type];
+  const title = displayTitle(mod);
+  const hasContext = Boolean(mod.renderedContextHtml?.trim());
+  const contextOpen = openContextId === mod.id;
+
+  let navigable = false;
+  let href: string | null = null;
+  if (!mod.is_orphaned) {
+    if (mod.module_type === "external_resource") {
+      const u = mod.external_url?.trim();
+      if (u) {
+        navigable = true;
+        href = u;
+      }
+    } else {
+      const slug = mod.linked_slug?.trim();
+      if (slug) {
+        navigable = true;
+        href = buildInternalHref(mod.module_type, slug, pathwaySlug);
+      }
+    }
+  }
+
+  const rowComplete = !mod.is_orphaned && completionById.get(mod.id)?.is_complete === true;
+  const showManualToggle = !mod.is_orphaned && usesManualPathwayCompletion(mod.module_type);
+
+  const shellClass = [
+    "overflow-hidden rounded-base border text-left transition-all",
+    mod.is_orphaned || !navigable
+      ? "border-border-default bg-bg-secondary-soft text-text-muted"
+      : rowComplete
+        ? "border-border-brand-subtle bg-bg-brand-softer/40 hover:border-border-brand-subtle hover:shadow-sm"
+        : "border-border-default bg-bg-primary-soft hover:border-border-brand-subtle hover:shadow-sm",
+  ].join(" ");
+
+  const stepMarker =
+    rowComplete && !mod.is_orphaned ? (
+      <div
+        className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bg-brand text-text-on-brand ring-4 ring-bg-primary-soft"
+        aria-hidden
+      >
+        <Check className="size-4" aria-hidden />
+      </div>
+    ) : (
+      <div
+        className={[
+          "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-4 ring-bg-primary-soft",
+          mod.is_orphaned || !navigable ? "bg-bg-secondary-medium text-text-muted" : "bg-bg-brand-softer text-text-fg-brand-strong",
+        ].join(" ")}
+        aria-hidden
+      >
+        {displayStepOneBased}
+      </div>
+    );
+
+  const initialManualComplete = Boolean(completionById.get(mod.id)?.is_complete);
+
+  return (
+    <li className="flex gap-4">
+      {stepMarker}
+      <div className={`min-w-0 flex-1 ${shellClass}`}>
+        <div className="flex min-w-0 flex-row items-stretch">
+          <div className="min-w-0 flex-1">
+            <ModuleHeader
+              mod={mod}
+              title={title}
+              typeLabel={typeLabel}
+              TypeIcon={TypeIcon}
+              navigable={navigable}
+              href={href}
+              isComplete={rowComplete}
+            />
+          </div>
+          {showManualToggle ? (
+            <ModuleCompleteToggle
+              key={`${mod.id}-${initialManualComplete}`}
+              pathwaySlug={pathwaySlug}
+              moduleId={mod.id}
+              initialComplete={initialManualComplete}
+            />
+          ) : null}
+        </div>
+
+        {hasContext ? (
+          <div className="border-t border-border-default px-4 pb-4 pt-2">
+            <button
+              type="button"
+              onClick={() => setOpenContextId(contextOpen ? null : mod.id)}
+              className="text-sm font-medium text-text-fg-brand-strong transition-colors hover:underline"
+              aria-expanded={contextOpen}
+            >
+              {contextOpen ? "Hide context" : "Show context"}
+            </button>
+            {contextOpen ? (
+              <div
+                className={`${CONTEXT_PROSE_CLASS} mt-3 rounded-base border border-border-default bg-bg-secondary-soft p-4`}
+                dangerouslySetInnerHTML={{ __html: mod.renderedContextHtml ?? "" }}
+              />
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </li>
+  );
+}
+
+export function CurriculumStepper({ phases, pathwaySlug, completions }: Props) {
   const [openContextId, setOpenContextId] = useState<string | null>(null);
 
   const completionById = useMemo(() => new Map(completions.map((c) => [c.module_id, c])), [completions]);
 
-  if (modules.length === 0) {
+  const totalModules = useMemo(() => phases.reduce((n, p) => n + p.modules.length, 0), [phases]);
+
+  if (totalModules === 0) {
     return (
       <section id="curriculum" className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft px-6 py-12 text-center">
         <p className="text-base font-medium text-text-heading">No modules in this pathway yet</p>
@@ -147,6 +268,8 @@ export function CurriculumStepper({ modules, pathwaySlug, completions }: Props) 
     );
   }
 
+  const showPhaseHeaders = phases.length >= 2;
+
   return (
     <section id="curriculum" className="rounded-base border border-border-default bg-bg-primary-soft p-6">
       <h2 className="text-lg font-bold text-text-heading">Curriculum</h2>
@@ -154,115 +277,50 @@ export function CurriculumStepper({ modules, pathwaySlug, completions }: Props) 
         Follow the steps in order. Use context where provided before opening each resource.
       </p>
 
-      <ol className="relative mt-6 flex flex-col gap-4 pl-0">
-        {modules.map((mod) => {
-          const TypeIcon = MODULE_ICONS[mod.module_type];
-          const typeLabel = MODULE_TYPE_LABELS[mod.module_type];
-          const title = displayTitle(mod);
-          const hasContext = Boolean(mod.renderedContextHtml?.trim());
-          const contextOpen = openContextId === mod.id;
-
-          let navigable = false;
-          let href: string | null = null;
-          if (!mod.is_orphaned) {
-            if (mod.module_type === "external_resource") {
-              const u = mod.external_url?.trim();
-              if (u) {
-                navigable = true;
-                href = u;
-              }
-            } else {
-              const slug = mod.linked_slug?.trim();
-              if (slug) {
-                navigable = true;
-                href = buildInternalHref(mod.module_type, slug, pathwaySlug);
-              }
-            }
-          }
-
-          const rowComplete = !mod.is_orphaned && completionById.get(mod.id)?.is_complete === true;
-          const showManualToggle = !mod.is_orphaned && usesManualPathwayCompletion(mod.module_type);
-
-          const shellClass = [
-            "overflow-hidden rounded-base border text-left transition-all",
-            mod.is_orphaned || !navigable
-              ? "border-border-default bg-bg-secondary-soft text-text-muted"
-              : rowComplete
-                ? "border-border-brand-subtle bg-bg-brand-softer/40 hover:border-border-brand-subtle hover:shadow-sm"
-                : "border-border-default bg-bg-primary-soft hover:border-border-brand-subtle hover:shadow-sm",
-          ].join(" ");
-
-          const stepMarker =
-            rowComplete && !mod.is_orphaned ? (
-              <div
-                className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bg-brand text-text-on-brand ring-4 ring-bg-primary-soft"
-                aria-hidden
-              >
-                <Check className="size-4" aria-hidden />
-              </div>
-            ) : (
-              <div
-                className={[
-                  "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ring-4 ring-bg-primary-soft",
-                  mod.is_orphaned || !navigable ? "bg-bg-secondary-medium text-text-muted" : "bg-bg-brand-softer text-text-fg-brand-strong",
-                ].join(" ")}
-                aria-hidden
-              >
-                {stepNumber(mod.position)}
-              </div>
-            );
-
-          const initialManualComplete = Boolean(completionById.get(mod.id)?.is_complete);
-
-          return (
-            <li key={mod.id} className="flex gap-4">
-              {stepMarker}
-              <div className={`min-w-0 flex-1 ${shellClass}`}>
-                <div className="flex min-w-0 flex-row items-stretch">
-                  <div className="min-w-0 flex-1">
-                    <ModuleHeader
-                      mod={mod}
-                      title={title}
-                      typeLabel={typeLabel}
-                      TypeIcon={TypeIcon}
-                      navigable={navigable}
-                      href={href}
-                      isComplete={rowComplete}
-                    />
-                  </div>
-                  {showManualToggle ? (
-                    <ModuleCompleteToggle
-                      key={`${mod.id}-${initialManualComplete}`}
-                      pathwaySlug={pathwaySlug}
-                      moduleId={mod.id}
-                      initialComplete={initialManualComplete}
-                    />
-                  ) : null}
-                </div>
-
-                {hasContext ? (
-                  <div className="border-t border-border-default px-4 pb-4 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setOpenContextId(contextOpen ? null : mod.id)}
-                      className="text-sm font-medium text-text-fg-brand-strong transition-colors hover:underline"
-                      aria-expanded={contextOpen}
-                    >
-                      {contextOpen ? "Hide context" : "Show context"}
-                    </button>
-                    {contextOpen ? (
-                      <div
-                        className={`${CONTEXT_PROSE_CLASS} mt-3 rounded-base border border-border-default bg-bg-secondary-soft p-4`}
-                        dangerouslySetInnerHTML={{ __html: mod.renderedContextHtml ?? "" }}
-                      />
-                    ) : null}
-                  </div>
+      {showPhaseHeaders ? (
+        <div className="relative mt-6 space-y-8">
+          {phases.map((phase, phaseIdx) => {
+            const moduleOffset = phases.slice(0, phaseIdx).reduce((s, ph) => s + ph.modules.length, 0);
+            return (
+              <section key={phase.id} aria-labelledby={`phase-heading-${phase.id}`}>
+                <h3 id={`phase-heading-${phase.id}`} className="text-base font-bold leading-tight text-text-heading">
+                  {phase.title}
+                </h3>
+                {phase.description?.trim() ? (
+                  <p className="mt-2 text-sm leading-relaxed text-text-body">{phase.description}</p>
                 ) : null}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+                <ol className="relative mt-4 flex flex-col gap-4 pl-0">
+                  {phase.modules.map((mod, mi) => (
+                    <CurriculumModuleStep
+                      key={mod.id}
+                      mod={mod}
+                      pathwaySlug={pathwaySlug}
+                      completionById={completionById}
+                      openContextId={openContextId}
+                      setOpenContextId={setOpenContextId}
+                      displayStepOneBased={moduleOffset + mi + 1}
+                    />
+                  ))}
+                </ol>
+              </section>
+            );
+          })}
+        </div>
+      ) : (
+        <ol className="relative mt-6 flex flex-col gap-4 pl-0">
+          {(phases[0]?.modules ?? []).map((mod, mi) => (
+            <CurriculumModuleStep
+              key={mod.id}
+              mod={mod}
+              pathwaySlug={pathwaySlug}
+              completionById={completionById}
+              openContextId={openContextId}
+              setOpenContextId={setOpenContextId}
+              displayStepOneBased={mi + 1}
+            />
+          ))}
+        </ol>
+      )}
     </section>
   );
 }

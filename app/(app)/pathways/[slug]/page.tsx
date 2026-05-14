@@ -7,7 +7,10 @@ import { PathwayHero } from "@/components/pathways/PathwayHero";
 import { renderContent } from "@/lib/blog/render-content";
 import { getModuleCompletions } from "@/lib/pathways/completion";
 import { getPublishedPathwayBySlug } from "@/lib/pathways/queries";
-import { pathwayWithModulesToHero, type PublicPathwayModuleForStepper } from "@/lib/pathways/types";
+import {
+  pathwayWithModulesToHero,
+  type PublicPathwayPhaseForStepper,
+} from "@/lib/pathways/types";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -31,18 +34,23 @@ export default async function PathwayDetailPage({ params }: Props) {
   }
 
   const modulesRaw = pathway.phases.flatMap((p) => p.modules);
-  const modules: PublicPathwayModuleForStepper[] = modulesRaw.map((m) => ({
-    ...m,
-    renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,
+
+  const phasesForStepper: PublicPathwayPhaseForStepper[] = pathway.phases.map((phase) => ({
+    ...phase,
+    modules: phase.modules.map((m) => ({
+      ...m,
+      renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,
+    })),
   }));
 
   const completions = await getModuleCompletions(modulesRaw, user.id);
-  const eligibleModules = modules.filter((m) => !m.is_orphaned);
+  const modulesFlatForHero = phasesForStepper.flatMap((p) => p.modules);
+  const eligibleModules = modulesFlatForHero.filter((m) => !m.is_orphaned);
   const eligibleIds = new Set(eligibleModules.map((m) => m.id));
   const completedCount = completions.filter((c) => c.is_complete && eligibleIds.has(c.module_id)).length;
   const totalCount = eligibleModules.length;
 
-  const hero = pathwayWithModulesToHero({ ...pathway, moduleCount: modules.length });
+  const hero = pathwayWithModulesToHero({ ...pathway, moduleCount: modulesFlatForHero.length });
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
@@ -67,7 +75,7 @@ export default async function PathwayDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-10">
-        <CurriculumStepper modules={modules} pathwaySlug={pathway.slug} completions={completions} />
+        <CurriculumStepper phases={phasesForStepper} pathwaySlug={pathway.slug} completions={completions} />
       </div>
     </div>
   );

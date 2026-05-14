@@ -21,6 +21,11 @@ export type PublicPathwayPhase = PathwayPhase & {
   modules: PublicPathwayModuleRow[];
 };
 
+/** Phase + modules as passed to `CurriculumStepper` (pre-rendered context on each module). */
+export type PublicPathwayPhaseForStepper = PathwayPhase & {
+  modules: PublicPathwayModuleForStepper[];
+};
+
 /** Public pathway module row for curriculum UI (joined + orphan rules in `getPublicPathwayModules`). */
 export type PublicPathwayModuleRow = {
   id: string;
