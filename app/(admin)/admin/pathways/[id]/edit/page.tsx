@@ -2,11 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
-import { ModuleManager } from "@/components/admin/pathways/ModuleManager";
+import { PhaseManager } from "@/components/admin/pathways/PhaseManager";
 import { PathwayForm } from "@/components/admin/pathways/PathwayForm";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { getBlogCategoriesForCourseForms } from "@/lib/courses/admin-queries";
-import { getAdminPathwayById, getAdminPathwayModules } from "@/lib/pathways/admin-queries";
+import { getAdminPathwayById, getAdminPathwayPhases } from "@/lib/pathways/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -47,7 +47,7 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
   const pathway = await getAdminPathwayById(id, user.id);
   if (!pathway) notFound();
 
-  const modules = await getAdminPathwayModules(id);
+  const phases = await getAdminPathwayPhases(id);
 
   const authorName =
     [profile.first_name, profile.last_name].filter((x): x is string => Boolean(x?.trim())).join(" ").trim() || "—";
@@ -78,10 +78,15 @@ export default async function EditPathwayPage({ params }: { params: Promise<{ id
       </div>
 
       <div className="mt-8">
-        <ModuleManager
-          key={modules.map((m) => `${m.id}:${m.position}`).join(",")}
+        <PhaseManager
+          key={phases
+            .map(
+              (p) =>
+                `${p.id}:${p.position}:${p.title}:${p.modules.map((m) => `${m.id}:${m.position}`).join(",")}`,
+            )
+            .join("|")}
           pathwayId={pathway.id}
-          initialModules={modules}
+          phases={phases}
         />
       </div>
     </div>

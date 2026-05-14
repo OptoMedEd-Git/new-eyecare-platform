@@ -12,7 +12,7 @@ import { FlashcardDeckPicker } from "./pickers/FlashcardDeckPicker";
 import { QuizPicker } from "./pickers/QuizPicker";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   onClose: () => void;
   onAdded: () => void;
 };
@@ -30,7 +30,7 @@ const TYPE_OPTIONS: {
   { type: "external_resource", label: "External resource", description: "Link to an outside URL", icon: ExternalLink },
 ];
 
-export function AddModuleModal({ pathwayId, onClose, onAdded }: Props) {
+export function AddModuleModal({ phaseId, onClose, onAdded }: Props) {
   const [selectedType, setSelectedType] = useState<PathwayModuleType | null>(null);
 
   useEffect(() => {
@@ -102,14 +102,14 @@ export function AddModuleModal({ pathwayId, onClose, onAdded }: Props) {
                 ← Choose a different type
               </button>
 
-              {selectedType === "course" ? <CoursePicker pathwayId={pathwayId} onAdded={handleAdded} /> : null}
-              {selectedType === "quiz" ? <QuizPicker pathwayId={pathwayId} onAdded={handleAdded} /> : null}
+              {selectedType === "course" ? <CoursePicker phaseId={phaseId} onAdded={handleAdded} /> : null}
+              {selectedType === "quiz" ? <QuizPicker phaseId={phaseId} onAdded={handleAdded} /> : null}
               {selectedType === "flashcard_deck" ? (
-                <FlashcardDeckPicker pathwayId={pathwayId} onAdded={handleAdded} />
+                <FlashcardDeckPicker phaseId={phaseId} onAdded={handleAdded} />
               ) : null}
-              {selectedType === "blog_post" ? <BlogPostPicker pathwayId={pathwayId} onAdded={handleAdded} /> : null}
+              {selectedType === "blog_post" ? <BlogPostPicker phaseId={phaseId} onAdded={handleAdded} /> : null}
               {selectedType === "external_resource" ? (
-                <ExternalResourceForm pathwayId={pathwayId} onAdded={handleAdded} />
+                <ExternalResourceForm phaseId={phaseId} onAdded={handleAdded} />
               ) : null}
             </div>
           )}

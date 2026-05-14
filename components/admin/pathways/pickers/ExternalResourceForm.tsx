@@ -7,11 +7,11 @@ import { addPathwayModule } from "@/app/(admin)/admin/pathways/module-actions";
 import { ModuleMetadataForm } from "../ModuleMetadataForm";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   onAdded: () => void;
 };
 
-export function ExternalResourceForm({ pathwayId, onAdded }: Props) {
+export function ExternalResourceForm({ phaseId, onAdded }: Props) {
   const [url, setUrl] = useState("");
   const [label, setLabel] = useState("");
   const [showMetadataForm, setShowMetadataForm] = useState(false);
@@ -23,7 +23,7 @@ export function ExternalResourceForm({ pathwayId, onAdded }: Props) {
         onCancel={() => setShowMetadataForm(false)}
         onSubmit={async ({ title, contextMarkdown }) => {
           const result = await addPathwayModule({
-            pathwayId,
+            phaseId,
             moduleType: "external_resource",
             externalUrl: url.trim(),
             externalLabel: label.trim(),

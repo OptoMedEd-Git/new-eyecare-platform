@@ -5,14 +5,14 @@ import { searchCoursesAction } from "@/app/(admin)/admin/pathways/picker-actions
 import { ContentPicker } from "./ContentPicker";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   onAdded: () => void;
 };
 
-export function CoursePicker({ pathwayId, onAdded }: Props) {
+export function CoursePicker({ phaseId, onAdded }: Props) {
   return (
     <ContentPicker
-      pathwayId={pathwayId}
+      phaseId={phaseId}
       searchAction={searchCoursesAction}
       moduleType="course"
       placeholder="Search published courses…"

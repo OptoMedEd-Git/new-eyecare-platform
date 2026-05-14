@@ -257,7 +257,7 @@ export async function getAdminPathwayModules(pathwayId: string): Promise<AdminPa
   });
 }
 
-/** Grouped view for future V2-B; double-fetches modules today. */
+/** Grouped admin view: phases with nested modules (V2-B). */
 export async function getAdminPathwayPhases(pathwayId: string): Promise<AdminPathwayPhase[]> {
   const supabase = await createClient();
 

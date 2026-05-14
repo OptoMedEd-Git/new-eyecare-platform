@@ -8,7 +8,7 @@ import type { PathwayModuleType } from "@/lib/pathways/types";
 type ActionResult<T = void> = { success: true; data?: T } | { success: false; error: string };
 
 export type AddModuleInput = {
-  pathwayId: string;
+  phaseId: string;
   moduleType: PathwayModuleType;
   title: string;
   contextMarkdown?: string | null;
@@ -22,21 +22,6 @@ export type AddModuleInput = {
 
 const TEMP_POSITION = 999_999;
 
-async function getFirstPhaseIdForPathway(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  pathwayId: string,
-): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("pathway_phases")
-    .select("id")
-    .eq("pathway_id", pathwayId)
-    .order("position", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data.id as string;
-}
-
 function revalidatePathwayEdit(pathwayId: string) {
   revalidatePath(`/admin/pathways/${pathwayId}/edit`);
 }
@@ -48,17 +33,25 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
+  const { data: phaseRow, error: phaseErr } = await supabase
+    .from("pathway_phases")
+    .select("id, pathway_id")
+    .eq("id", input.phaseId)
+    .maybeSingle();
+
+  if (phaseErr || !phaseRow) return { success: false, error: "Phase not found" };
+
   const { data: pathway } = await supabase
     .from("pathways")
     .select("id, author_id")
-    .eq("id", input.pathwayId)
+    .eq("id", phaseRow.pathway_id)
     .maybeSingle();
 
   if (!pathway) return { success: false, error: "Pathway not found" };
   if (pathway.author_id !== user.id) return { success: false, error: "Not authorized" };
 
-  const phaseId = await getFirstPhaseIdForPathway(supabase, input.pathwayId);
-  if (!phaseId) return { success: false, error: "Pathway has no phases — run migrations or add a phase." };
+  const phaseId = phaseRow.id as string;
+  const pathwayId = pathway.id as string;
 
   const title = input.title.trim();
   if (!title) return { success: false, error: "Module title is required" };
@@ -97,7 +90,7 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
   const { data: moduleRow, error } = await supabase
     .from("pathway_modules")
     .insert({
-      pathway_id: input.pathwayId,
+      pathway_id: pathwayId,
       phase_id: phaseId,
       position: nextPosition,
       title,
@@ -118,7 +111,7 @@ export async function addPathwayModule(input: AddModuleInput): Promise<ActionRes
     return { success: false, error: "Could not add module" };
   }
 
-  revalidatePathwayEdit(input.pathwayId);
+  revalidatePathwayEdit(pathwayId);
   return { success: true, data: { moduleId: moduleRow.id } };
 }
 
@@ -173,7 +166,7 @@ export async function removePathwayModule(moduleId: string): Promise<ActionResul
 }
 
 export async function reorderPathwayModules(
-  pathwayId: string,
+  phaseId: string,
   fromPosition: number,
   toPosition: number,
 ): Promise<ActionResult> {
@@ -183,30 +176,35 @@ export async function reorderPathwayModules(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
+  const { data: phaseRow, error: phErr } = await supabase
+    .from("pathway_phases")
+    .select("pathway_id")
+    .eq("id", phaseId)
+    .maybeSingle();
+
+  if (phErr || !phaseRow) return { success: false, error: "Phase not found" };
+
+  const pathwayId = phaseRow.pathway_id as string;
+
   const { data: pathway } = await supabase.from("pathways").select("author_id").eq("id", pathwayId).maybeSingle();
   if (!pathway || pathway.author_id !== user.id) return { success: false, error: "Not authorized" };
 
   if (fromPosition === toPosition) return { success: true };
 
-  const { data: srcRows, error: srcErr } = await supabase
+  const { data: sourceRow, error: srcErr } = await supabase
     .from("pathway_modules")
-    .select("id, phase_id")
-    .eq("pathway_id", pathwayId)
-    .eq("position", fromPosition);
+    .select("id")
+    .eq("phase_id", phaseId)
+    .eq("position", fromPosition)
+    .maybeSingle();
 
-  if (srcErr || !srcRows?.length) return { success: false, error: "Source module not found" };
-  if (srcRows.length > 1) {
-    return { success: false, error: "Ambiguous reorder — multiple modules share this position across phases." };
-  }
+  if (srcErr || !sourceRow) return { success: false, error: "Source module not found" };
 
-  const sourceRow = srcRows[0] as { id: string; phase_id: string };
-  const sourceId = sourceRow.id;
-  const phaseId = sourceRow.phase_id;
+  const sourceId = sourceRow.id as string;
 
   const { data: tgtRow } = await supabase
     .from("pathway_modules")
     .select("id")
-    .eq("pathway_id", pathwayId)
     .eq("phase_id", phaseId)
     .eq("position", toPosition)
     .maybeSingle();
@@ -220,7 +218,6 @@ export async function reorderPathwayModules(
     const { data: between } = await supabase
       .from("pathway_modules")
       .select("id, position")
-      .eq("pathway_id", pathwayId)
       .eq("phase_id", phaseId)
       .gt("position", fromPosition)
       .lte("position", toPosition)
@@ -234,7 +231,6 @@ export async function reorderPathwayModules(
     const { data: between } = await supabase
       .from("pathway_modules")
       .select("id, position")
-      .eq("pathway_id", pathwayId)
       .eq("phase_id", phaseId)
       .gte("position", toPosition)
       .lt("position", fromPosition)

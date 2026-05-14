@@ -11,7 +11,7 @@ import type { PathwayModuleType } from "@/lib/pathways/types";
 type NonExternalModuleType = Exclude<PathwayModuleType, "external_resource">;
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   searchAction: (q: string) => Promise<PickerItem[]>;
   moduleType: NonExternalModuleType;
   placeholder: string;
@@ -19,14 +19,14 @@ type Props = {
 };
 
 function buildAddInput(
-  pathwayId: string,
+  phaseId: string,
   moduleType: NonExternalModuleType,
   item: PickerItem,
   title: string,
   contextMarkdown: string | null,
 ): AddModuleInput {
   const base = {
-    pathwayId,
+    phaseId,
     moduleType,
     title,
     contextMarkdown,
@@ -43,7 +43,7 @@ function buildAddInput(
   }
 }
 
-export function ContentPicker({ pathwayId, searchAction, moduleType, placeholder, onAdded }: Props) {
+export function ContentPicker({ phaseId, searchAction, moduleType, placeholder, onAdded }: Props) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<PickerItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -72,7 +72,7 @@ export function ContentPicker({ pathwayId, searchAction, moduleType, placeholder
         onCancel={() => setSelectedItem(null)}
         onSubmit={async ({ title, contextMarkdown }) => {
           const result = await addPathwayModule(
-            buildAddInput(pathwayId, moduleType, selectedItem, title, contextMarkdown),
+            buildAddInput(phaseId, moduleType, selectedItem, title, contextMarkdown),
           );
           if (result.success) {
             onAdded();

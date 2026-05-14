@@ -5,14 +5,14 @@ import { searchQuizzesAction } from "@/app/(admin)/admin/pathways/picker-actions
 import { ContentPicker } from "./ContentPicker";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   onAdded: () => void;
 };
 
-export function QuizPicker({ pathwayId, onAdded }: Props) {
+export function QuizPicker({ phaseId, onAdded }: Props) {
   return (
     <ContentPicker
-      pathwayId={pathwayId}
+      phaseId={phaseId}
       searchAction={searchQuizzesAction}
       moduleType="quiz"
       placeholder="Search curated quizzes…"

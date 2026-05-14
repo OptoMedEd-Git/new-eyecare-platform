@@ -12,8 +12,10 @@ import { AddModuleModal } from "./AddModuleModal";
 import { EditModuleModal } from "./EditModuleModal";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   initialModules: AdminPathwayModuleRow[];
+  /** Override outer section classes (e.g. tighter top margin when nested under PhaseManager). */
+  sectionClassName?: string;
 };
 
 const MODULE_TYPE_LABELS: Record<string, string> = {
@@ -24,7 +26,7 @@ const MODULE_TYPE_LABELS: Record<string, string> = {
   external_resource: "External",
 };
 
-export function ModuleManager({ pathwayId, initialModules }: Props) {
+export function ModuleManager({ phaseId, initialModules, sectionClassName }: Props) {
   const router = useRouter();
   const [modules, setModules] = useState(initialModules);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,7 +67,7 @@ export function ModuleManager({ pathwayId, initialModules }: Props) {
     setError(null);
 
     startTransition(async () => {
-      const result = await reorderPathwayModules(pathwayId, fromPos, toPos);
+      const result = await reorderPathwayModules(phaseId, fromPos, toPos);
       if (!result.success) {
         setModules(snapshot);
         setError(result.error);
@@ -76,7 +78,11 @@ export function ModuleManager({ pathwayId, initialModules }: Props) {
   }
 
   return (
-    <section className="mt-8 rounded-base border border-border-default bg-bg-primary-soft p-6">
+    <section
+      className={
+        sectionClassName ?? "mt-8 rounded-base border border-border-default bg-bg-primary-soft p-6"
+      }
+    >
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-text-heading">Modules</h2>
@@ -126,7 +132,7 @@ export function ModuleManager({ pathwayId, initialModules }: Props) {
 
       {showAddModal ? (
         <AddModuleModal
-          pathwayId={pathwayId}
+          phaseId={phaseId}
           onClose={() => setShowAddModal(false)}
           onAdded={() => {
             setShowAddModal(false);

@@ -5,14 +5,14 @@ import { searchFlashcardDecksAction } from "@/app/(admin)/admin/pathways/picker-
 import { ContentPicker } from "./ContentPicker";
 
 type Props = {
-  pathwayId: string;
+  phaseId: string;
   onAdded: () => void;
 };
 
-export function FlashcardDeckPicker({ pathwayId, onAdded }: Props) {
+export function FlashcardDeckPicker({ phaseId, onAdded }: Props) {
   return (
     <ContentPicker
-      pathwayId={pathwayId}
+      phaseId={phaseId}
       searchAction={searchFlashcardDecksAction}
       moduleType="flashcard_deck"
       placeholder="Search published flashcard decks…"
