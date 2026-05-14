@@ -1,8 +1,7 @@
 "use client";
 
 import { flagQuestion, unflagQuestion } from "@/app/(app)/quiz-bank/flag-actions";
-import { Flag } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { FlagButton as SharedFlagButton, type FlagActionResult } from "@/components/shared/FlagButton";
 
 type Props = {
   questionId: string;
@@ -11,85 +10,19 @@ type Props = {
   onToggle?: (nowFlagged: boolean) => void;
 };
 
+function toFlagResult(result: Awaited<ReturnType<typeof flagQuestion>>): FlagActionResult {
+  if (result.success) return { success: true };
+  return { success: false, error: result.error };
+}
+
 export function FlagButton({ questionId, initialFlagged, variant = "icon-label", onToggle }: Props) {
-  const [flagged, setFlagged] = useState(initialFlagged);
-  const [isPending, startTransition] = useTransition();
-  const [showFlaggedToast, setShowFlaggedToast] = useState(false);
-
-  useEffect(() => {
-    if (!showFlaggedToast) return;
-    const t = setTimeout(() => setShowFlaggedToast(false), 1500);
-    return () => clearTimeout(t);
-  }, [showFlaggedToast]);
-
-  function handleToggle() {
-    const nextFlagged = !flagged;
-    setFlagged(nextFlagged);
-
-    if (nextFlagged) {
-      setShowFlaggedToast(true);
-    } else {
-      setShowFlaggedToast(false);
-    }
-
-    startTransition(async () => {
-      const result = nextFlagged ? await flagQuestion(questionId) : await unflagQuestion(questionId);
-
-      if (!result.success) {
-        setFlagged(!nextFlagged);
-        if (nextFlagged) setShowFlaggedToast(false);
-        return;
-      }
-      onToggle?.(nextFlagged);
-    });
-  }
-
-  const baseClasses =
-    "inline-flex items-center gap-1.5 rounded-base text-sm font-medium transition-colors disabled:opacity-50";
-  const flaggedClasses = flagged
-    ? "bg-bg-brand-softer text-text-fg-brand-strong hover:bg-bg-brand-soft"
-    : "border border-border-default bg-bg-primary-soft text-text-muted hover:bg-bg-secondary-soft hover:text-text-heading";
-
-  const buttonContent =
-    variant === "icon" ? (
-      <Flag className="size-4" fill={flagged ? "currentColor" : "none"} aria-hidden />
-    ) : (
-      <>
-        <Flag className="size-4" fill={flagged ? "currentColor" : "none"} aria-hidden />
-        {flagged ? "Flagged" : "Flag for review"}
-      </>
-    );
-
   return (
-    <div className="relative inline-flex items-center">
-      <button
-        type="button"
-        onClick={handleToggle}
-        disabled={isPending}
-        aria-pressed={flagged}
-        aria-label={variant === "icon" ? (flagged ? "Remove flag" : "Flag for review") : undefined}
-        title={variant === "icon" ? (flagged ? "Remove flag" : "Flag for review") : undefined}
-        className={[baseClasses, flaggedClasses, variant === "icon" ? "size-8 justify-center" : "px-3 py-1.5"].join(
-          " ",
-        )}
-      >
-        {buttonContent}
-      </button>
-
-      <span
-        aria-hidden={!showFlaggedToast}
-        className={[
-          "pointer-events-none absolute whitespace-nowrap rounded-base bg-bg-brand px-2 py-1 text-xs font-medium text-text-on-brand shadow-sm",
-          "transition-opacity duration-300",
-          showFlaggedToast ? "opacity-100" : "opacity-0",
-          // Narrow viewports: below button so the pill stays on-screen (flag often sits at the right edge)
-          "max-sm:left-1/2 max-sm:right-auto max-sm:top-full max-sm:mt-2 max-sm:-translate-x-1/2 max-sm:translate-y-0",
-          // sm+: to the left of the button
-          "sm:right-full sm:top-1/2 sm:mr-2 sm:-translate-y-1/2 sm:left-auto sm:translate-x-0",
-        ].join(" ")}
-      >
-        Flagged!
-      </span>
-    </div>
+    <SharedFlagButton
+      initialFlagged={initialFlagged}
+      variant={variant}
+      onToggle={onToggle}
+      flag={() => flagQuestion(questionId).then(toFlagResult)}
+      unflag={() => unflagQuestion(questionId).then(toFlagResult)}
+    />
   );
 }

@@ -172,3 +172,34 @@ export async function getActiveFlashcardCategories(): Promise<{ id: string; name
     .map(([id, v]) => ({ id, name: v.name, count: v.count }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/** IDs of flashcards the current user has flagged (requires `flagged_flashcards` table). */
+export async function getFlaggedFlashcardIds(): Promise<string[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase.from("flagged_flashcards").select("flashcard_id").eq("user_id", user.id);
+
+  if (error || !data) return [];
+  return data.map((r) => String((r as { flashcard_id: string }).flashcard_id));
+}
+
+export async function isFlashcardFlagged(flashcardId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  const { data } = await supabase
+    .from("flagged_flashcards")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("flashcard_id", flashcardId)
+    .maybeSingle();
+
+  return data != null;
+}
