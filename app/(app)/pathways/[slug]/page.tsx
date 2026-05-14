@@ -36,7 +36,7 @@ export default async function PathwayDetailPage({ params }: Props) {
     renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,
   }));
 
-  const completions = await getModuleCompletions(pathway.id, user.id);
+  const completions = await getModuleCompletions(modulesRaw, user.id);
   const eligibleModules = modules.filter((m) => !m.is_orphaned);
   const eligibleIds = new Set(eligibleModules.map((m) => m.id));
   const completedCount = completions.filter((c) => c.is_complete && eligibleIds.has(c.module_id)).length;

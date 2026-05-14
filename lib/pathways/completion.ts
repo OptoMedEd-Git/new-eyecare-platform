@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 
-import { getPublicPathwayModules } from "./queries";
 import { usesManualPathwayCompletion } from "./manual-completion";
 import type { PathwayModuleType, PublicPathwayModuleRow } from "./types";
 
@@ -24,8 +23,11 @@ async function checkCourseCompletion(
   courseId: string,
 ): Promise<{ is_complete: boolean; source: ModuleCompletionSource }> {
   const { data: lessons, error: leErr } = await supabase.from("lessons").select("id").eq("course_id", courseId);
-  if (leErr || !lessons?.length) {
-    return { is_complete: true, source: "course_progress" };
+  if (leErr) {
+    return { is_complete: false, source: "none" };
+  }
+  if (!lessons?.length) {
+    return { is_complete: false, source: "course_progress" };
   }
 
   const { data: progress, error: pErr } = await supabase
@@ -73,8 +75,11 @@ async function checkFlashcardDeckCompletion(
     .select("flashcard_id")
     .eq("deck_id", deckId);
 
-  if (iErr || !items?.length) {
-    return { is_complete: true, source: "flashcard_reviews" };
+  if (iErr) {
+    return { is_complete: false, source: "none" };
+  }
+  if (!items?.length) {
+    return { is_complete: false, source: "flashcard_reviews" };
   }
 
   const cardIds = items.map((r) => String(r.flashcard_id));
@@ -160,9 +165,14 @@ async function completionForModule(
  * External resources and blog posts use pathway_module_completions (manual).
  *
  * Orphaned modules always return is_complete: false, source: "none".
+ *
+ * Callers should pass the same module list already loaded for the pathway UI
+ * (e.g. from getPublicPathwayModules) to avoid a duplicate fetch.
  */
-export async function getModuleCompletions(pathwayId: string, userId: string): Promise<ModuleCompletionState[]> {
+export async function getModuleCompletions(
+  modules: PublicPathwayModuleRow[],
+  userId: string,
+): Promise<ModuleCompletionState[]> {
   const supabase = await createClient();
-  const modules = await getPublicPathwayModules(pathwayId);
   return Promise.all(modules.map((m) => completionForModule(supabase, userId, m)));
 }
