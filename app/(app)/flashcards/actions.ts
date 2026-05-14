@@ -43,6 +43,7 @@ export async function submitFlashcardReview(flashcardId: string, rating: Flashca
 
   revalidatePath("/flashcards");
   revalidatePath("/flashcards/review");
+  revalidatePath("/flashcards/decks");
   return { success: true };
 }
 

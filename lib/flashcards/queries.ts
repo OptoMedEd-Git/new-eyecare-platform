@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 
 import type {
+  DeckListing,
+  DeckWithCards,
   Flashcard,
   FlashcardAudience,
   FlashcardDifficulty,
@@ -14,7 +16,7 @@ function single<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function rowToFlashcard(row: Record<string, unknown>): Flashcard {
+export function rowToFlashcard(row: Record<string, unknown>): Flashcard {
   const cat = single(row.category as { id: string; name: string } | { id: string; name: string }[] | null);
   return {
     id: String(row.id),
@@ -327,4 +329,131 @@ export async function getRecentFlaggedFlashcards(limit: number = 3): Promise<Rec
   }
 
   return out;
+}
+
+function mapDeckRowToListing(
+  row: Record<string, unknown>,
+  cardCount: number,
+): DeckListing {
+  const cat = single(row.category as { id: string; name: string } | { id: string; name: string }[] | null);
+  const status = row.status === "published" ? "published" : "draft";
+  const diff = row.difficulty as FlashcardDifficulty | null;
+  return {
+    id: String(row.id),
+    slug: String(row.slug),
+    title: String(row.title),
+    description: row.description == null ? null : String(row.description),
+    category: cat,
+    audience: (row.target_audience as FlashcardAudience | null) ?? null,
+    difficulty: diff ?? null,
+    isFeatured: Boolean(row.is_featured),
+    status,
+    authorId: row.author_id == null ? null : String(row.author_id),
+    publishedAt: row.published_at == null ? null : String(row.published_at),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    cardCount,
+  };
+}
+
+export async function getPublishedDecks(): Promise<DeckListing[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("flashcard_decks")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name),
+      flashcard_deck_items(count)
+    `,
+    )
+    .eq("status", "published")
+    .order("is_featured", { ascending: false })
+    .order("published_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  return (data as Record<string, unknown>[]).map((row) => {
+    const embed = row.flashcard_deck_items as { count: number }[] | null | undefined;
+    const countEl = Array.isArray(embed) ? embed[0] : null;
+    const cardCount = countEl?.count ?? 0;
+    return mapDeckRowToListing(row, cardCount);
+  });
+}
+
+export async function getPublishedDeckBySlug(slug: string): Promise<DeckWithCards | null> {
+  const supabase = await createClient();
+
+  const { data: deckRow, error } = await supabase
+    .from("flashcard_decks")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name)
+    `,
+    )
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (error || !deckRow) return null;
+
+  const dr = deckRow as Record<string, unknown>;
+
+  const { data: itemsData, error: itemsErr } = await supabase
+    .from("flashcard_deck_items")
+    .select(
+      `
+      position,
+      flashcard:flashcards(
+        *,
+        category:blog_categories(id, name)
+      )
+    `,
+    )
+    .eq("deck_id", dr.id as string)
+    .order("position", { ascending: true });
+
+  if (itemsErr) return null;
+
+  const cards: Flashcard[] = [];
+  for (const item of itemsData ?? []) {
+    const it = item as Record<string, unknown>;
+    const fRaw = it.flashcard;
+    const f = Array.isArray(fRaw) ? fRaw[0] : fRaw;
+    if (!f || typeof f !== "object") continue;
+    cards.push(rowToFlashcard(f as Record<string, unknown>));
+  }
+
+  const listing = mapDeckRowToListing(dr, cards.length);
+  return { ...listing, cards };
+}
+
+/**
+ * Next random card from a published deck (prefers cards the user has not reviewed yet).
+ * Deck review UI uses linear order instead; this is available for future flows.
+ */
+export async function getNextCardFromDeck(deckSlug: string): Promise<Flashcard | null> {
+  const deck = await getPublishedDeckBySlug(deckSlug);
+  if (!deck || deck.cards.length === 0) return null;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let reviewedIds = new Set<string>();
+  if (user) {
+    const { data: reviews } = await supabase
+      .from("flashcard_reviews")
+      .select("flashcard_id")
+      .eq("user_id", user.id);
+    reviewedIds = new Set((reviews ?? []).map((r) => String((r as { flashcard_id: string }).flashcard_id)));
+  }
+
+  const unreviewed = deck.cards.filter((c) => !reviewedIds.has(c.id));
+  const pool = unreviewed.length > 0 ? unreviewed : deck.cards;
+
+  return pool[Math.floor(Math.random() * pool.length)] ?? null;
 }

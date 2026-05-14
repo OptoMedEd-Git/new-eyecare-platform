@@ -43,3 +43,27 @@ export type FlashcardReviewStats = {
     good: number;
   };
 };
+
+/** Curated deck publish state (CMS + public listing). */
+export type FlashcardDeckStatus = "draft" | "published";
+
+export type DeckListing = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  category: { id: string; name: string } | null;
+  audience: FlashcardAudience | null;
+  difficulty: FlashcardDifficulty | null;
+  isFeatured: boolean;
+  status: FlashcardDeckStatus;
+  authorId: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  cardCount: number;
+};
+
+export type DeckWithCards = DeckListing & {
+  cards: Flashcard[];
+};

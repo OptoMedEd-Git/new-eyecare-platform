@@ -66,6 +66,24 @@ export default async function FlashcardsLandingPage() {
       </section>
 
       <section className="mt-10">
+        <div className="rounded-base border border-border-default bg-bg-primary-soft p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-text-heading">Curated decks</h2>
+              <p className="mt-1 text-sm text-text-body">Focused collections of flashcards on specific topics.</p>
+            </div>
+            <Link
+              href="/flashcards/decks"
+              className="inline-flex items-center gap-1.5 self-start rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
+            >
+              Browse decks
+              <ArrowRight className="size-4" aria-hidden />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-10">
         <div className="rounded-base border border-border-default bg-bg-primary-soft p-8 shadow-xs">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-xl">
