@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowRight, ChevronRight, Home } from "lucide-react";
 
+import { PathwayContextBanner } from "@/components/pathways/PathwayContextBanner";
 import { getPublishedDeckBySlug } from "@/lib/flashcards/queries";
+import { getPathwayBannerContext, parsePathwayQueryParam } from "@/lib/pathways/pathway-context";
 import { createClient } from "@/lib/supabase/server";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -11,8 +13,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: deck ? `${deck.title} · Deck` : "Deck" };
 }
 
-export default async function DeckOverviewPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function DeckOverviewPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const pathwaySlug = parsePathwayQueryParam(sp);
 
   const supabase = await createClient();
   const {
@@ -25,8 +35,15 @@ export default async function DeckOverviewPage({ params }: { params: Promise<{ s
 
   const preview = deck.cards.slice(0, 5);
 
+  const pathwayBanner = await getPathwayBannerContext({
+    pathwaySlug,
+    contentType: "flashcard_deck",
+    contentId: deck.id,
+  });
+
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8 lg:py-10">
+      {pathwayBanner ? <PathwayContextBanner {...pathwayBanner} /> : null}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm">
         <Link
           href="/dashboard"

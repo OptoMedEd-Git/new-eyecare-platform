@@ -4,16 +4,22 @@ import { notFound, redirect } from "next/navigation";
 
 import { CourseHero } from "@/components/courses/CourseHero";
 import { LessonList } from "@/components/courses/LessonList";
+import { PathwayContextBanner } from "@/components/pathways/PathwayContextBanner";
 import { computeCourseProgress } from "@/lib/courses/progress";
 import { getCompletedLessonIdsForCourse, getPublishedCourseBySlug } from "@/lib/courses/queries";
+import { getPathwayBannerContext, parsePathwayQueryParam } from "@/lib/pathways/pathway-context";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseOverviewPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const pathwaySlug = parsePathwayQueryParam(sp);
 
   const supabase = await createClient();
   const {
@@ -31,8 +37,15 @@ export default async function CourseOverviewPage({
   const completedLessonIds = await getCompletedLessonIdsForCourse(course.id);
   const progress = computeCourseProgress(course, completedLessonIds);
 
+  const pathwayBanner = await getPathwayBannerContext({
+    pathwaySlug,
+    contentType: "course",
+    contentId: course.id,
+  });
+
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
+      {pathwayBanner ? <PathwayContextBanner {...pathwayBanner} /> : null}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm">
         <Link
           href="/dashboard"

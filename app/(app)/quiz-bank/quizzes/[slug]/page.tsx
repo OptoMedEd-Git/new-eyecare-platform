@@ -2,12 +2,22 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight, Clock, Home, ListChecks } from "lucide-react";
 
+import { PathwayContextBanner } from "@/components/pathways/PathwayContextBanner";
 import { QuizStartButton } from "@/components/quiz-bank/QuizStartButton";
 import { createClient } from "@/lib/supabase/server";
+import { getPathwayBannerContext, parsePathwayQueryParam } from "@/lib/pathways/pathway-context";
 import { getPublishedQuizBySlug, getUserActiveAttemptForQuiz } from "@/lib/quiz-bank/queries";
 
-export default async function QuizOverviewPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function QuizOverviewPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const sp = (await searchParams) ?? {};
+  const pathwaySlug = parsePathwayQueryParam(sp);
 
   const supabase = await createClient();
   const {
@@ -20,8 +30,15 @@ export default async function QuizOverviewPage({ params }: { params: Promise<{ s
 
   const activeAttempt = await getUserActiveAttemptForQuiz(quiz.id);
 
+  const pathwayBanner = await getPathwayBannerContext({
+    pathwaySlug,
+    contentType: "quiz",
+    contentId: quiz.id,
+  });
+
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8 lg:py-10">
+      {pathwayBanner ? <PathwayContextBanner {...pathwayBanner} /> : null}
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm">
         <Link
           href="/dashboard"
