@@ -255,7 +255,13 @@ export function CurriculumStepper({ phases, pathwaySlug, completions }: Props) {
 
   const completionById = useMemo(() => new Map(completions.map((c) => [c.module_id, c])), [completions]);
 
-  const totalModules = useMemo(() => phases.reduce((n, p) => n + p.modules.length, 0), [phases]);
+  /** Public view: omit phase sections that have no modules (V2-C / P6). */
+  const phasesWithModules = useMemo(() => phases.filter((p) => p.modules.length > 0), [phases]);
+
+  const totalModules = useMemo(
+    () => phasesWithModules.reduce((n, p) => n + p.modules.length, 0),
+    [phasesWithModules],
+  );
 
   if (totalModules === 0) {
     return (
@@ -268,7 +274,7 @@ export function CurriculumStepper({ phases, pathwaySlug, completions }: Props) {
     );
   }
 
-  const showPhaseHeaders = phases.length >= 2;
+  const showPhaseHeaders = phasesWithModules.length >= 2;
 
   return (
     <section id="curriculum" className="rounded-base border border-border-default bg-bg-primary-soft p-6">
@@ -279,8 +285,8 @@ export function CurriculumStepper({ phases, pathwaySlug, completions }: Props) {
 
       {showPhaseHeaders ? (
         <div className="relative mt-6 space-y-8">
-          {phases.map((phase, phaseIdx) => {
-            const moduleOffset = phases.slice(0, phaseIdx).reduce((s, ph) => s + ph.modules.length, 0);
+          {phasesWithModules.map((phase, phaseIdx) => {
+            const moduleOffset = phasesWithModules.slice(0, phaseIdx).reduce((s, ph) => s + ph.modules.length, 0);
             return (
               <section key={phase.id} aria-labelledby={`phase-heading-${phase.id}`}>
                 <h3 id={`phase-heading-${phase.id}`} className="text-base font-bold leading-tight text-text-heading">
@@ -308,7 +314,7 @@ export function CurriculumStepper({ phases, pathwaySlug, completions }: Props) {
         </div>
       ) : (
         <ol className="relative mt-6 flex flex-col gap-4 pl-0">
-          {(phases[0]?.modules ?? []).map((mod, mi) => (
+          {(phasesWithModules[0]?.modules ?? []).map((mod, mi) => (
             <CurriculumModuleStep
               key={mod.id}
               mod={mod}

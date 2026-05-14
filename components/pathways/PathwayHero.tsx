@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { createElement } from "react";
-import { Clock, Layers as LayersIcon, Play, Sparkles } from "lucide-react";
+import { Check, Clock, Layers as LayersIcon, Play, Sparkles } from "lucide-react";
 
 import type { PathwayHeroModel } from "@/lib/pathways/types";
 import { ProgressBar } from "@/components/shared/ProgressBar";
@@ -22,8 +22,18 @@ type Props = {
 export function PathwayHero({ pathway, completedCount = 0, totalCount = 0 }: Props) {
   const audienceLabel = pathway.audience ? AUDIENCE_LABELS[pathway.audience] : "—";
 
+  const isPathwayComplete = totalCount > 0 && completedCount === totalCount;
+  /** Every module row exists but none are eligible (all linked content unavailable). */
+  const isAllContentUnavailable = totalCount === 0 && pathway.moduleCount > 0;
+
   const hasProgressStarted = pathway.progress_percent !== undefined || completedCount > 0;
-  const ctaLabel = hasProgressStarted ? "Continue learning" : "Start pathway";
+  const ctaLabel = isPathwayComplete
+    ? "Review pathway"
+    : isAllContentUnavailable
+      ? "View curriculum"
+      : hasProgressStarted
+        ? "Continue learning"
+        : "Start pathway";
 
   const iconLg = createElement(Sparkles, {
     className: "size-24 text-text-fg-brand-strong/40",
@@ -60,7 +70,31 @@ export function PathwayHero({ pathway, completedCount = 0, totalCount = 0 }: Pro
             </span>
           </div>
 
-          {totalCount > 0 ? (
+          {isPathwayComplete ? (
+            <div className="mt-1 flex flex-col gap-3">
+              <div className="flex flex-wrap items-start gap-3">
+                <div
+                  className="flex size-11 shrink-0 items-center justify-center rounded-full bg-bg-brand text-text-on-brand"
+                  aria-hidden
+                >
+                  <Check className="size-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-lg font-bold text-text-heading">Pathway complete</p>
+                  <p className="mt-0.5 text-sm text-text-body">
+                    You&apos;ve finished every available step in this pathway.
+                  </p>
+                </div>
+              </div>
+              <ProgressBar
+                value={totalCount}
+                max={totalCount}
+                showAtZero
+                size="sm"
+                ariaLabel="Pathway complete: all available modules finished"
+              />
+            </div>
+          ) : totalCount > 0 ? (
             <div className="flex flex-col gap-1.5">
               <p className="text-sm font-medium text-text-body">
                 {completedCount} of {totalCount} modules complete
@@ -72,6 +106,14 @@ export function PathwayHero({ pathway, completedCount = 0, totalCount = 0 }: Pro
                 size="sm"
                 ariaLabel={`${completedCount} of ${totalCount} pathway modules complete`}
               />
+            </div>
+          ) : isAllContentUnavailable ? (
+            <div className="rounded-base border border-border-default bg-bg-secondary-soft px-4 py-3">
+              <p className="text-sm font-medium text-text-heading">Steps temporarily unavailable</p>
+              <p className="mt-1 text-sm text-text-body">
+                Nothing here can be opened right now because the linked materials are unpublished or missing. When
+                editors restore them, the pathway will update automatically.
+              </p>
             </div>
           ) : null}
 
