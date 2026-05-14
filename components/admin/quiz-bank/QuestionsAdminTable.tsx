@@ -1,40 +1,27 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
-import Link from "next/link";
-
 import { deleteQuestion } from "@/app/(admin)/admin/quiz-bank/actions";
 import { PostStatusPill } from "@/components/admin/PostStatusPill";
-import { formatRelativeTime } from "@/lib/blog/utils";
 import type { AdminQuestionRow } from "@/lib/quiz-bank/admin-queries";
+import { formatRelativeTime } from "@/lib/blog/utils";
+import { Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 
-/** Same pattern as `FlashcardsAdminTable` excerpt — normalized spaces, capped length for primary column. */
-function excerpt(text: string, max = 80): string {
-  const t = text.replace(/\s+/g, " ").trim();
-  if (t.length <= max) return t;
-  return `${t.slice(0, max - 1)}…`;
-}
-
-function vignetteExcerpt(text: string | null | undefined, max = 60): string {
+function vignetteExcerpt(text: string | null | undefined, max = 80): string {
   const t = (text ?? "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
 }
 
-/** Primary row preview: vignette when present, otherwise question stem (for delete confirm + link title). */
+/** Primary row preview: vignette when present, otherwise question stem. */
 function rowPreview(q: AdminQuestionRow): string {
   const v = q.vignette?.trim();
   if (v) return v;
   return q.questionText;
 }
 
-/**
- * Admin questions list — structurally aligned with `FlashcardsAdminTable`
- * (wrapper, table-fixed, thead/th classes, tbody/td patterns, PostStatusPill, formatRelativeTime, actions row).
- * Extra column: Type (quiz-specific), inserted after the primary text column like flashcards’ column order + one metadata column.
- */
 export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -121,11 +108,9 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                     className="block text-sm font-medium text-text-heading hover:underline"
                     title={rowPreview(q)}
                   >
-                    {excerpt(rowPreview(q))}
+                    {vignetteExcerpt(rowPreview(q))}
                   </Link>
-                  {q.questionText.trim() ? (
-                    <p className="mt-1 truncate text-sm text-text-body">{q.questionText}</p>
-                  ) : null}
+                  <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.questionText}</p>
                 </td>
                 <td className="px-6 py-4 align-top text-sm text-text-body">
                   {q.questionType === "true_false"
