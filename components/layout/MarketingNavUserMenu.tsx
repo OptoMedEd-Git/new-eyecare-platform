@@ -22,6 +22,7 @@ export function MarketingNavUserMenu({ user }: { user: NavUser }) {
 
   const initials = getInitials(user);
   const firstName = user.firstName?.trim() || user.email.split("@")[0] || "there";
+  const appHref = user.role === "admin" && user.viewMode === "admin" ? "/admin/dashboard" : "/dashboard";
 
   useEffect(() => {
     if (!open) return;
@@ -66,7 +67,7 @@ export function MarketingNavUserMenu({ user }: { user: NavUser }) {
         </button>
 
         <Link
-          href="/dashboard"
+          href={appHref}
           className="inline-flex items-center justify-center gap-1.5 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium leading-5 text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
         >
           Go to app

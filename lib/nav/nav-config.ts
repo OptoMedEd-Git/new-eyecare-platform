@@ -57,6 +57,13 @@ export const MEMBER_NAV_PRIMARY: NavItem[] = [
 /** Admin-facing nav (CMS / management pages) */
 export const ADMIN_NAV_PRIMARY: NavItem[] = [
   {
+    id: "admin-dashboard",
+    label: "Admin dashboard",
+    icon: LayoutDashboard,
+    href: "/admin/dashboard",
+    visibleIn: ["admin"],
+  },
+  {
     id: "admin-posts",
     label: "Posts",
     icon: FileText,
