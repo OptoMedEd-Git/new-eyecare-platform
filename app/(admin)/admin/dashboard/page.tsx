@@ -1,6 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, BookMarked, ClipboardList, FileText, GraduationCap, Map } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  BookMarked,
+  ClipboardList,
+  FileText,
+  FolderOpen,
+  GraduationCap,
+  Map,
+  Users,
+} from "lucide-react";
 
 import { PostStatusPill } from "@/components/admin/PostStatusPill";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
@@ -40,7 +50,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={FileText}
           label="Blog posts"
@@ -71,6 +81,19 @@ export default async function AdminDashboardPage() {
           value={counts.pathways.published}
           context={`${counts.pathways.draft} draft`}
         />
+        <StatCard
+          icon={BarChart3}
+          label="Total published"
+          value={counts.totalPublished}
+          context="Across blog, courses, quizzes, decks, pathways"
+        />
+        <StatCard
+          icon={FolderOpen}
+          label="Total drafts"
+          value={counts.totalDrafts}
+          context="Across all five content types"
+        />
+        <StatCard icon={Users} label="Total users" value={counts.totalUsers} context="Registered profiles" />
       </div>
 
       <section>

@@ -17,7 +17,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <AppShell user={user}>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-12">{children}</main>
+      <main className="mx-auto w-full max-w-7xl flex-1 bg-gray-50 px-6 py-12 dark:bg-gray-950/40">
+        {children}
+      </main>
     </AppShell>
   );
 }

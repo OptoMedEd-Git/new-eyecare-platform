@@ -119,12 +119,6 @@ export const SAMPLE_BADGES: SampleBadge[] = [
   },
 ];
 
-export const SAMPLE_STATS = {
-  pathwaysInProgress: { value: 3, total: 7, trendDelta: null as number | null },
-  questionsAnswered: { value: 428, weeklyDelta: 24 },
-  casesReviewed: { value: 67, weeklyDelta: 5 },
-} as const;
-
 export const SAMPLE_CONTINUE_LEARNING: SampleCourse[] = [
   {
     id: "c1",

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ClipboardList, Compass, Stethoscope } from "lucide-react";
+import { BookOpen, ClipboardList, Layers, ListChecks } from "lucide-react";
 
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -16,6 +16,7 @@ import { PerformanceBreakdownChart } from "@/components/dashboard/PerformanceBre
 import { HomeBlogPostCard } from "@/components/blog/HomeBlogPostCard";
 
 import { getFeaturedPosts } from "@/lib/blog/queries";
+import { getUserDashboardStats } from "@/lib/dashboard/user-stats";
 import {
   SAMPLE_CONTINUE_LEARNING,
   SAMPLE_BADGES,
@@ -24,7 +25,6 @@ import {
   SAMPLE_RECOMMENDATIONS,
   SAMPLE_RECENT_ACTIVITY,
   SAMPLE_SKILL_MASTERY,
-  SAMPLE_STATS,
   SAMPLE_WEEKLY_ACTIVITY,
 } from "@/lib/dashboard/sample-data";
 
@@ -47,36 +47,38 @@ export default async function DashboardPage() {
   const metaFirst = (authUser.user_metadata?.first_name as string | undefined)?.trim();
   const firstName = profile?.first_name?.trim() ?? metaFirst ?? "there";
 
-  // REAL data: most recent published posts (3).
-  const blogPosts = await getFeaturedPosts(3);
+  // REAL data: most recent published posts (3) + learner stats.
+  const [blogPosts, stats] = await Promise.all([getFeaturedPosts(3), getUserDashboardStats(authUser.id)]);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
       {/* Page header */}
       <DashboardHeader firstName={firstName} />
 
-      {/* SAMPLE: high-level stats (placeholder until real progress tracking exists). */}
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          icon={Compass}
-          label="Pathways in progress"
-          value={SAMPLE_STATS.pathwaysInProgress.value}
-          context={`out of ${SAMPLE_STATS.pathwaysInProgress.total} enrolled`}
-          trendDelta={SAMPLE_STATS.pathwaysInProgress.trendDelta}
-        />
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={ClipboardList}
           label="Questions answered"
-          value={SAMPLE_STATS.questionsAnswered.value}
-          context="all time"
-          trendDelta={SAMPLE_STATS.questionsAnswered.weeklyDelta}
+          value={stats.questionsAnswered}
+          context="All time"
         />
         <StatCard
-          icon={Stethoscope}
-          label="Cases reviewed"
-          value={SAMPLE_STATS.casesReviewed.value}
-          context="all time"
-          trendDelta={SAMPLE_STATS.casesReviewed.weeklyDelta}
+          icon={ListChecks}
+          label="Quizzes completed"
+          value={stats.quizzesCompleted}
+          context="All time"
+        />
+        <StatCard
+          icon={Layers}
+          label="Flashcards reviewed"
+          value={stats.flashcardsReviewed}
+          context="All time"
+        />
+        <StatCard
+          icon={BookOpen}
+          label="Lessons completed"
+          value={stats.lessonsCompleted}
+          context="All time"
         />
       </div>
 

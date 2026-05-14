@@ -6,6 +6,12 @@ export type AdminDashboardCounts = {
   quizzes: { published: number; draft: number };
   decks: { published: number; draft: number };
   pathways: { published: number; draft: number };
+  /** Sum of the five content-type published counts. */
+  totalPublished: number;
+  /** Sum of the five content-type draft counts. */
+  totalDrafts: number;
+  /** All profiles (platform users). */
+  totalUsers: number;
 };
 
 export type AdminRecentItemKind = "post" | "course" | "quiz" | "deck" | "pathway";
@@ -59,6 +65,7 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     decksDraft,
     pathwaysPublished,
     pathwaysDraft,
+    profilesRes,
   ] = await Promise.all([
     headCount(supabase, "blog_posts", { status: "published" }),
     headCount(supabase, "blog_posts", { status: "draft" }),
@@ -70,7 +77,17 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     headCount(supabase, "flashcard_decks", { status: "draft" }),
     headCount(supabase, "pathways", { status: "published" }),
     headCount(supabase, "pathways", { status: "draft" }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
   ]);
+
+  if (profilesRes.error) {
+    console.error("[admin dashboard] count profiles", profilesRes.error.message);
+  }
+
+  const totalPublished =
+    postsPublished + coursesPublished + quizzesPublished + decksPublished + pathwaysPublished;
+  const totalDrafts = postsDraft + coursesDraft + quizzesDraft + decksDraft + pathwaysDraft;
+  const totalUsers = profilesRes.count ?? 0;
 
   return {
     posts: { published: postsPublished, draft: postsDraft },
@@ -78,6 +95,9 @@ export async function getAdminDashboardCounts(): Promise<AdminDashboardCounts> {
     quizzes: { published: quizzesPublished, draft: quizzesDraft },
     decks: { published: decksPublished, draft: decksDraft },
     pathways: { published: pathwaysPublished, draft: pathwaysDraft },
+    totalPublished,
+    totalDrafts,
+    totalUsers,
   };
 }
 
