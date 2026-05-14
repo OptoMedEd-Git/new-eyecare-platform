@@ -33,12 +33,14 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
   const isEditing = Boolean(initialQuestion);
 
   const [vignette, setVignette] = useState(initialQuestion?.vignette ?? "");
-  const [questionText, setQuestionText] = useState(initialQuestion?.question_text ?? "");
+  const [questionText, setQuestionText] = useState(initialQuestion?.questionText ?? "");
   const [explanation, setExplanation] = useState(initialQuestion?.explanation ?? "");
-  const [imageUrl, setImageUrl] = useState(initialQuestion?.image_url ?? "");
-  const [imageAttribution, setImageAttribution] = useState(initialQuestion?.image_attribution ?? "");
-  const [categoryId, setCategoryId] = useState(initialQuestion?.category_id ?? "");
-  const [audience, setAudience] = useState(initialQuestion?.target_audience ?? "");
+  const [imageUrl, setImageUrl] = useState(initialQuestion?.imageUrl ?? "");
+  const [imageAttribution, setImageAttribution] = useState(initialQuestion?.imageAttribution ?? "");
+  const [categoryId, setCategoryId] = useState(
+    () => initialQuestion?.categoryId ?? initialQuestion?.category?.id ?? "",
+  );
+  const [audience, setAudience] = useState(initialQuestion?.audience ?? "");
   const [difficulty, setDifficulty] = useState<QuizDifficulty>(
     (initialQuestion?.difficulty as QuizDifficulty | undefined) ?? "intermediate",
   );
@@ -51,7 +53,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     initialChoices[3]?.text ?? "",
   ]);
   const [correctIndex, setCorrectIndex] = useState<number>(() => {
-    const ix = initialChoices.findIndex((c) => c.is_correct);
+    const ix = initialChoices.findIndex((c) => c.isCorrect);
     return ix >= 0 ? ix : -1;
   });
 
@@ -377,11 +379,11 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
               <div className="grid gap-2 rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-xs text-text-muted">
                 <p>
                   <span className="font-medium text-text-heading">Created:</span>{" "}
-                  {formatPostDate(initialQuestion.created_at) || "—"}
+                  {formatPostDate(initialQuestion.createdAt) || "—"}
                 </p>
                 <p>
                   <span className="font-medium text-text-heading">Updated:</span>{" "}
-                  {formatPostDate(initialQuestion.updated_at) || "—"}
+                  {formatPostDate(initialQuestion.updatedAt) || "—"}
                 </p>
               </div>
             ) : null}

@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { buildSingleBestAnswerPayload } from "@/lib/quiz-bank/answer-payload";
+import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
+import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
 
 type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -82,14 +85,31 @@ export async function saveAnswerToAttempt(
     return { success: false, error: "Cannot modify a submitted attempt" };
   }
 
-  const { data: choice } = await supabase
-    .from("quiz_question_choices")
-    .select("id, is_correct, question_id")
-    .eq("id", choiceId)
-    .eq("question_id", questionId)
+  const { data: qFull, error: qErr } = await supabase
+    .from("quiz_questions")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name),
+      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+    `,
+    )
+    .eq("id", questionId)
     .maybeSingle();
 
-  if (!choice) return { success: false, error: "Invalid choice" };
+  if (qErr || !qFull) return { success: false, error: "Question not found" };
+
+  const row = qFull as Record<string, unknown>;
+  const choicesRaw = row.choices;
+  const choiceRows = (
+    Array.isArray(choicesRaw) ? choicesRaw : choicesRaw ? [choicesRaw] : []
+  ) as Array<Record<string, unknown>>;
+
+  const quizQuestion = rowToQuizQuestion(row, choiceRows);
+  const selected = quizQuestion.choices.find((c) => c.id === choiceId);
+  if (!selected) return { success: false, error: "Invalid choice" };
+
+  const isCorrect = evaluateQuestionAnswer(quizQuestion, choiceId);
 
   const { error: delErr } = await supabase
     .from("question_responses")
@@ -107,8 +127,9 @@ export async function saveAnswerToAttempt(
     user_id: user.id,
     question_id: questionId,
     choice_id: choiceId,
-    is_correct: choice.is_correct,
+    is_correct: isCorrect,
     quiz_attempt_id: attemptId,
+    answer_payload: buildSingleBestAnswerPayload(choiceId),
   });
 
   if (insErr) {

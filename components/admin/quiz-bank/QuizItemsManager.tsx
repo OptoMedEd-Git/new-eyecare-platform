@@ -18,9 +18,7 @@ type Props = {
 };
 
 function categoryLabel(row: AdminQuizItemRow["question"]): string | null {
-  const c = row.category;
-  if (!c) return null;
-  return Array.isArray(c) ? (c[0]?.name ?? null) : c.name;
+  return row.category?.name ?? null;
 }
 
 export function QuizItemsManager({ quizId, initialItems }: Props) {
@@ -105,7 +103,7 @@ export function QuizItemsManager({ quizId, initialItems }: Props) {
                     {item.question.vignette ? (
                       <p className="line-clamp-2 text-xs text-text-muted">{item.question.vignette}</p>
                     ) : null}
-                    <p className="mt-1 font-medium text-text-heading">{item.question.question_text}</p>
+                    <p className="mt-1 font-medium text-text-heading">{item.question.questionText}</p>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
                       {cat ? (
                         <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-text-fg-brand-strong">

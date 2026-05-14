@@ -13,9 +13,7 @@ type Props = {
 };
 
 function categoryLabel(q: AdminQuestionRow): string | null {
-  const c = q.category;
-  if (!c) return null;
-  return Array.isArray(c) ? (c[0]?.name ?? null) : c.name;
+  return q.category?.name ?? null;
 }
 
 export function QuestionPicker({ quizId, onClose, onComplete }: Props) {
@@ -139,7 +137,7 @@ export function QuestionPicker({ quizId, onClose, onComplete }: Props) {
                         {q.vignette ? (
                           <p className="line-clamp-2 text-xs text-text-muted">{q.vignette}</p>
                         ) : null}
-                        <p className="mt-1 text-sm font-medium text-text-heading">{q.question_text}</p>
+                        <p className="mt-1 text-sm font-medium text-text-heading">{q.questionText}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-text-muted">
                           {cat ? (
                             <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-text-fg-brand-strong">
@@ -147,8 +145,8 @@ export function QuestionPicker({ quizId, onClose, onComplete }: Props) {
                             </span>
                           ) : null}
                           <span className="capitalize">{q.difficulty}</span>
-                          {q.target_audience ? (
-                            <span className="capitalize">· {q.target_audience}</span>
+                          {q.audience ? (
+                            <span className="capitalize">· {q.audience}</span>
                           ) : null}
                         </div>
                       </div>

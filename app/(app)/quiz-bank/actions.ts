@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { buildSingleBestAnswerPayload } from "@/lib/quiz-bank/answer-payload";
+import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
+import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
 
 type SubmitResult =
   | { success: true; isCorrect: boolean; correctChoiceId: string; explanation: string }
@@ -15,46 +18,42 @@ export async function submitQuestionResponse(questionId: string, choiceId: strin
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const { data: published } = await supabase
+  const { data: qFull, error: qFullErr } = await supabase
     .from("quiz_questions")
-    .select("id")
+    .select(
+      `
+      *,
+      category:blog_categories(id, name),
+      choices:quiz_question_choices(id, position, text, is_correct, question_id)
+    `,
+    )
     .eq("id", questionId)
     .eq("status", "published")
     .maybeSingle();
 
-  if (!published) return { success: false, error: "Question not available" };
+  if (qFullErr || !qFull) return { success: false, error: "Question not available" };
 
-  const { data: choice, error: cErr } = await supabase
-    .from("quiz_question_choices")
-    .select("id, is_correct, question_id")
-    .eq("id", choiceId)
-    .eq("question_id", questionId)
-    .maybeSingle();
+  const row = qFull as Record<string, unknown>;
+  const choicesRaw = row.choices;
+  const choiceRows = (
+    Array.isArray(choicesRaw) ? choicesRaw : choicesRaw ? [choicesRaw] : []
+  ) as Array<Record<string, unknown>>;
 
-  if (cErr || !choice) return { success: false, error: "Invalid choice" };
+  const quizQuestion = rowToQuizQuestion(row, choiceRows);
+  const selected = quizQuestion.choices.find((c) => c.id === choiceId);
+  if (!selected) return { success: false, error: "Invalid choice" };
 
-  const { data: question, error: qErr } = await supabase
-    .from("quiz_questions")
-    .select("explanation")
-    .eq("id", questionId)
-    .maybeSingle();
+  const correctChoice = quizQuestion.choices.find((c) => c.isCorrect);
+  if (!correctChoice) return { success: false, error: "Question has no correct answer set" };
 
-  if (qErr || !question) return { success: false, error: "Question not found" };
-
-  const { data: correctChoice, error: ccErr } = await supabase
-    .from("quiz_question_choices")
-    .select("id")
-    .eq("question_id", questionId)
-    .eq("is_correct", true)
-    .maybeSingle();
-
-  if (ccErr || !correctChoice) return { success: false, error: "Question has no correct answer set" };
+  const isCorrect = evaluateQuestionAnswer(quizQuestion, choiceId);
 
   const { error: insErr } = await supabase.from("question_responses").insert({
     user_id: user.id,
     question_id: questionId,
     choice_id: choiceId,
-    is_correct: choice.is_correct,
+    is_correct: isCorrect,
+    answer_payload: buildSingleBestAnswerPayload(choiceId),
   });
 
   if (insErr) {
@@ -66,8 +65,8 @@ export async function submitQuestionResponse(questionId: string, choiceId: strin
 
   return {
     success: true,
-    isCorrect: choice.is_correct,
+    isCorrect,
     correctChoiceId: correctChoice.id,
-    explanation: String(question.explanation),
+    explanation: String(row.explanation),
   };
 }

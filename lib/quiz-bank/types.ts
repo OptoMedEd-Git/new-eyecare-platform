@@ -1,5 +1,8 @@
 export type QuizDifficulty = "foundational" | "intermediate" | "advanced";
+
+/** Matches DB enum `quiz_question_type`; extend when new types ship. */
 export type QuizQuestionType = "single_best_answer";
+
 export type QuestionAudience = "student" | "resident" | "practicing" | "all";
 export type QuestionStatus = "draft" | "published";
 
@@ -11,7 +14,8 @@ export type QuizChoice = {
   isCorrect: boolean;
 };
 
-export type QuizQuestion = {
+/** Fields shared by every question row (base table quiz_questions). */
+export type QuizQuestionBase = {
   id: string;
   vignette: string | null;
   questionText: string;
@@ -27,16 +31,39 @@ export type QuizQuestion = {
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+/** Satellite: quiz_question_choices for single_best_answer. */
+export type SingleBestAnswerSatellite = {
   choices: QuizChoice[];
 };
+
+/** Fully loaded question for the app (discriminated union — add arms per new question_type). */
+export type SingleBestAnswerQuestion = QuizQuestionBase & SingleBestAnswerSatellite;
+
+export type QuizQuestion = SingleBestAnswerQuestion;
+
+/** Stored in question_responses.answer_payload (jsonb). */
+export type SingleBestAnswerPayload = {
+  type: "single_best_answer";
+  version?: number;
+  selectedChoiceId: string;
+  /** Reserved for future partial-credit scoring; omit for all-or-nothing today. */
+  partialCredit?: { earned: number; max: number };
+};
+
+export type QuestionAnswerPayload = SingleBestAnswerPayload;
 
 export type QuestionResponse = {
   id: string;
   userId: string;
   questionId: string;
+  /** Denormalized FK for single_best_answer; future types may deprecate. */
   choiceId: string;
+  answerPayload: QuestionAnswerPayload;
   isCorrect: boolean;
   answeredAt: string;
+  quizAttemptId?: string | null;
 };
 
 export type PracticeStats = {

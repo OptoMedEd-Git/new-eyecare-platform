@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
+import { parseQuestionAnswerPayload } from "./answer-payload";
+import { evaluateQuestionAnswer } from "./scoring";
 import type {
   PracticeFilters,
   PracticeQuestionResult,
@@ -14,6 +16,7 @@ import type {
   QuizBankDashboardData,
   QuizListing,
   QuizQuestion,
+  QuizQuestionBase,
   QuizQuestionType,
   QuizWithQuestions,
 } from "./types";
@@ -29,11 +32,8 @@ function single<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-export function rowToQuizQuestion(
-  row: Record<string, unknown>,
-  choiceRows: Array<Record<string, unknown>>,
-): QuizQuestion {
-  const choices: QuizChoice[] = choiceRows
+function mapChoiceRows(choiceRows: Array<Record<string, unknown>>): QuizChoice[] {
+  return choiceRows
     .map((c) => ({
       id: String(c.id),
       questionId: String(c.question_id),
@@ -42,9 +42,10 @@ export function rowToQuizQuestion(
       isCorrect: Boolean(c.is_correct),
     }))
     .sort((a, b) => a.position - b.position);
+}
 
+function rowToQuizQuestionBase(row: Record<string, unknown>): QuizQuestionBase {
   const cat = single(row.category as { id: string; name: string } | { id: string; name: string }[] | null);
-
   return {
     id: String(row.id),
     vignette: row.vignette == null ? null : String(row.vignette),
@@ -61,8 +62,34 @@ export function rowToQuizQuestion(
     publishedAt: row.published_at == null ? null : String(row.published_at),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
-    choices,
   };
+}
+
+/**
+ * Map a quiz_questions row + joined choice rows into the composed app question model.
+ * Branches on `question_type` so new types add satellites without changing the base mapping.
+ */
+export function rowToQuizQuestion(
+  row: Record<string, unknown>,
+  choiceRows: Array<Record<string, unknown>>,
+): QuizQuestion {
+  const questionType = (row.question_type as QuizQuestionType) ?? "single_best_answer";
+  const base = rowToQuizQuestionBase(row);
+
+  switch (questionType) {
+    case "single_best_answer":
+      return {
+        ...base,
+        questionType: "single_best_answer",
+        choices: mapChoiceRows(choiceRows),
+      };
+    default:
+      return {
+        ...base,
+        questionType: "single_best_answer",
+        choices: mapChoiceRows(choiceRows),
+      };
+  }
 }
 
 function rowToQuiz(row: Record<string, unknown>): Quiz {
@@ -541,7 +568,7 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct)
+        choices:quiz_question_choices(id, position, text, is_correct, question_id)
       )
     `,
     )
@@ -550,18 +577,29 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
 
   if (iErr || !itemsData) return null;
 
+  /*
+   * Authoritative read policy (Q-Gen): `choice_id` + denormalized `is_correct` remain the source of
+   * truth for persisted single_best_answer rows. `answer_payload` is the generalized forward store.
+   * Question rows are always mapped through `rowToQuizQuestion` so future `question_type` values carry
+   * the right satellite shape; per-question score shown here uses `evaluateQuestionAnswer` (type-aware)
+   * from the resolved selection id so new types can share this path without trusting legacy columns alone.
+   */
   const { data: responsesData } = await supabase
     .from("question_responses")
-    .select("question_id, choice_id, is_correct")
+    .select("question_id, choice_id, answer_payload")
     .eq("quiz_attempt_id", attemptId)
     .eq("user_id", user.id);
 
-  const responseByQuestion = new Map<string, { choiceId: string; isCorrect: boolean }>();
+  const responseByQuestion = new Map<string, { choiceId: string; answerPayload: unknown }>();
   for (const r of responsesData ?? []) {
-    const row = r as { question_id: string; choice_id: string; is_correct: boolean };
+    const row = r as {
+      question_id: string;
+      choice_id: string;
+      answer_payload?: unknown;
+    };
     responseByQuestion.set(row.question_id, {
       choiceId: row.choice_id,
-      isCorrect: Boolean(row.is_correct),
+      answerPayload: row.answer_payload,
     });
   }
 
@@ -580,11 +618,17 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
 
     const question = rowToQuizQuestion(q, choiceRows);
     const response = responseByQuestion.get(question.id);
+    const payload = response
+      ? parseQuestionAnswerPayload(response.answerPayload ?? null, response.choiceId)
+      : null;
+    const userChoiceId = payload?.selectedChoiceId ?? response?.choiceId ?? null;
+    const isCorrect =
+      response && userChoiceId != null ? evaluateQuestionAnswer(question, userChoiceId) : null;
 
     questions.push({
       question,
-      userChoiceId: response?.choiceId ?? null,
-      isCorrect: response ? response.isCorrect : null,
+      userChoiceId,
+      isCorrect,
     });
   }
 

@@ -19,7 +19,7 @@ function vignetteExcerpt(text: string | null | undefined, max = 80): string {
 function rowPreview(q: AdminQuestionRow): string {
   const v = q.vignette?.trim();
   if (v) return v;
-  return q.question_text;
+  return q.questionText;
 }
 
 export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow[] }) {
@@ -104,19 +104,19 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                   >
                     {vignetteExcerpt(rowPreview(q))}
                   </Link>
-                  <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.question_text}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.questionText}</p>
                 </td>
                 <td className="px-6 py-4 align-top">
                   <PostStatusPill status={q.status === "published" ? "published" : "draft"} />
                 </td>
                 <td className="px-6 py-4 align-top text-sm text-text-body">
-                  {q.category && !Array.isArray(q.category) ? q.category.name : "—"}
+                  {q.category ? q.category.name : "—"}
                 </td>
                 <td className="px-6 py-4 align-top text-sm capitalize text-text-body">
-                  {q.target_audience ?? "—"}
+                  {q.audience ?? "—"}
                 </td>
                 <td className="px-6 py-4 align-top text-sm capitalize text-text-body">{q.difficulty}</td>
-                <td className="px-6 py-4 align-top text-sm text-text-body">{formatRelativeTime(q.updated_at)}</td>
+                <td className="px-6 py-4 align-top text-sm text-text-body">{formatRelativeTime(q.updatedAt)}</td>
                 <td className="px-6 py-4 text-right align-top text-sm">
                   <div className="flex items-center justify-end gap-3">
                     <Link

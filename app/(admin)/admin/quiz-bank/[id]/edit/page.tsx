@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   } = await supabase.auth.getUser();
   if (!user) return { title: "Edit question" };
   const q = await getAdminQuestionById(id, user.id);
-  return { title: q ? `Edit: ${truncateLabel(q.question_text, 52)}` : "Edit question" };
+  return { title: q ? `Edit: ${truncateLabel(q.questionText, 52)}` : "Edit question" };
 }
 
 export default async function EditQuizQuestionPage({ params }: { params: Promise<{ id: string }> }) {

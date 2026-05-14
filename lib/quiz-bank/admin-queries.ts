@@ -1,35 +1,64 @@
 import { createClient } from "@/lib/supabase/server";
 
+import { rowToQuizQuestion } from "./queries";
+import type { QuizQuestion } from "./types";
+
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-export type AdminQuestionRow = {
+export type AdminQuestionAuthor = {
   id: string;
-  vignette: string | null;
-  question_text: string;
-  explanation: string;
-  image_url: string | null;
-  image_attribution: string | null;
-  question_type: string;
-  status: string;
-  difficulty: string;
-  target_audience: string | null;
-  category_id: string | null;
-  category: { id: string; name: string } | { id: string; name: string }[] | null;
-  author_id: string | null;
-  author: { id: string; first_name: string | null; last_name: string | null } | null;
-  published_at: string | null;
-  created_at: string;
-  updated_at: string;
-  choices: Array<{
-    id: string;
-    position: number;
-    text: string;
-    is_correct: boolean;
-  }>;
+  first_name: string | null;
+  last_name: string | null;
 };
+
+/** Generalized question (`rowToQuizQuestion` + `question_type` branch) plus admin-only joins. */
+export type AdminQuestionRow = QuizQuestion & {
+  author: AdminQuestionAuthor | null;
+  /** Raw `quiz_questions.category_id` for authoring when the category embed is absent. */
+  categoryId: string | null;
+};
+
+function choiceRowsFromRow(row: Record<string, unknown>): Array<Record<string, unknown>> {
+  const choicesRaw = row.choices;
+  return (
+    Array.isArray(choicesRaw) ? choicesRaw : choicesRaw ? [choicesRaw] : []
+  ) as Array<Record<string, unknown>>;
+}
+
+function toAdminQuestionRow(row: Record<string, unknown>, author: AdminQuestionAuthor | null): AdminQuestionRow {
+  const question = rowToQuizQuestion(row, choiceRowsFromRow(row));
+  return {
+    ...question,
+    author,
+    categoryId: row.category_id == null ? null : String(row.category_id),
+  };
+}
+
+function missingAdminQuestionRow(): AdminQuestionRow {
+  const row: Record<string, unknown> = {
+    id: "",
+    vignette: null,
+    question_text: "(Missing question)",
+    explanation: "",
+    image_url: null,
+    image_attribution: null,
+    question_type: "single_best_answer",
+    target_audience: null,
+    difficulty: "intermediate",
+    status: "published",
+    author_id: null,
+    published_at: null,
+    created_at: "",
+    updated_at: "",
+    category_id: null,
+    category: null,
+    choices: [],
+  };
+  return toAdminQuestionRow(row, null);
+}
 
 export async function getAllAdminQuestions(userId: string): Promise<AdminQuestionRow[]> {
   const supabase = await createClient();
@@ -41,7 +70,7 @@ export async function getAllAdminQuestions(userId: string): Promise<AdminQuestio
       *,
       category:blog_categories(id, name),
       author:profiles!quiz_questions_author_id_fkey(id, first_name, last_name),
-      choices:quiz_question_choices(id, position, text, is_correct)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id)
     `,
     )
     .eq("author_id", userId)
@@ -54,13 +83,8 @@ export async function getAllAdminQuestions(userId: string): Promise<AdminQuestio
 
   return (data ?? []).map((row) => {
     const r = row as Record<string, unknown>;
-    const choices = (r.choices as AdminQuestionRow["choices"] | undefined) ?? [];
-    return {
-      ...(row as unknown as AdminQuestionRow),
-      category: single(r.category as AdminQuestionRow["category"]),
-      author: single(r.author as AdminQuestionRow["author"]),
-      choices: [...choices].sort((a, b) => a.position - b.position),
-    };
+    const author = single(r.author as AdminQuestionAuthor | AdminQuestionAuthor[] | null) as AdminQuestionAuthor | null;
+    return toAdminQuestionRow(r, author);
   });
 }
 
@@ -74,7 +98,7 @@ export async function getAdminQuestionById(id: string, userId: string): Promise<
       *,
       category:blog_categories(id, name),
       author:profiles!quiz_questions_author_id_fkey(id, first_name, last_name),
-      choices:quiz_question_choices(id, position, text, is_correct)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id)
     `,
     )
     .eq("id", id)
@@ -89,14 +113,8 @@ export async function getAdminQuestionById(id: string, userId: string): Promise<
   if (!data) return null;
 
   const row = data as Record<string, unknown>;
-  const choices = (row.choices as AdminQuestionRow["choices"] | undefined) ?? [];
-
-  return {
-    ...(data as unknown as AdminQuestionRow),
-    category: single(row.category as AdminQuestionRow["category"]),
-    author: single(row.author as AdminQuestionRow["author"]),
-    choices: [...choices].sort((a, b) => a.position - b.position),
-  };
+  const author = single(row.author as AdminQuestionAuthor | AdminQuestionAuthor[] | null) as AdminQuestionAuthor | null;
+  return toAdminQuestionRow(row, author);
 }
 
 export type AdminQuizAuthor = {
@@ -136,37 +154,13 @@ export type AdminQuizItemRow = {
 };
 
 function normalizeAdminQuestionRow(raw: unknown): AdminQuestionRow {
-  const rowObj = single(raw as AdminQuestionRow | AdminQuestionRow[] | null);
-  if (!rowObj) {
-    return {
-      id: "",
-      vignette: null,
-      question_text: "(Missing question)",
-      explanation: "",
-      image_url: null,
-      image_attribution: null,
-      question_type: "single_best_answer",
-      status: "published",
-      difficulty: "intermediate",
-      target_audience: null,
-      category_id: null,
-      category: null,
-      author_id: null,
-      author: null,
-      published_at: null,
-      created_at: "",
-      updated_at: "",
-      choices: [],
-    };
+  const rowObj = single(raw as Record<string, unknown> | Record<string, unknown>[] | null);
+  if (!rowObj || typeof rowObj !== "object") {
+    return missingAdminQuestionRow();
   }
-  const row = rowObj as unknown as Record<string, unknown>;
-  const choices = (row.choices as AdminQuestionRow["choices"] | undefined) ?? [];
-  return {
-    ...(rowObj as unknown as AdminQuestionRow),
-    category: single(row.category as AdminQuestionRow["category"]),
-    author: single(row.author as AdminQuestionRow["author"]),
-    choices: [...choices].sort((a, b) => a.position - b.position),
-  };
+  const row = rowObj as Record<string, unknown>;
+  const author = single(row.author as AdminQuestionAuthor | AdminQuestionAuthor[] | null) as AdminQuestionAuthor | null;
+  return toAdminQuestionRow(row, author);
 }
 
 export async function getAllAdminQuizzes(userId: string): Promise<AdminQuizRow[]> {
@@ -235,7 +229,7 @@ export async function getAdminQuizById(
       question:quiz_questions(
         *,
         category:blog_categories(id, name),
-        choices:quiz_question_choices(id, position, text, is_correct)
+        choices:quiz_question_choices(id, position, text, is_correct, question_id)
       )
     `,
     )
@@ -287,7 +281,7 @@ export async function getAvailableQuestionsForPicker(
       `
       *,
       category:blog_categories(id, name),
-      choices:quiz_question_choices(id, position, text, is_correct)
+      choices:quiz_question_choices(id, position, text, is_correct, question_id)
     `,
     )
     .eq("status", "published");

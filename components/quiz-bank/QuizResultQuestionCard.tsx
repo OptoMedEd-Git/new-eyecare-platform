@@ -72,12 +72,17 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
         <ol className="space-y-2">
           {question.choices.map((choice, i) => {
             const letter = String.fromCharCode(65 + i);
-            const isUserChoice = userChoiceId === choice.id;
+            const isUserChoice = wasAnswered && userChoiceId === choice.id;
             const isCorrectChoice = choice.isCorrect;
+            /** Green "you earned it" styling only when the user submitted an answer (right or wrong). Unanswered: show correct key in neutral/info style so it does not read as a correct *attempt*. */
+            const correctChoiceEarnedSuccess = isCorrectChoice && wasAnswered;
+            const correctChoiceUnansweredReveal = isCorrectChoice && !wasAnswered;
 
             let classes = "flex items-start gap-3 rounded-base border px-4 py-3 text-sm";
-            if (isCorrectChoice) {
+            if (correctChoiceEarnedSuccess) {
               classes += " border-border-success bg-bg-success-softer";
+            } else if (correctChoiceUnansweredReveal) {
+              classes += " border-border-brand-subtle bg-bg-brand-softer";
             } else if (isUserChoice) {
               classes += " border-border-danger bg-bg-danger-softer";
             } else {
@@ -89,14 +94,14 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
                 <span
                   className={[
                     "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                    isCorrectChoice
+                    correctChoiceEarnedSuccess
                       ? "bg-bg-success text-text-on-brand"
                       : isUserChoice
                         ? "bg-bg-danger text-text-on-brand"
                         : "bg-bg-secondary-soft text-text-muted",
                   ].join(" ")}
                 >
-                  {isCorrectChoice ? (
+                  {correctChoiceEarnedSuccess ? (
                     <Check className="size-3.5" aria-hidden />
                   ) : isUserChoice ? (
                     <X className="size-3.5" aria-hidden />
@@ -108,7 +113,15 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
                   {choice.text}
                   <span className="ml-2 inline-flex items-center gap-2 text-xs">
                     {isCorrectChoice ? (
-                      <span className="font-medium text-text-fg-success-strong">Correct answer</span>
+                      <span
+                        className={
+                          correctChoiceUnansweredReveal
+                            ? "font-medium text-text-fg-brand-strong"
+                            : "font-medium text-text-fg-success-strong"
+                        }
+                      >
+                        Correct answer
+                      </span>
                     ) : null}
                     {isUserChoice && !isCorrectChoice ? (
                       <span className="font-medium text-text-fg-danger">Your answer</span>
