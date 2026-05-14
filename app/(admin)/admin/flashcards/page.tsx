@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Layers, Plus } from "lucide-react";
+import { Layers, LayoutList, Plus } from "lucide-react";
 
 import { FlashcardsAdminTable } from "@/components/admin/flashcards/FlashcardsAdminTable";
 import { getAllAdminFlashcards } from "@/lib/flashcards/admin-queries";
@@ -31,13 +31,22 @@ export default async function FlashcardsAdminPage() {
           <h1 className="text-2xl font-semibold text-text-heading">Flashcards</h1>
           <p className="mt-1 text-sm text-text-body">Author short front-and-back cards for active recall practice.</p>
         </div>
-        <Link
-          href="/admin/flashcards/new"
-          className="inline-flex items-center gap-1.5 self-start rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus:outline-none focus:ring-4 focus:ring-ring-brand"
-        >
-          <Plus className="size-4" aria-hidden />
-          New flashcard
-        </Link>
+        <div className="flex flex-wrap items-center gap-2 self-start">
+          <Link
+            href="/admin/flashcards/decks"
+            className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium text-text-body shadow-xs transition-colors hover:bg-bg-secondary-soft focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          >
+            <LayoutList className="size-4" aria-hidden />
+            Manage decks
+          </Link>
+          <Link
+            href="/admin/flashcards/new"
+            className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium focus:outline-none focus:ring-4 focus:ring-ring-brand"
+          >
+            <Plus className="size-4" aria-hidden />
+            New flashcard
+          </Link>
+        </div>
       </header>
 
       {flashcards.length === 0 ? (

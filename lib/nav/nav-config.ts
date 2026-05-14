@@ -8,7 +8,6 @@ import {
   Hash,
   Layers,
   LayoutDashboard,
-  Library,
   LifeBuoy,
   Mail,
   Map,
@@ -83,13 +82,6 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
     label: "Flashcards",
     icon: BookMarked,
     href: "/admin/flashcards",
-    visibleIn: ["admin", "contributor"],
-  },
-  {
-    id: "admin-flashcard-decks",
-    label: "Flashcard decks",
-    icon: Library,
-    href: "/admin/flashcards/decks",
     visibleIn: ["admin", "contributor"],
   },
   {
