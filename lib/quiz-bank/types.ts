@@ -121,6 +121,19 @@ export type QuizWithItems = Quiz & {
 
 export type QuizAttemptStatus = "in_progress" | "submitted" | "abandoned";
 
+/** One submitted quiz attempt for review lists (curated + user-generated unified). */
+export type PastQuizAttemptSummary = {
+  attemptId: string;
+  quizId: string;
+  quizTitle: string;
+  quizKind: QuizKind;
+  quizSlug: string | null;
+  scoreCorrect: number;
+  scoreTotal: number;
+  questionCount: number;
+  submittedAt: string;
+};
+
 export type QuizAttempt = {
   id: string;
   userId: string;

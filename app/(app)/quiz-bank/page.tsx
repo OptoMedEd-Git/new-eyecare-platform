@@ -17,24 +17,28 @@ import { ContinueLearningCard } from "@/components/quiz-bank/ContinueLearningCar
 import { FeaturedQuizCard } from "@/components/quiz-bank/FeaturedQuizCard";
 import { FlaggedSummaryCard } from "@/components/quiz-bank/FlaggedSummaryCard";
 import { ModeCard } from "@/components/quiz-bank/ModeCard";
+import { ReviewPreviousQuizzesSection } from "@/components/quiz-bank/ReviewPreviousQuizzesSection";
 import {
   getFeaturedQuiz,
   getFlaggedCount,
   getLastQuizAttempt,
   getQuizBankDashboardData,
   getRecentFlaggedQuestions,
+  getRecentPastQuizAttemptsForDashboard,
   getRecentPracticeActivity,
 } from "@/lib/quiz-bank/queries";
 
 export default async function QuizBankPage() {
-  const [dashboard, featuredQuiz, flaggedCount, recentFlagged, recentPractice, lastQuizAttempt] = await Promise.all([
-    getQuizBankDashboardData(),
-    getFeaturedQuiz(),
-    getFlaggedCount(),
-    getRecentFlaggedQuestions(3),
-    getRecentPracticeActivity(3),
-    getLastQuizAttempt(),
-  ]);
+  const [dashboard, featuredQuiz, flaggedCount, recentFlagged, recentPractice, lastQuizAttempt, pastAttempts] =
+    await Promise.all([
+      getQuizBankDashboardData(),
+      getFeaturedQuiz(),
+      getFlaggedCount(),
+      getRecentFlaggedQuestions(3),
+      getRecentPracticeActivity(3),
+      getLastQuizAttempt(),
+      getRecentPastQuizAttemptsForDashboard(),
+    ]);
   const { stats, accuracyPct, unansweredCount, categoryAccuracy, accuracyOverTime } = dashboard;
 
   return (
@@ -101,6 +105,16 @@ export default async function QuizBankPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
           <FlaggedSummaryCard totalCount={flaggedCount} recent={recentFlagged} />
           <ContinueLearningCard recentPractice={recentPractice} lastQuizAttempt={lastQuizAttempt} />
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+          <ReviewPreviousQuizzesSection
+            attempts={pastAttempts.attempts}
+            hasMore={pastAttempts.hasMore}
+            fullWidthOnLarge
+          />
         </div>
       </section>
 

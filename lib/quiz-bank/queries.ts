@@ -14,6 +14,8 @@ import type {
   QuizBankCategoryAccuracyRow,
   QuizBankDailyAccuracyRow,
   QuizBankDashboardData,
+  PastQuizAttemptSummary,
+  QuizKind,
   QuizListing,
   QuizQuestion,
   QuizQuestionBase,
@@ -666,6 +668,128 @@ export async function getUserAttemptsForQuiz(quizId: string): Promise<QuizAttemp
   if (error || !data) return [];
 
   return data.map((row) => rowToAttempt(row as Record<string, unknown>));
+}
+
+function quizItemsCountFromQuizEmbed(quiz: Record<string, unknown>): number {
+  const raw = quiz.quiz_items;
+  const embed = raw as { count: number }[] | null | undefined;
+  const el = Array.isArray(embed) ? embed[0] : null;
+  return el?.count ?? 0;
+}
+
+function mapPastQuizAttemptRow(row: Record<string, unknown>): PastQuizAttemptSummary | null {
+  const qRaw = row.quiz;
+  const q = Array.isArray(qRaw) ? qRaw[0] : qRaw;
+  if (!q || typeof q !== "object") return null;
+  const quiz = q as Record<string, unknown>;
+  const kind = quiz.kind as QuizKind;
+  if (kind !== "curated" && kind !== "user_generated") return null;
+
+  return {
+    attemptId: String(row.id),
+    quizId: String(quiz.id),
+    quizTitle: String(quiz.title),
+    quizKind: kind,
+    quizSlug: quiz.slug == null ? null : String(quiz.slug),
+    scoreCorrect: Number(row.score_correct ?? 0),
+    scoreTotal: Number(row.score_total ?? 0),
+    questionCount: quizItemsCountFromQuizEmbed(quiz),
+    submittedAt: String(row.submitted_at ?? ""),
+  };
+}
+
+/** Results URL for a submitted attempt (curated uses slug; user-generated uses quiz id). */
+export function pastQuizAttemptResultsHref(s: PastQuizAttemptSummary): string {
+  if (s.quizKind === "curated" && s.quizSlug) {
+    return `/quiz-bank/quizzes/${s.quizSlug}/results/${s.attemptId}`;
+  }
+  return `/quiz-bank/my-quizzes/${s.quizId}/results/${s.attemptId}`;
+}
+
+const PAST_ATTEMPTS_LANDING_CAP = 5;
+
+/** Recent submitted attempts across all quizzes (curated + user-generated), most recent first. */
+export async function getRecentPastQuizAttemptsForDashboard(): Promise<{
+  attempts: PastQuizAttemptSummary[];
+  hasMore: boolean;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { attempts: [], hasMore: false };
+
+  const take = PAST_ATTEMPTS_LANDING_CAP + 1;
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select(
+      `
+      id,
+      score_correct,
+      score_total,
+      submitted_at,
+      quiz:quizzes(
+        id,
+        title,
+        slug,
+        kind,
+        quiz_items(count)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .eq("status", "submitted")
+    .not("submitted_at", "is", null)
+    .order("submitted_at", { ascending: false })
+    .limit(take);
+
+  if (error || !data?.length) return { attempts: [], hasMore: false };
+
+  const mapped = data
+    .map((r) => mapPastQuizAttemptRow(r as Record<string, unknown>))
+    .filter((x): x is PastQuizAttemptSummary => x != null);
+
+  const hasMore = mapped.length > PAST_ATTEMPTS_LANDING_CAP;
+  const attempts = mapped.slice(0, PAST_ATTEMPTS_LANDING_CAP);
+  return { attempts, hasMore };
+}
+
+/** Full list of submitted attempts for the review-all page (capped for safety). */
+export async function getAllPastQuizAttemptsForUser(): Promise<PastQuizAttemptSummary[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("quiz_attempts")
+    .select(
+      `
+      id,
+      score_correct,
+      score_total,
+      submitted_at,
+      quiz:quizzes(
+        id,
+        title,
+        slug,
+        kind,
+        quiz_items(count)
+      )
+    `,
+    )
+    .eq("user_id", user.id)
+    .eq("status", "submitted")
+    .not("submitted_at", "is", null)
+    .order("submitted_at", { ascending: false })
+    .limit(100);
+
+  if (error || !data) return [];
+
+  return data
+    .map((r) => mapPastQuizAttemptRow(r as Record<string, unknown>))
+    .filter((x): x is PastQuizAttemptSummary => x != null);
 }
 
 /** Published question count (anonymous-safe; used for unanswered tally). */
