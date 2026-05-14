@@ -2,9 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 
 import type {
   PathwayListing,
-  PathwayModuleRecord,
-  PathwayModuleType,
   PathwayWithModules,
+  PublicPathwayModuleRow,
 } from "./types";
 
 function single<T>(value: T | T[] | null | undefined): T | null {
@@ -38,21 +37,128 @@ function rowToListing(row: Record<string, unknown>, moduleCountOverride?: number
   };
 }
 
-function rowToModule(row: Record<string, unknown>): PathwayModuleRecord {
-  return {
-    id: String(row.id),
-    pathwayId: String(row.pathway_id),
-    position: Number(row.position),
-    title: String(row.title),
-    contextMarkdown: row.context_markdown == null ? null : String(row.context_markdown),
-    moduleType: row.module_type as PathwayModuleType,
-    courseId: row.course_id == null ? null : String(row.course_id),
-    quizId: row.quiz_id == null ? null : String(row.quiz_id),
-    flashcardDeckId: row.flashcard_deck_id == null ? null : String(row.flashcard_deck_id),
-    blogPostId: row.blog_post_id == null ? null : String(row.blog_post_id),
-    externalUrl: row.external_url == null ? null : String(row.external_url),
-    externalLabel: row.external_label == null ? null : String(row.external_label),
-  };
+type LinkedEmbed = {
+  id: string;
+  title: string;
+  slug: string;
+  status: string;
+  category: { name: string } | { name: string }[] | null;
+} | null;
+
+function isPublishedContent(row: LinkedEmbed): row is NonNullable<LinkedEmbed> {
+  return row != null && row.status === "published";
+}
+
+/**
+ * Public pathway modules with joins and stricter orphan rules than admin:
+ * orphaned if embed missing OR linked row status !== 'published'.
+ */
+export async function getPublicPathwayModules(pathwayId: string): Promise<PublicPathwayModuleRow[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("pathway_modules")
+    .select(
+      `
+      id,
+      position,
+      title,
+      context_markdown,
+      module_type,
+      external_url,
+      external_label,
+      course:courses(id, title, slug, status, category:blog_categories(name)),
+      quiz:quizzes(id, title, slug, status, category:blog_categories(name)),
+      flashcard_deck:flashcard_decks(id, title, slug, status, category:blog_categories(name)),
+      blog_post:blog_posts(id, title, slug, status, category:blog_categories!blog_posts_category_id_fkey(name))
+    `,
+    )
+    .eq("pathway_id", pathwayId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    console.error("[pathways] getPublicPathwayModules", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((raw) => {
+    const row = raw as Record<string, unknown> & {
+      module_type: string;
+      external_url: string | null;
+      external_label: string | null;
+    };
+
+    let linked_slug: string | null = null;
+    let linked_title: string | null = null;
+    let is_orphaned = false;
+
+    switch (row.module_type) {
+      case "course": {
+        const c = single(row.course as LinkedEmbed);
+        if (!isPublishedContent(c)) {
+          is_orphaned = true;
+        } else {
+          linked_slug = c.slug;
+          linked_title = c.title;
+        }
+        break;
+      }
+      case "quiz": {
+        const q = single(row.quiz as LinkedEmbed);
+        if (!isPublishedContent(q)) {
+          is_orphaned = true;
+        } else {
+          linked_slug = q.slug;
+          linked_title = q.title;
+        }
+        break;
+      }
+      case "flashcard_deck": {
+        const d = single(row.flashcard_deck as LinkedEmbed);
+        if (!isPublishedContent(d)) {
+          is_orphaned = true;
+        } else {
+          linked_slug = d.slug;
+          linked_title = d.title;
+        }
+        break;
+      }
+      case "blog_post": {
+        const p = single(row.blog_post as LinkedEmbed);
+        if (!isPublishedContent(p)) {
+          is_orphaned = true;
+        } else {
+          linked_slug = p.slug;
+          linked_title = p.title;
+        }
+        break;
+      }
+      case "external_resource": {
+        const url = row.external_url == null ? "" : String(row.external_url).trim();
+        if (!url) {
+          is_orphaned = true;
+        }
+        linked_title = row.external_label == null ? null : String(row.external_label);
+        break;
+      }
+      default:
+        is_orphaned = true;
+        break;
+    }
+
+    return {
+      id: String(row.id),
+      position: Number(row.position),
+      module_type: row.module_type as PublicPathwayModuleRow["module_type"],
+      title: String(row.title),
+      context_markdown: row.context_markdown == null ? null : String(row.context_markdown),
+      is_orphaned,
+      linked_slug,
+      linked_title,
+      external_url: row.external_url == null ? null : String(row.external_url),
+      external_label: row.external_label == null ? null : String(row.external_label),
+    };
+  });
 }
 
 export async function getPublishedPathways(): Promise<PathwayListing[]> {
@@ -87,7 +193,8 @@ export async function getPublishedPathwayBySlug(slug: string): Promise<PathwayWi
     .select(
       `
       *,
-      category:blog_categories(id, name)
+      category:blog_categories(id, name),
+      pathway_modules(count)
     `,
     )
     .eq("slug", slug)
@@ -100,23 +207,10 @@ export async function getPublishedPathwayBySlug(slug: string): Promise<PathwayWi
   }
 
   const pr = pathwayRow as Record<string, unknown>;
-
-  const { data: moduleRows, error: modErr } = await supabase
-    .from("pathway_modules")
-    .select("*")
-    .eq("pathway_id", pr.id as string)
-    .order("position", { ascending: true });
-
-  if (modErr) {
-    console.error("[pathways] modules", modErr.message);
-  }
-
-  const modules: PathwayModuleRecord[] = (moduleRows ?? []).map((r) => rowToModule(r as Record<string, unknown>));
-  const listing = rowToListing(pr, modules.length);
+  const listing = rowToListing(pr);
 
   return {
     ...listing,
-    moduleCount: modules.length,
-    modules,
+    modules: [],
   };
 }

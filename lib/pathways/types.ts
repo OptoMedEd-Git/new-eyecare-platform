@@ -7,7 +7,26 @@ export type PathwayStatus = "draft" | "published";
 
 export type PathwayModuleType = "course" | "quiz" | "flashcard_deck" | "blog_post" | "external_resource";
 
-/** One row in `pathway_modules` (named PathwayModuleRecord to avoid clashing with sample-data PathwayModule for CurriculumStepper). */
+/** Public pathway module row for curriculum UI (joined + orphan rules in `getPublicPathwayModules`). */
+export type PublicPathwayModuleRow = {
+  id: string;
+  position: number;
+  module_type: PathwayModuleType;
+  title: string;
+  context_markdown: string | null;
+  is_orphaned: boolean;
+  linked_slug: string | null;
+  linked_title: string | null;
+  external_url: string | null;
+  external_label: string | null;
+};
+
+/** Server-enriched row passed to `CurriculumStepper` (pre-rendered TipTap/HTML for context). */
+export type PublicPathwayModuleForStepper = PublicPathwayModuleRow & {
+  renderedContextHtml: string | null;
+};
+
+/** One row in `pathway_modules` as returned by public listing/detail queries (FK ids only). */
 export type PathwayModuleRecord = {
   id: string;
   pathwayId: string;

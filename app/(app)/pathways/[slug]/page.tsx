@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
-import { PathwayCurriculumPlaceholder } from "@/components/pathways/PathwayCurriculumPlaceholder";
+import { CurriculumStepper } from "@/components/pathways/CurriculumStepper";
 import { PathwayHero } from "@/components/pathways/PathwayHero";
-import { getPublishedPathwayBySlug } from "@/lib/pathways/queries";
-import { pathwayWithModulesToHero } from "@/lib/pathways/types";
+import { renderContent } from "@/lib/blog/render-content";
+import { getPublicPathwayModules, getPublishedPathwayBySlug } from "@/lib/pathways/queries";
+import { pathwayWithModulesToHero, type PublicPathwayModuleForStepper } from "@/lib/pathways/types";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -28,7 +29,13 @@ export default async function PathwayDetailPage({ params }: Props) {
     notFound();
   }
 
-  const hero = pathwayWithModulesToHero(pathway);
+  const modulesRaw = await getPublicPathwayModules(pathway.id);
+  const modules: PublicPathwayModuleForStepper[] = modulesRaw.map((m) => ({
+    ...m,
+    renderedContextHtml: m.context_markdown?.trim() ? renderContent(m.context_markdown) : null,
+  }));
+
+  const hero = pathwayWithModulesToHero({ ...pathway, moduleCount: modules.length });
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
@@ -53,7 +60,7 @@ export default async function PathwayDetailPage({ params }: Props) {
       </div>
 
       <div className="mt-10">
-        <PathwayCurriculumPlaceholder moduleCount={pathway.moduleCount} />
+        <CurriculumStepper modules={modules} pathwaySlug={pathway.slug} />
       </div>
     </div>
   );

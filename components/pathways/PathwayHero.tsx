@@ -2,7 +2,6 @@ import Image from "next/image";
 import { createElement } from "react";
 import { Clock, Layers as LayersIcon, Play, Sparkles } from "lucide-react";
 
-import { CATEGORY_ICONS, type PathwayCategory } from "@/lib/pathways/sample-data";
 import type { PathwayHeroModel } from "@/lib/pathways/types";
 
 const AUDIENCE_LABELS = {
@@ -16,23 +15,16 @@ type Props = {
   pathway: PathwayHeroModel;
 };
 
-function heroIconComponent(categoryLabel: string) {
-  const key = categoryLabel as PathwayCategory;
-  if (key in CATEGORY_ICONS) return CATEGORY_ICONS[key];
-  return Sparkles;
-}
-
 export function PathwayHero({ pathway }: Props) {
-  const IconType = heroIconComponent(pathway.categoryLabel);
   const audienceLabel = pathway.audience ? AUDIENCE_LABELS[pathway.audience] : "—";
 
   const ctaLabel = pathway.progress_percent !== undefined ? "Continue learning" : "Start pathway";
 
-  const iconLg = createElement(IconType, {
+  const iconLg = createElement(Sparkles, {
     className: "size-24 text-text-fg-brand-strong/40",
     "aria-hidden": true,
   });
-  const iconSm = createElement(IconType, {
+  const iconSm = createElement(Sparkles, {
     className: "size-16 text-text-fg-brand-strong/40",
     "aria-hidden": true,
   });
