@@ -1,7 +1,7 @@
 export type QuizDifficulty = "foundational" | "intermediate" | "advanced";
 
 /** Matches DB enum `quiz_question_type`; extend when new types ship. */
-export type QuizQuestionType = "single_best_answer" | "true_false";
+export type QuizQuestionType = "single_best_answer" | "true_false" | "multi_select";
 
 export type QuestionAudience = "student" | "resident" | "practicing" | "all";
 export type QuestionStatus = "draft" | "published";
@@ -33,10 +33,13 @@ export type QuizQuestionBase = {
   updatedAt: string;
 };
 
-/** Satellite: quiz_question_choices for single_best_answer. */
-export type SingleBestAnswerSatellite = {
+/** Satellite: quiz_question_choices (single_best_answer and multi_select). */
+export type ChoiceListSatellite = {
   choices: QuizChoice[];
 };
+
+/** Satellite: quiz_question_choices for single_best_answer. */
+export type SingleBestAnswerSatellite = ChoiceListSatellite;
 
 /** Satellite: quiz_question_true_false for true_false. */
 export type TrueFalseSatellite = {
@@ -46,9 +49,11 @@ export type TrueFalseSatellite = {
 /** Fully loaded question for the app (discriminated union — add arms per new question_type). */
 export type SingleBestAnswerQuestion = QuizQuestionBase & SingleBestAnswerSatellite & { questionType: "single_best_answer" };
 
+export type MultiSelectQuestion = QuizQuestionBase & ChoiceListSatellite & { questionType: "multi_select" };
+
 export type TrueFalseQuestion = QuizQuestionBase & TrueFalseSatellite & { questionType: "true_false" };
 
-export type QuizQuestion = SingleBestAnswerQuestion | TrueFalseQuestion;
+export type QuizQuestion = SingleBestAnswerQuestion | MultiSelectQuestion | TrueFalseQuestion;
 
 export function isSingleBestAnswerQuestion(q: QuizQuestion): q is SingleBestAnswerQuestion {
   return q.questionType === "single_best_answer";
@@ -58,10 +63,25 @@ export function isTrueFalseQuestion(q: QuizQuestion): q is TrueFalseQuestion {
   return q.questionType === "true_false";
 }
 
+export function isMultiSelectQuestion(q: QuizQuestion): q is MultiSelectQuestion {
+  return q.questionType === "multi_select";
+}
+
 /** What the learner submitted, used by scoring and results (generalizes beyond choice id). */
 export type SubmittedQuestionAnswer =
   | { type: "single_best_answer"; selectedChoiceId: string }
-  | { type: "true_false"; value: boolean };
+  | { type: "true_false"; value: boolean }
+  | { type: "multi_select"; selectedChoiceIds: string[] };
+
+/**
+ * Result of evaluating a submission. `isCorrect` is the all-or-nothing pass used for quiz scoring today.
+ * `scoreRatio` is 0..1 (today 0 or 1); future partial-credit modes may set fractional values and optional `partialCredit`.
+ */
+export type QuestionEvaluationResult = {
+  isCorrect: boolean;
+  scoreRatio: number;
+  partialCredit?: { earned: number; max: number };
+};
 
 /** Stored in question_responses.answer_payload (jsonb). */
 export type SingleBestAnswerPayload = {
@@ -78,13 +98,21 @@ export type TrueFalsePayload = {
   answer: boolean;
 };
 
-export type QuestionAnswerPayload = SingleBestAnswerPayload | TrueFalsePayload;
+export type MultiSelectPayload = {
+  type: "multi_select";
+  version?: number;
+  selectedChoiceIds: string[];
+  /** Reserved for future partial-credit scoring. */
+  partialCredit?: { earned: number; max: number };
+};
+
+export type QuestionAnswerPayload = SingleBestAnswerPayload | TrueFalsePayload | MultiSelectPayload;
 
 export type QuestionResponse = {
   id: string;
   userId: string;
   questionId: string;
-  /** Denormalized FK for single_best_answer; null for true_false. */
+  /** Denormalized FK for single_best_answer; null for true_false and multi_select. */
   choiceId: string | null;
   answerPayload: QuestionAnswerPayload;
   isCorrect: boolean;
@@ -226,4 +254,5 @@ export type QuizBankDashboardData = {
 /** One saved answer when resuming a quiz attempt (curated or user-generated). */
 export type QuizAttemptSavedResponse =
   | { questionId: string; kind: "single_best_answer"; choiceId: string }
-  | { questionId: string; kind: "true_false"; value: boolean };
+  | { questionId: string; kind: "true_false"; value: boolean }
+  | { questionId: string; kind: "multi_select"; selectedChoiceIds: string[] };

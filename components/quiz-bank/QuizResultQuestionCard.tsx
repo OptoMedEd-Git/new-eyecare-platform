@@ -1,7 +1,7 @@
 import { Check, X, AlertCircle } from "lucide-react";
 
 import type { QuizAttemptResult } from "@/lib/quiz-bank/queries";
-import { isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
+import { isMultiSelectQuestion, isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
 
 import { FlagButton } from "./FlagButton";
 
@@ -24,6 +24,8 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
 
   const userChoiceId = userAnswer?.type === "single_best_answer" ? userAnswer.selectedChoiceId : null;
   const userTf = userAnswer?.type === "true_false" ? userAnswer.value : null;
+  const userMultiSet =
+    userAnswer?.type === "multi_select" ? new Set(userAnswer.selectedChoiceIds) : new Set<string>();
 
   return (
     <article className={`rounded-base border bg-bg-primary-soft ${borderClass}`}>
@@ -133,6 +135,94 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
                       ) : null}
                       {isUserChoice && isCorrectChoice ? (
                         <span className="font-medium text-text-fg-success-strong">Your answer</span>
+                      ) : null}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
+        {isMultiSelectQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const isCorrectChoice = choice.isCorrect;
+              const userPicked = wasAnswered && userMultiSet.has(choice.id);
+
+              let classes = "flex items-start gap-3 rounded-base border px-4 py-3 text-sm";
+
+              if (!wasAnswered) {
+                if (isCorrectChoice) {
+                  classes += " border-border-brand-subtle bg-bg-brand-softer";
+                } else {
+                  classes += " border-border-default bg-bg-primary-soft";
+                }
+              } else if (isCorrect === true) {
+                if (isCorrectChoice) {
+                  classes += " border-border-success bg-bg-success-softer";
+                } else {
+                  classes += " border-border-default bg-bg-primary-soft opacity-70";
+                }
+              } else {
+                if (isCorrectChoice && userPicked) {
+                  classes += " border-border-success bg-bg-success-softer";
+                } else if (isCorrectChoice && !userPicked) {
+                  classes += " border-border-brand-subtle bg-bg-brand-softer";
+                } else if (!isCorrectChoice && userPicked) {
+                  classes += " border-border-danger bg-bg-danger-softer";
+                } else {
+                  classes += " border-border-default bg-bg-primary-soft opacity-70";
+                }
+              }
+
+              return (
+                <li key={choice.id} className={classes}>
+                  <span
+                    className={[
+                      "flex size-6 shrink-0 items-center justify-center rounded-sm border text-xs font-bold",
+                      wasAnswered && isCorrect === true && isCorrectChoice
+                        ? "border-border-success bg-bg-success text-text-on-brand"
+                        : wasAnswered && isCorrectChoice && userPicked && isCorrect === false
+                          ? "border-border-success bg-bg-success text-text-on-brand"
+                          : wasAnswered && isCorrectChoice && !userPicked
+                            ? "border-border-brand bg-bg-brand-softer text-text-fg-brand-strong"
+                            : wasAnswered && !isCorrectChoice && userPicked
+                              ? "border-border-danger bg-bg-danger text-text-on-brand"
+                              : "border-border-default bg-bg-secondary-soft text-text-muted",
+                    ].join(" ")}
+                  >
+                    {!wasAnswered && isCorrectChoice ? (
+                      <span className="text-[10px] font-bold" aria-hidden>
+                        ✓
+                      </span>
+                    ) : wasAnswered && isCorrectChoice && userPicked ? (
+                      <Check className="size-3.5" aria-hidden />
+                    ) : wasAnswered && isCorrectChoice && !userPicked ? (
+                      <span className="text-[10px] font-bold" aria-hidden>
+                        !
+                      </span>
+                    ) : wasAnswered && !isCorrectChoice && userPicked ? (
+                      <X className="size-3.5" aria-hidden />
+                    ) : (
+                      letter
+                    )}
+                  </span>
+                  <div className="flex-1 leading-relaxed text-text-heading">
+                    {choice.text}
+                    <span className="ml-2 inline-flex flex-wrap items-center gap-2 text-xs">
+                      {!wasAnswered && isCorrectChoice ? (
+                        <span className="font-medium text-text-fg-brand-strong">Correct answer</span>
+                      ) : null}
+                      {wasAnswered && isCorrectChoice && userPicked ? (
+                        <span className="font-medium text-text-fg-success-strong">Your answer · correct</span>
+                      ) : null}
+                      {wasAnswered && isCorrectChoice && !userPicked ? (
+                        <span className="font-medium text-text-fg-brand-strong">Correct (missed)</span>
+                      ) : null}
+                      {wasAnswered && !isCorrectChoice && userPicked ? (
+                        <span className="font-medium text-text-fg-danger">Your answer · incorrect</span>
                       ) : null}
                     </span>
                   </div>

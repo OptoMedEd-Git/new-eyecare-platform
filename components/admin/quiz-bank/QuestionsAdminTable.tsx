@@ -113,7 +113,11 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
                   <p className="mt-1 line-clamp-2 text-xs text-text-muted">{q.questionText}</p>
                 </td>
                 <td className="px-6 py-4 align-top text-sm text-text-body">
-                  {q.questionType === "true_false" ? "True / False" : "Multiple choice"}
+                  {q.questionType === "true_false"
+                    ? "True / False"
+                    : q.questionType === "multi_select"
+                      ? "Multi-select"
+                      : "Multiple choice"}
                 </td>
                 <td className="px-6 py-4 align-top">
                   <PostStatusPill status={q.status === "published" ? "published" : "draft"} />

@@ -98,6 +98,12 @@ export function rowToQuizQuestion(
         questionType: "single_best_answer",
         choices: mapChoiceRows(choiceRows),
       };
+    case "multi_select":
+      return {
+        ...base,
+        questionType: "multi_select",
+        choices: mapChoiceRows(choiceRows),
+      };
     case "true_false": {
       const correctAnswer = trueFalseCorrectFromRow(row) ?? false;
       return {
@@ -356,11 +362,17 @@ export async function getQuizAttemptWithResponses(attemptId: string): Promise<{
         kind: "single_best_answer",
         choiceId: sub.selectedChoiceId,
       });
-    } else {
+    } else if (sub.type === "true_false") {
       responses.push({
         questionId: row.question_id,
         kind: "true_false",
         value: sub.value,
+      });
+    } else {
+      responses.push({
+        questionId: row.question_id,
+        kind: "multi_select",
+        selectedChoiceIds: [...sub.selectedChoiceIds],
       });
     }
   }
@@ -697,7 +709,8 @@ export async function getQuizResultsForAttempt(attemptId: string): Promise<QuizA
       ? parseQuestionAnswerPayload(response.answerPayload ?? null, response.choiceId)
       : null;
     const userAnswer = submittedAnswerFromPayload(payload, response?.choiceId ?? null);
-    const isCorrect = userAnswer !== null ? evaluateQuestionAnswer(question, userAnswer) : null;
+    const evalResult = userAnswer !== null ? evaluateQuestionAnswer(question, userAnswer) : null;
+    const isCorrect = evalResult?.isCorrect ?? null;
 
     questions.push({
       question,

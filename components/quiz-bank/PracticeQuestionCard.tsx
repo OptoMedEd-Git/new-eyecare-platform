@@ -2,7 +2,11 @@
 
 import { submitQuestionResponse } from "@/app/(app)/quiz-bank/actions";
 import type { PracticeQuestionResult, SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
-import { isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
+import {
+  isMultiSelectQuestion,
+  isSingleBestAnswerQuestion,
+  isTrueFalseQuestion,
+} from "@/lib/quiz-bank/types";
 import { ArrowRight, Check, History, X } from "lucide-react";
 
 import { FlagButton } from "./FlagButton";
@@ -27,6 +31,13 @@ type SubmissionState =
       explanation: string;
       questionType: "true_false";
       correctAnswer: boolean;
+    }
+  | {
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "multi_select";
+      correctSelectedChoiceIds: string[];
+      userSelectedChoiceIds: string[];
     };
 
 export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
@@ -34,11 +45,17 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
 
   const [selectedMcId, setSelectedMcId] = useState<string | null>(null);
   const [selectedTf, setSelectedTf] = useState<boolean | null>(null);
+  const [selectedMultiIds, setSelectedMultiIds] = useState<string[]>([]);
   const [submission, setSubmission] = useState<SubmissionState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const submitted = Boolean(submission);
+
+  function toggleMultiChoice(id: string) {
+    if (submitted) return;
+    setSelectedMultiIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
 
   function buildPendingAnswer(): SubmittedQuestionAnswer | null {
     if (isSingleBestAnswerQuestion(question)) {
@@ -49,12 +66,15 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
       if (selectedTf === null) return null;
       return { type: "true_false", value: selectedTf };
     }
+    if (isMultiSelectQuestion(question)) {
+      return { type: "multi_select", selectedChoiceIds: [...selectedMultiIds] };
+    }
     return null;
   }
 
   function handleSubmit() {
     const pending = buildPendingAnswer();
-    if (!pending || submitted) return;
+    if (pending == null || submitted) return;
     setError(null);
     startTransition(async () => {
       const r = await submitQuestionResponse(question.id, pending);
@@ -69,17 +89,31 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
           explanation: r.explanation,
           questionType: "single_best_answer",
         });
-      } else {
+      } else if (r.questionType === "true_false") {
         setSubmission({
           isCorrect: r.isCorrect,
           correctAnswer: r.correctAnswer,
           explanation: r.explanation,
           questionType: "true_false",
         });
+      } else {
+        setSubmission({
+          isCorrect: r.isCorrect,
+          explanation: r.explanation,
+          questionType: "multi_select",
+          correctSelectedChoiceIds: r.correctSelectedChoiceIds,
+          userSelectedChoiceIds:
+            pending.type === "multi_select" ? [...pending.selectedChoiceIds] : [],
+        });
       }
       onAnswered(r.isCorrect);
     });
   }
+
+  const canSubmit =
+    isSingleBestAnswerQuestion(question) ? Boolean(selectedMcId)
+    : isTrueFalseQuestion(question) ? selectedTf !== null
+    : true;
 
   return (
     <article className="rounded-base border border-border-default bg-bg-primary-soft">
@@ -195,6 +229,81 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
           </ol>
         ) : null}
 
+        {isMultiSelectQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const userPicked = selectedMultiIds.includes(choice.id);
+              const multiSub = submission?.questionType === "multi_select" ? submission : null;
+              const correctSet = multiSub ? new Set(multiSub.correctSelectedChoiceIds) : null;
+              const userSet = multiSub ? new Set(multiSub.userSelectedChoiceIds) : null;
+              const isCorrectChoice = choice.isCorrect;
+              const showAsCorrect = submitted && correctSet?.has(choice.id);
+              const showMissed = submitted && isCorrectChoice && userSet && !userSet.has(choice.id);
+              const showWrongPick = submitted && !isCorrectChoice && userSet?.has(choice.id);
+              const showRightPick = submitted && isCorrectChoice && userSet?.has(choice.id);
+
+              let classes =
+                "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
+              if (submitted && multiSub) {
+                if (showRightPick && multiSub.isCorrect) {
+                  classes +=
+                    " border-border-success-subtle bg-bg-success-softer text-text-heading";
+                } else if (showRightPick && !multiSub.isCorrect) {
+                  classes +=
+                    " border-border-success-subtle bg-bg-success-softer text-text-heading";
+                } else if (showMissed) {
+                  classes +=
+                    " border-border-brand-subtle bg-bg-brand-softer text-text-heading";
+                } else if (showWrongPick) {
+                  classes +=
+                    " border-border-danger-subtle bg-bg-danger-softer text-text-heading";
+                } else {
+                  classes +=
+                    " border-border-default bg-bg-primary-soft text-text-body opacity-60";
+                }
+              } else if (!submitted && userPicked) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
+              } else if (!submitted) {
+                classes +=
+                  " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
+              }
+
+              return (
+                <li key={choice.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggleMultiChoice(choice.id)}
+                    disabled={submitted}
+                    className={classes}
+                  >
+                    <span
+                      className={[
+                        "flex size-6 shrink-0 items-center justify-center rounded-sm border text-xs font-bold",
+                        userPicked && !submitted
+                          ? "border-border-brand bg-bg-brand text-text-on-brand"
+                          : "border-border-default bg-bg-secondary-soft text-text-muted",
+                      ].join(" ")}
+                      aria-hidden
+                    >
+                      {submitted && showAsCorrect && multiSub?.isCorrect ? (
+                        <Check className="size-3.5 text-text-fg-success-strong" aria-hidden />
+                      ) : submitted && showWrongPick ? (
+                        <X className="size-3.5 text-text-fg-danger-strong" aria-hidden />
+                      ) : submitted && showMissed ? (
+                        <span className="text-[10px] font-bold">!</span>
+                      ) : (
+                        letter
+                      )}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
         {isTrueFalseQuestion(question) ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {([true, false] as const).map((value) => {
@@ -262,7 +371,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={(isSingleBestAnswerQuestion(question) ? !selectedMcId : selectedTf === null) || isPending}
+              disabled={!canSubmit || isPending}
               className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Submitting..." : "Submit answer"}

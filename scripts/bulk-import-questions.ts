@@ -8,6 +8,7 @@
  *
  * Each array entry is either:
  *   - Multiple choice (default): { question_text, explanation, choices[4], category, audience, difficulty, ... }
+ *   - Multi-select: { "question_type": "multi_select", question_text, explanation, choices[4] with one or more is_correct: true, ... }
  *   - True/False: { "question_type": "true_false", question_text, explanation, correct_answer: boolean, category, ... }
  */
 import { readFileSync } from "node:fs";
@@ -66,6 +67,18 @@ type InputQuestionMc = {
   image_suggestion?: string | null;
 };
 
+type InputQuestionMulti = {
+  question_type: "multi_select";
+  vignette?: string | null;
+  question_text: string;
+  choices: InputChoice[];
+  explanation: string;
+  category: string;
+  audience: string;
+  difficulty: string;
+  image_suggestion?: string | null;
+};
+
 type InputQuestionTf = {
   question_type: "true_false";
   vignette?: string | null;
@@ -78,13 +91,17 @@ type InputQuestionTf = {
   image_suggestion?: string | null;
 };
 
-type InputQuestion = InputQuestionMc | InputQuestionTf;
+type InputQuestion = InputQuestionMc | InputQuestionMulti | InputQuestionTf;
 
 const VALID_AUDIENCES = ["student", "resident", "practicing", "all"] as const;
 const VALID_DIFFICULTIES = ["foundational", "intermediate", "advanced"] as const;
 
 function isTrueFalseShape(o: Record<string, unknown>): boolean {
   return o.question_type === "true_false";
+}
+
+function isMultiSelectShape(o: Record<string, unknown>): boolean {
+  return o.question_type === "multi_select";
 }
 
 function validateCommon(o: Record<string, unknown>, index: number): string | null {
@@ -122,6 +139,32 @@ function validateQuestion(q: unknown, index: number): string | null {
     }
     if (o.choices != null) {
       return `Question ${index + 1}: true_false entries must not include choices`;
+    }
+    return null;
+  }
+
+  if (isMultiSelectShape(o)) {
+    if (!Array.isArray(o.choices) || o.choices.length !== 4) {
+      return `Question ${index + 1}: multi_select choices must be an array of exactly 4`;
+    }
+    const correctCount = o.choices.filter((c: unknown) => {
+      return typeof c === "object" && c !== null && (c as { is_correct?: boolean }).is_correct === true;
+    }).length;
+    if (correctCount < 1) {
+      return `Question ${index + 1}: multi_select must have at least one correct choice`;
+    }
+    for (let i = 0; i < o.choices.length; i++) {
+      const c = o.choices[i];
+      if (typeof c !== "object" || c === null) {
+        return `Question ${index + 1}: choice ${i} invalid`;
+      }
+      const ch = c as Record<string, unknown>;
+      if (typeof ch.text !== "string" || !ch.text.trim()) {
+        return `Question ${index + 1}: choice ${i} missing text`;
+      }
+      if (typeof ch.is_correct !== "boolean") {
+        return `Question ${index + 1}: choice ${i} is_correct must be boolean`;
+      }
     }
     return null;
   }
@@ -234,6 +277,7 @@ async function main() {
     const categoryId = categoryMap.get(q.category.trim())!;
 
     const isTf = "question_type" in q && q.question_type === "true_false";
+    const isMulti = "question_type" in q && q.question_type === "multi_select";
 
     const { data: questionRow, error: qErr } = await supabase
       .from("quiz_questions")
@@ -243,7 +287,7 @@ async function main() {
         explanation: q.explanation.trim(),
         image_url: null,
         image_attribution: null,
-        question_type: isTf ? "true_false" : "single_best_answer",
+        question_type: isTf ? "true_false" : isMulti ? "multi_select" : "single_best_answer",
         category_id: categoryId,
         target_audience: q.audience,
         difficulty: q.difficulty,
@@ -274,7 +318,7 @@ async function main() {
         continue;
       }
     } else {
-      const mc = q as InputQuestionMc;
+      const mc = q as InputQuestionMc | InputQuestionMulti;
       const choicesToInsert = mc.choices.map((c, idx) => ({
         question_id: questionRow.id,
         position: idx,

@@ -3,10 +3,19 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { buildSingleBestAnswerPayload, buildTrueFalsePayload } from "@/lib/quiz-bank/answer-payload";
+import {
+  buildMultiSelectPayload,
+  buildSingleBestAnswerPayload,
+  buildTrueFalsePayload,
+} from "@/lib/quiz-bank/answer-payload";
 import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
 import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
-import { isSingleBestAnswerQuestion, isTrueFalseQuestion, type SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
+import {
+  isMultiSelectQuestion,
+  isSingleBestAnswerQuestion,
+  isTrueFalseQuestion,
+  type SubmittedQuestionAnswer,
+} from "@/lib/quiz-bank/types";
 
 type ActionResult<T = void> =
   | { success: true; data?: T }
@@ -116,7 +125,10 @@ export async function saveAnswerToAttempt(
     choice_id: string | null;
     is_correct: boolean;
     quiz_attempt_id: string;
-    answer_payload: ReturnType<typeof buildSingleBestAnswerPayload> | ReturnType<typeof buildTrueFalsePayload>;
+    answer_payload:
+      | ReturnType<typeof buildSingleBestAnswerPayload>
+      | ReturnType<typeof buildTrueFalsePayload>
+      | ReturnType<typeof buildMultiSelectPayload>;
   };
 
   if (isSingleBestAnswerQuestion(quizQuestion)) {
@@ -125,7 +137,7 @@ export async function saveAnswerToAttempt(
     }
     const selected = quizQuestion.choices.find((c) => c.id === answer.selectedChoiceId);
     if (!selected) return { success: false, error: "Invalid choice" };
-    isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer).isCorrect;
     insertRow = {
       user_id: user.id,
       question_id: questionId,
@@ -138,7 +150,7 @@ export async function saveAnswerToAttempt(
     if (answer.type !== "true_false") {
       return { success: false, error: "This question expects a true/false answer" };
     }
-    isCorrect = evaluateQuestionAnswer(quizQuestion, answer);
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer).isCorrect;
     insertRow = {
       user_id: user.id,
       question_id: questionId,
@@ -146,6 +158,24 @@ export async function saveAnswerToAttempt(
       is_correct: isCorrect,
       quiz_attempt_id: attemptId,
       answer_payload: buildTrueFalsePayload(answer.value),
+    };
+  } else if (isMultiSelectQuestion(quizQuestion)) {
+    if (answer.type !== "multi_select") {
+      return { success: false, error: "This question expects a multi-select answer" };
+    }
+    for (const id of answer.selectedChoiceIds) {
+      if (!quizQuestion.choices.some((c) => c.id === id)) {
+        return { success: false, error: "Invalid choice" };
+      }
+    }
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer).isCorrect;
+    insertRow = {
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: null,
+      is_correct: isCorrect,
+      quiz_attempt_id: attemptId,
+      answer_payload: buildMultiSelectPayload(answer.selectedChoiceIds),
     };
   } else {
     return { success: false, error: "Unsupported question type" };

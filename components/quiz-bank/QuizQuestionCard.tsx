@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  isMultiSelectQuestion,
   isSingleBestAnswerQuestion,
   isTrueFalseQuestion,
   type QuizQuestion,
@@ -30,6 +31,17 @@ export function QuizQuestionCard({
   initialFlagged,
   onFlagToggle,
 }: Props) {
+  const multiSelected =
+    selectedAnswer?.type === "multi_select" ? new Set(selectedAnswer.selectedChoiceIds) : new Set<string>();
+
+  function toggleMulti(choiceId: string) {
+    if (locked) return;
+    const next = new Set(multiSelected);
+    if (next.has(choiceId)) next.delete(choiceId);
+    else next.add(choiceId);
+    onSelectAnswer({ type: "multi_select", selectedChoiceIds: [...next] });
+  }
+
   return (
     <article className="rounded-base border border-border-default bg-bg-primary-soft">
       <header className="border-b border-border-default p-5">
@@ -110,6 +122,48 @@ export function QuizQuestionCard({
                         "flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                         isSelected ? "bg-bg-brand text-text-on-brand" : "bg-bg-secondary-soft text-text-muted",
                       ].join(" ")}
+                    >
+                      {letter}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{choice.text}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : null}
+
+        {isMultiSelectQuestion(question) ? (
+          <ol className="space-y-2">
+            {question.choices.map((choice, i) => {
+              const letter = String.fromCharCode(65 + i);
+              const isOn = multiSelected.has(choice.id);
+
+              let classes =
+                "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
+              if (isOn) {
+                classes += " border-border-brand bg-bg-brand-softer text-text-heading";
+              } else {
+                classes += " border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft";
+              }
+              if (locked) {
+                classes += " cursor-not-allowed";
+              }
+
+              return (
+                <li key={choice.id}>
+                  <button
+                    type="button"
+                    onClick={() => toggleMulti(choice.id)}
+                    disabled={locked}
+                    className={classes}
+                  >
+                    <span
+                      className={[
+                        "flex size-6 shrink-0 items-center justify-center rounded-sm border text-xs font-bold",
+                        isOn ? "border-border-brand bg-bg-brand text-text-on-brand" : "border-border-default bg-bg-secondary-soft text-text-muted",
+                      ].join(" ")}
+                      aria-hidden
                     >
                       {letter}
                     </span>

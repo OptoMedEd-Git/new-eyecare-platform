@@ -24,6 +24,18 @@ function parseChoices(formData: FormData): Array<{ position: number; text: strin
   }));
 }
 
+function parseMultiSelectChoices(formData: FormData): Array<{ position: number; text: string; isCorrect: boolean }> {
+  return [0, 1, 2, 3].map((i) => {
+    const raw = String(formData.get(`choice_correct_${i}`) ?? "").trim();
+    const isCorrect = raw === "1" || raw === "true" || raw === "on";
+    return {
+      position: i,
+      text: String(formData.get(`choice_${i}`) ?? "").trim(),
+      isCorrect,
+    };
+  });
+}
+
 function validateQuestionFields(
   formData: FormData,
   choices: Array<{ text: string; isCorrect: boolean }>,
@@ -36,6 +48,22 @@ function validateQuestionFields(
   if (choices.some((c) => !c.text)) return "All 4 choice texts are required";
   const correctCount = choices.filter((c) => c.isCorrect).length;
   if (correctCount !== 1) return "Exactly one choice must be marked correct";
+
+  return null;
+}
+
+function validateMultiSelectFields(
+  formData: FormData,
+  choices: Array<{ text: string; isCorrect: boolean }>,
+): string | null {
+  const questionText = String(formData.get("question_text") ?? "").trim();
+  const explanation = String(formData.get("explanation") ?? "").trim();
+
+  if (!questionText) return "Question is required";
+  if (!explanation) return "Explanation is required";
+  if (choices.some((c) => !c.text)) return "All 4 choice texts are required";
+  const correctCount = choices.filter((c) => c.isCorrect).length;
+  if (correctCount < 1) return "At least one choice must be marked correct";
 
   return null;
 }
@@ -60,9 +88,11 @@ function parseDifficulty(formData: FormData): (typeof DIFFICULTIES)[number] {
     : "intermediate";
 }
 
-function parseQuestionTypeForCreate(formData: FormData): "single_best_answer" | "true_false" {
+function parseQuestionTypeForCreate(formData: FormData): "single_best_answer" | "true_false" | "multi_select" {
   const raw = String(formData.get("question_type") ?? "single_best_answer").trim();
-  return raw === "true_false" ? "true_false" : "single_best_answer";
+  if (raw === "true_false") return "true_false";
+  if (raw === "multi_select") return "multi_select";
+  return "single_best_answer";
 }
 
 function parseCorrectTrueFalse(formData: FormData): boolean | null {
@@ -150,6 +180,54 @@ export async function createQuestion(formData: FormData): Promise<ActionResult<{
     return { success: true, data: { id: question.id } };
   }
 
+  if (questionType === "multi_select") {
+    const choices = parseMultiSelectChoices(formData);
+    const validationError = validateMultiSelectFields(formData, choices);
+    if (validationError) return { success: false, error: validationError };
+
+    const { data: question, error: qErr } = await supabase
+      .from("quiz_questions")
+      .insert({
+        vignette,
+        question_text: questionText,
+        explanation,
+        image_url: imageUrl,
+        image_attribution: imageAttribution,
+        question_type: "multi_select",
+        category_id: categoryId,
+        target_audience: targetAudience,
+        difficulty,
+        status: "draft",
+        author_id: user.id,
+        published_at: null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (qErr || !question) {
+      console.error("createQuestion (multi_select) error:", qErr);
+      return { success: false, error: "Could not create question" };
+    }
+
+    const { error: cErr } = await supabase.from("quiz_question_choices").insert(
+      choices.map((c) => ({
+        question_id: question.id,
+        position: c.position,
+        text: c.text,
+        is_correct: c.isCorrect,
+      })),
+    );
+
+    if (cErr) {
+      console.error("Failed to insert choices (multi_select):", cErr);
+      await supabase.from("quiz_questions").delete().eq("id", question.id);
+      return { success: false, error: "Could not save choices" };
+    }
+
+    revalidatePath("/admin/quiz-bank");
+    return { success: true, data: { id: question.id } };
+  }
+
   const tfErr = validateTrueFalseCore(formData);
   if (tfErr) return { success: false, error: tfErr };
   const correctAnswer = parseCorrectTrueFalse(formData);
@@ -210,7 +288,7 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
 
   if (exErr || !existing) return { success: false, error: "Question not found" };
 
-  const existingType = existing.question_type as "single_best_answer" | "true_false";
+  const existingType = existing.question_type as "single_best_answer" | "true_false" | "multi_select";
 
   const vignetteRaw = String(formData.get("vignette") ?? "").trim();
   const vignette = vignetteRaw.length > 0 ? vignetteRaw : null;
@@ -227,6 +305,10 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
   if (existingType === "single_best_answer") {
     const choices = parseChoices(formData);
     const validationError = validateQuestionFields(formData, choices);
+    if (validationError) return { success: false, error: validationError };
+  } else if (existingType === "multi_select") {
+    const choices = parseMultiSelectChoices(formData);
+    const validationError = validateMultiSelectFields(formData, choices);
     if (validationError) return { success: false, error: validationError };
   } else {
     const validationError = validateTrueFalseCore(formData);
@@ -273,6 +355,28 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
 
     if (cErr) {
       console.error("Failed to update choices:", cErr);
+      return { success: false, error: "Could not update choices" };
+    }
+  } else if (existingType === "multi_select") {
+    const choices = parseMultiSelectChoices(formData);
+
+    const { error: delErr } = await supabase.from("quiz_question_choices").delete().eq("question_id", id);
+    if (delErr) {
+      console.error("delete choices (multi_select):", delErr);
+      return { success: false, error: "Could not update choices" };
+    }
+
+    const { error: cErr } = await supabase.from("quiz_question_choices").insert(
+      choices.map((c) => ({
+        question_id: id,
+        position: c.position,
+        text: c.text,
+        is_correct: c.isCorrect,
+      })),
+    );
+
+    if (cErr) {
+      console.error("Failed to update choices (multi_select):", cErr);
       return { success: false, error: "Could not update choices" };
     }
   } else {
@@ -335,9 +439,19 @@ export async function publishQuestion(id: string): Promise<ActionResult> {
     if (ch.length !== 4) {
       return { success: false, error: "Multiple-choice questions need exactly four choices before publishing" };
     }
+    const nCorrect = ch.filter((c: { is_correct?: boolean }) => c.is_correct === true).length;
+    if (nCorrect !== 1) {
+      return { success: false, error: "Mark exactly one choice as correct before publishing" };
+    }
+  } else if (qType === "multi_select") {
+    const rawCh = q.choices as unknown;
+    const ch = Array.isArray(rawCh) ? rawCh : [];
+    if (ch.length !== 4) {
+      return { success: false, error: "Multi-select questions need exactly four choices before publishing" };
+    }
     const anyCorrect = ch.some((c: { is_correct?: boolean }) => c.is_correct === true);
     if (!anyCorrect) {
-      return { success: false, error: "Mark one choice as correct before publishing" };
+      return { success: false, error: "Mark at least one choice as correct before publishing" };
     }
   } else if (qType === "true_false") {
     const rawTf = q.true_false as unknown;

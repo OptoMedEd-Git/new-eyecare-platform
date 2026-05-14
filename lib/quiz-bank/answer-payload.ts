@@ -1,4 +1,5 @@
 import type {
+  MultiSelectPayload,
   QuestionAnswerPayload,
   SingleBestAnswerPayload,
   SubmittedQuestionAnswer,
@@ -7,6 +8,12 @@ import type {
 
 const SINGLE_BEST = "single_best_answer" as const;
 const TRUE_FALSE = "true_false" as const;
+const MULTI_SELECT = "multi_select" as const;
+
+/** Normalize selected choice ids for stable storage and comparison. */
+export function normalizeMultiSelectChoiceIds(ids: string[]): string[] {
+  return [...new Set(ids.filter((id) => id.length > 0))].sort();
+}
 
 /** Build JSONB payload for a single-best-answer submission (stored in question_responses.answer_payload). */
 export function buildSingleBestAnswerPayload(choiceId: string): SingleBestAnswerPayload {
@@ -23,6 +30,15 @@ export function buildTrueFalsePayload(value: boolean): TrueFalsePayload {
     type: TRUE_FALSE,
     version: 1,
     answer: value,
+  };
+}
+
+/** Build JSONB payload for a multi-select submission (set of choice ids). */
+export function buildMultiSelectPayload(selectedChoiceIds: string[]): MultiSelectPayload {
+  return {
+    type: MULTI_SELECT,
+    version: 1,
+    selectedChoiceIds: normalizeMultiSelectChoiceIds(selectedChoiceIds),
   };
 }
 
@@ -61,6 +77,27 @@ export function parseQuestionAnswerPayload(
         answer: o.answer,
       };
     }
+    if (t === MULTI_SELECT && Array.isArray(o.selectedChoiceIds)) {
+      const ids = o.selectedChoiceIds.filter((x): x is string => typeof x === "string" && x.length > 0);
+      const partial = o.partialCredit;
+      let partialCredit: MultiSelectPayload["partialCredit"];
+      if (
+        partial &&
+        typeof partial === "object" &&
+        !Array.isArray(partial) &&
+        typeof (partial as Record<string, unknown>).earned === "number" &&
+        typeof (partial as Record<string, unknown>).max === "number"
+      ) {
+        const p = partial as { earned: number; max: number };
+        partialCredit = { earned: p.earned, max: p.max };
+      }
+      return {
+        type: MULTI_SELECT,
+        version: typeof o.version === "number" ? o.version : 1,
+        selectedChoiceIds: normalizeMultiSelectChoiceIds(ids),
+        partialCredit,
+      };
+    }
   }
   if (fallbackChoiceId) {
     return buildSingleBestAnswerPayload(fallbackChoiceId);
@@ -80,5 +117,8 @@ export function submittedAnswerFromPayload(
   if (parsed.type === "single_best_answer") {
     return { type: "single_best_answer", selectedChoiceId: parsed.selectedChoiceId };
   }
-  return { type: "true_false", value: parsed.answer };
+  if (parsed.type === "true_false") {
+    return { type: "true_false", value: parsed.answer };
+  }
+  return { type: "multi_select", selectedChoiceIds: [...parsed.selectedChoiceIds] };
 }

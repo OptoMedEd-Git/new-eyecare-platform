@@ -55,7 +55,10 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     return true;
   });
 
-  const initialChoices = initialQuestion?.questionType === "single_best_answer" ? initialQuestion.choices : [];
+  const initialChoices =
+    initialQuestion?.questionType === "single_best_answer" || initialQuestion?.questionType === "multi_select"
+      ? initialQuestion.choices
+      : [];
   const [choices, setChoices] = useState<string[]>([
     initialChoices[0]?.text ?? "",
     initialChoices[1]?.text ?? "",
@@ -66,6 +69,9 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     const ix = initialChoices.findIndex((c) => c.isCorrect);
     return ix >= 0 ? ix : -1;
   });
+  const [correctMulti, setCorrectMulti] = useState<boolean[]>(() =>
+    [0, 1, 2, 3].map((i) => Boolean(initialChoices[i]?.isCorrect)),
+  );
 
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,9 +99,13 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     fd.set("target_audience", audience);
     fd.set("difficulty", difficulty);
     fd.set("question_type", isEditing ? lockedQuestionType : questionType);
-    if (isEditing ? lockedQuestionType === "single_best_answer" : questionType === "single_best_answer") {
+    const effectiveType = isEditing ? lockedQuestionType : questionType;
+    if (effectiveType === "single_best_answer") {
       fd.set("correct_choice", String(correctIndex));
       choices.forEach((c, i) => fd.set(`choice_${i}`, c));
+    } else if (effectiveType === "multi_select") {
+      choices.forEach((c, i) => fd.set(`choice_${i}`, c));
+      correctMulti.forEach((on, i) => fd.set(`choice_correct_${i}`, on ? "1" : "0"));
     } else {
       fd.set("correct_true_false", correctTf ? "true" : "false");
     }
@@ -324,51 +334,87 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                   Question type
                 </label>
                 <p className="mt-1 mb-2 text-xs text-text-muted">
-                  Multiple choice uses four answer options. True/False uses a single boolean correct answer.
+                  Multiple choice uses four answer options. Multi-select allows more than one correct answer. True/False
+                  uses a single boolean correct answer.
                 </p>
                 <select
                   id="question_type"
                   name="question_type"
                   value={questionType}
                   onChange={(e) => {
-                    setQuestionType(e.target.value as QuizQuestionType);
+                    const next = e.target.value as QuizQuestionType;
+                    if (next === "multi_select" && questionType === "single_best_answer") {
+                      const flags = [false, false, false, false];
+                      if (correctIndex >= 0) flags[correctIndex] = true;
+                      setCorrectMulti(flags);
+                    }
+                    if (next === "single_best_answer" && questionType === "multi_select") {
+                      const ix = correctMulti.findIndex(Boolean);
+                      setCorrectIndex(ix >= 0 ? ix : 0);
+                    }
+                    setQuestionType(next);
                     markDirty();
                   }}
                   className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading shadow-xs outline-none transition-colors focus:border-border-brand focus:ring-4 focus:ring-ring-brand"
                 >
                   <option value="single_best_answer">Multiple choice (single best answer)</option>
+                  <option value="multi_select">Multi-select (select all that apply)</option>
                   <option value="true_false">True / False</option>
                 </select>
               </div>
             ) : (
               <div className="rounded-base border border-border-default bg-bg-secondary-soft px-3 py-2 text-sm text-text-body">
                 <span className="font-medium text-text-heading">Question type:</span>{" "}
-                {lockedQuestionType === "true_false" ? "True / False" : "Multiple choice (single best answer)"}
+                {lockedQuestionType === "true_false"
+                  ? "True / False"
+                  : lockedQuestionType === "multi_select"
+                    ? "Multi-select (select all that apply)"
+                    : "Multiple choice (single best answer)"}
               </div>
             )}
 
-            {(isEditing ? lockedQuestionType === "single_best_answer" : questionType === "single_best_answer") ? (
+            {(isEditing
+              ? lockedQuestionType === "single_best_answer" || lockedQuestionType === "multi_select"
+              : questionType === "single_best_answer" || questionType === "multi_select") ? (
             <div>
               <span className="text-sm font-medium text-text-heading">
                 Answer choices <span className="text-text-fg-danger">*</span>
               </span>
               <p className="mt-1 mb-3 text-xs text-text-muted">
-                Provide all 4 choices and select the one correct answer with the radio button.
+                {(isEditing ? lockedQuestionType : questionType) === "single_best_answer"
+                  ? "Provide all 4 choices and select the one correct answer with the radio button."
+                  : "Provide all 4 choices and mark every correct answer with the checkboxes (more than one allowed)."}
               </p>
               <ol className="space-y-2">
                 {choices.map((text, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <label className="mt-2.5 flex shrink-0 items-center gap-2">
-                      <input
-                        type="radio"
-                        name="correct_choice"
-                        checked={correctIndex === i}
-                        onChange={() => {
-                          setCorrectIndex(i);
-                          markDirty();
-                        }}
-                        className="size-4 border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
-                      />
+                      {(isEditing ? lockedQuestionType : questionType) === "single_best_answer" ? (
+                        <input
+                          type="radio"
+                          name="correct_choice"
+                          checked={correctIndex === i}
+                          onChange={() => {
+                            setCorrectIndex(i);
+                            markDirty();
+                          }}
+                          className="size-4 border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
+                        />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={correctMulti[i] ?? false}
+                          onChange={() => {
+                            setCorrectMulti((prev) => {
+                              const next = [...prev];
+                              next[i] = !next[i];
+                              return next;
+                            });
+                            markDirty();
+                          }}
+                          className="size-4 rounded border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand"
+                        />
+                      )}
                       <span className="text-sm font-bold text-text-muted">{String.fromCharCode(65 + i)}</span>
                     </label>
                     <textarea

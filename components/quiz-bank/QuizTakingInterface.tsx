@@ -17,7 +17,10 @@ function savedResponseToSubmitted(r: QuizAttemptSavedResponse): SubmittedQuestio
   if (r.kind === "single_best_answer") {
     return { type: "single_best_answer", selectedChoiceId: r.choiceId };
   }
-  return { type: "true_false", value: r.value };
+  if (r.kind === "true_false") {
+    return { type: "true_false", value: r.value };
+  }
+  return { type: "multi_select", selectedChoiceIds: [...r.selectedChoiceIds] };
 }
 
 type Props = {
