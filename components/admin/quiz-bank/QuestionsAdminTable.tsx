@@ -1,27 +1,40 @@
 "use client";
 
-import { deleteQuestion } from "@/app/(admin)/admin/quiz-bank/actions";
-import { PostStatusPill } from "@/components/admin/PostStatusPill";
-import type { AdminQuestionRow } from "@/lib/quiz-bank/admin-queries";
-import { formatRelativeTime } from "@/lib/blog/utils";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
 
-function vignetteExcerpt(text: string | null | undefined, max = 80): string {
+import { deleteQuestion } from "@/app/(admin)/admin/quiz-bank/actions";
+import { PostStatusPill } from "@/components/admin/PostStatusPill";
+import { formatRelativeTime } from "@/lib/blog/utils";
+import type { AdminQuestionRow } from "@/lib/quiz-bank/admin-queries";
+
+/** Same pattern as `FlashcardsAdminTable` excerpt — normalized spaces, capped length for primary column. */
+function excerpt(text: string, max = 80): string {
+  const t = text.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
+function vignetteExcerpt(text: string | null | undefined, max = 60): string {
   const t = (text ?? "").replace(/\s+/g, " ").trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
 }
 
-/** Primary row preview: vignette when present, otherwise question stem. */
+/** Primary row preview: vignette when present, otherwise question stem (for delete confirm + link title). */
 function rowPreview(q: AdminQuestionRow): string {
   const v = q.vignette?.trim();
   if (v) return v;
   return q.questionText;
 }
 
+/**
+ * Admin questions list — structurally aligned with `FlashcardsAdminTable`
+ * (wrapper, table-fixed, thead/th classes, tbody/td patterns, PostStatusPill, formatRelativeTime, actions row).
+ * Extra column: Type (quiz-specific), inserted after the primary text column like flashcards’ column order + one metadata column.
+ */
 export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -46,7 +59,7 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
           <tr className="border-b border-border-default">
             <th
               scope="col"
-              className="min-w-0 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
+              className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted"
             >
               Vignette
             </th>
@@ -102,16 +115,16 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
 
             return (
               <tr key={q.id} className={rowClassName}>
-                <td className="min-w-0 px-6 py-4">
+                <td className="px-6 py-4">
                   <Link
                     href={`/admin/quiz-bank/${q.id}/edit`}
-                    className="block truncate text-sm font-medium text-text-heading hover:underline"
+                    className="block text-sm font-medium text-text-heading hover:underline"
                     title={rowPreview(q)}
                   >
-                    {rowPreview(q)}
+                    {excerpt(rowPreview(q))}
                   </Link>
                   {q.questionText.trim() ? (
-                    <p className="mt-1 truncate text-xs text-text-muted">{q.questionText}</p>
+                    <p className="mt-1 truncate text-sm text-text-body">{q.questionText}</p>
                   ) : null}
                 </td>
                 <td className="px-6 py-4 align-top text-sm text-text-body">
