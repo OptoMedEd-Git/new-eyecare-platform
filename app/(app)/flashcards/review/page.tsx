@@ -3,7 +3,11 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ChevronRight, Home } from "lucide-react";
 
 import { FlashcardReviewOrchestrator } from "@/components/flashcards/FlashcardReviewOrchestrator";
-import { getActiveFlashcardCategories, getFlaggedFlashcardIds } from "@/lib/flashcards/queries";
+import {
+  getActiveFlashcardCategories,
+  getFlaggedFlashcardIds,
+  getFlashcardReviewStats,
+} from "@/lib/flashcards/queries";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Flashcards — Review" };
@@ -15,9 +19,10 @@ export default async function FlashcardReviewPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [categories, flaggedFlashcardIds] = await Promise.all([
+  const [categories, flaggedFlashcardIds, stats] = await Promise.all([
     getActiveFlashcardCategories(),
     getFlaggedFlashcardIds(),
+    getFlashcardReviewStats(),
   ]);
 
   return (
@@ -52,7 +57,12 @@ export default async function FlashcardReviewPage() {
       </header>
 
       <div className="mt-6">
-        <FlashcardReviewOrchestrator categoryOptions={categories} initialFlaggedFlashcardIds={flaggedFlashcardIds} />
+        <FlashcardReviewOrchestrator
+          categoryOptions={categories}
+          initialFlaggedFlashcardIds={flaggedFlashcardIds}
+          totalCardsPublished={stats.totalCardsPublished}
+          totalFlaggedCount={flaggedFlashcardIds.length}
+        />
       </div>
     </div>
   );

@@ -1,0 +1,182 @@
+[
+  {
+    "card_number": 1,
+    "front": "From which three embryonic tissue sources does the eye develop?",
+    "back": "Neuroectoderm (retina, optic nerve, iris/ciliary epithelium, sphincter and dilator muscles), surface ectoderm (lens, corneal epithelium, conjunctival epithelium, lacrimal gland), and neural crest-derived mesenchyme (corneal stroma and endothelium, sclera, choroidal stroma, trabecular meshwork, ciliary muscle).",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 2,
+    "front": "When do the optic grooves (optic sulci) first appear in human embryonic development?",
+    "back": "Around day 22 of gestation, as bilateral evaginations of the forebrain neuroectoderm. They deepen into optic vesicles by around day 25.",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 3,
+    "front": "What structure induces lens placode formation, and from which germ layer does the lens placode arise?",
+    "back": "The optic vesicle (neuroectoderm) induces the overlying surface ectoderm to thicken into the lens placode around week 4. The lens is entirely surface ectoderm-derived.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 4,
+    "front": "How does the optic cup form, and which layer becomes the neural retina vs. the RPE?",
+    "back": "The optic vesicle invaginates to form a double-walled optic cup. The inner layer becomes the neural retina; the outer layer becomes the retinal pigment epithelium (RPE).",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 5,
+    "front": "What is the embryonic (choroidal) fissure, and what passes through it?",
+    "back": "A groove on the inferonasal surface of the optic cup and stalk that allows the hyaloid artery to enter the developing eye. It normally closes by week 7.",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 6,
+    "front": "Failure of the embryonic fissure to close produces what congenital anomaly?",
+    "back": "Coloboma — a defect classically located inferonasally affecting iris, ciliary body, choroid, retina, and/or optic nerve depending on the extent of closure failure.",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 7,
+    "front": "From what does the lens vesicle form, and what happens to its posterior cells?",
+    "back": "The lens placode invaginates and pinches off from surface ectoderm to form the lens vesicle. Posterior cells elongate anteriorly to form the primary lens fibers, obliterating the vesicle lumen.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 8,
+    "front": "What is the embryologic origin of the corneal epithelium, stroma, and endothelium?",
+    "back": "Epithelium derives from surface ectoderm. Stroma and endothelium derive from neural crest mesenchyme that migrates in waves between the lens vesicle and surface ectoderm.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 9,
+    "front": "Which intraocular muscles are neuroectodermal in origin, unlike most muscles in the body?",
+    "back": "The iris sphincter and dilator muscles — both derive from the anterior neuroectoderm of the optic cup, not from mesoderm. The ciliary muscle, by contrast, is neural crest-derived.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 10,
+    "front": "What is the hyaloid artery, and what is its fate?",
+    "back": "A branch of the ophthalmic artery that nourishes the developing lens and primary vitreous via the embryonic fissure. It regresses by the third trimester; persistence causes persistent fetal vasculature (PFV).",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 11,
+    "front": "Distinguish primary, secondary, and tertiary vitreous.",
+    "back": "Primary vitreous: vascularized, contains hyaloid system; regresses. Secondary vitreous: avascular, becomes the definitive adult vitreous. Tertiary vitreous: forms the zonular fibers of the lens.",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 12,
+    "front": "What is Bergmeister's papilla, and what does it represent?",
+    "back": "A small glial remnant of the hyaloid artery at the optic disc. It is a benign developmental remnant of incomplete hyaloid regression.",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 13,
+    "front": "What is a Mittendorf dot?",
+    "back": "A small white opacity on the posterior lens capsule, typically inferonasal, representing a remnant of the attachment of the hyaloid artery to the lens. Benign and visually insignificant.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 14,
+    "front": "From which embryonic structure do the extraocular muscles develop?",
+    "back": "Paraxial mesoderm (specifically preotic somitomeres). This is a notable exception — most other periocular structures derive from neural crest, not mesoderm.",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 15,
+    "front": "What is the embryologic origin of the sclera and choroid?",
+    "back": "Both derive primarily from neural crest mesenchyme that condenses around the optic cup. The posterior sclera has some mesodermal contribution.",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 16,
+    "front": "When during gestation does retinal vascularization begin and complete?",
+    "back": "Retinal vessels begin growing from the optic disc around week 16 and reach the nasal ora serrata by ~36 weeks and the temporal ora serrata by ~40 weeks. Incomplete vascularization in preterm infants underlies retinopathy of prematurity.",
+    "category": "Posterior Segment",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 17,
+    "front": "What is the embryologic origin of the optic nerve fibers and its myelination pattern?",
+    "back": "Optic nerve axons are extensions of retinal ganglion cells (neuroectoderm). Myelination proceeds from the chiasm distally toward the eye and normally stops at the lamina cribrosa shortly after birth.",
+    "category": "Neuro-ophthalmology",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 18,
+    "front": "How do the eyelids develop, and when do they separate?",
+    "back": "Eyelid folds of surface ectoderm and neural crest mesenchyme fuse around week 8–9 and remain fused until approximately week 25–26 of gestation, when they separate.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 19,
+    "front": "Maldevelopment of neural crest-derived anterior segment structures produces what spectrum of disorders?",
+    "back": "Anterior segment dysgenesis — including Axenfeld-Rieger syndrome, Peters anomaly, and posterior embryotoxon. These reflect abnormal neural crest migration or differentiation, often with associated glaucoma risk.",
+    "category": "Anterior Segment",
+    "audience": "student",
+    "difficulty": "intermediate",
+    "image_suggestion": null
+  },
+  {
+    "card_number": 20,
+    "front": "Approximately when in gestation is the basic structural development of the eye complete?",
+    "back": "Major structural development is largely complete by the end of the embryonic period (~week 8), though functional maturation — particularly of the macula, myelination, and refractive components — continues well after birth.",
+    "category": "Pediatric Optometry",
+    "audience": "student",
+    "difficulty": "foundational",
+    "image_suggestion": null
+  }
+]

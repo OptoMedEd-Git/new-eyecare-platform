@@ -1,14 +1,79 @@
 "use client";
 
 import Link from "next/link";
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpenCheck,
+  ChevronLeft,
+  ChevronRight,
+  Flag,
+  Inbox,
+  Loader2,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Flag, Inbox, Loader2, X } from "lucide-react";
 
 import { countMatchingFlashcardsAction, fetchNextFlashcard } from "@/app/(app)/flashcards/actions";
 import { PracticeFilters } from "@/components/quiz-bank/PracticeFilters";
 import type { Flashcard, FlashcardAudience, FlashcardDifficulty, FlashcardRating, ReviewFilters } from "@/lib/flashcards/types";
 
 import { FlashcardReviewCard } from "./FlashcardReviewCard";
+
+type ReviewEmptyReason = "bank-empty" | "no-flags-at-all" | "no-flags-matching-filters" | "filters-narrow";
+
+function determineEmptyReason({
+  empty,
+  totalCardsPublished,
+  availableCount,
+  onlyFlagged,
+  totalFlaggedCount,
+}: {
+  empty: boolean;
+  totalCardsPublished: number;
+  availableCount: number | null;
+  onlyFlagged: boolean;
+  totalFlaggedCount: number;
+}): ReviewEmptyReason | null {
+  if (!empty) return null;
+  if (totalCardsPublished === 0) return "bank-empty";
+  if (onlyFlagged && totalFlaggedCount === 0) return "no-flags-at-all";
+  if (availableCount === 0) {
+    if (onlyFlagged) return "no-flags-matching-filters";
+    return "filters-narrow";
+  }
+  return "filters-narrow";
+}
+
+function EmptyStateCard({
+  icon: Icon,
+  title,
+  description,
+  primaryAction,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  primaryAction?: { label: string; onClick: () => void };
+}) {
+  return (
+    <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
+      <Icon className="mx-auto size-8 text-text-muted" aria-hidden />
+      <h3 className="mt-3 text-base font-bold text-text-heading">{title}</h3>
+      <p className="mx-auto mt-1 max-w-md text-sm text-text-body">{description}</p>
+      {primaryAction ? (
+        <button
+          type="button"
+          onClick={primaryAction.onClick}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
+        >
+          {primaryAction.label}
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 type SessionEntry = {
   flashcard: Flashcard;
@@ -19,9 +84,16 @@ type SessionEntry = {
 type Props = {
   categoryOptions: { id: string; name: string; count: number }[];
   initialFlaggedFlashcardIds: string[];
+  totalCardsPublished: number;
+  totalFlaggedCount: number;
 };
 
-export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFlashcardIds }: Props) {
+export function FlashcardReviewOrchestrator({
+  categoryOptions,
+  initialFlaggedFlashcardIds,
+  totalCardsPublished,
+  totalFlaggedCount,
+}: Props) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAudiences, setSelectedAudiences] = useState<string[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
@@ -40,6 +112,15 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
   const [isCounting, setIsCounting] = useState(false);
   const countGenRef = useRef(0);
 
+  const syncMatchCount = useCallback(async (f: ReviewFilters) => {
+    try {
+      const c = await countMatchingFlashcardsAction(f);
+      setAvailableCount(c);
+    } catch {
+      setAvailableCount(null);
+    }
+  }, []);
+
   const filters: ReviewFilters = useMemo(
     () => ({
       categoryIds: selectedCategoryIds,
@@ -51,14 +132,7 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
   );
 
   useEffect(() => {
-    if (!onlyFlagged) {
-      countGenRef.current += 1;
-      const frame = requestAnimationFrame(() => {
-        setAvailableCount(null);
-        setIsCounting(false);
-      });
-      return () => cancelAnimationFrame(frame);
-    }
+    if (!onlyFlagged) return;
 
     const gen = ++countGenRef.current;
     const handle = setTimeout(() => {
@@ -81,6 +155,23 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
       clearTimeout(handle);
     };
   }, [filters, onlyFlagged]);
+
+  const effectiveFlaggedCount = useMemo(
+    () => Math.max(totalFlaggedCount, flaggedIds.size),
+    [totalFlaggedCount, flaggedIds],
+  );
+
+  const emptyReason = useMemo(
+    () =>
+      determineEmptyReason({
+        empty,
+        totalCardsPublished,
+        availableCount,
+        onlyFlagged,
+        totalFlaggedCount: effectiveFlaggedCount,
+      }),
+    [empty, totalCardsPublished, availableCount, onlyFlagged, effectiveFlaggedCount],
+  );
 
   const sessionStats = useMemo(() => {
     let good = 0;
@@ -106,6 +197,7 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
       if (!card) {
         setEntries([]);
         setEmpty(true);
+        await syncMatchCount(filters);
       } else {
         setEntries([{ flashcard: card, rating: null, wasFlipped: false }]);
         setCursor(0);
@@ -113,7 +205,7 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, syncMatchCount]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -148,6 +240,7 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
     const card = await fetchNextFlashcard(filters);
     if (!card) {
       setEmpty(true);
+      await syncMatchCount(filters);
       return;
     }
     setEntries((prev) => [...prev, { flashcard: card, rating: null, wasFlipped: false }]);
@@ -246,20 +339,59 @@ export function FlashcardReviewOrchestrator({ categoryOptions, initialFlaggedFla
         <div className="flex items-center justify-center rounded-base border border-border-default bg-bg-primary-soft p-12 shadow-xs">
           <Loader2 className="size-6 animate-spin text-text-muted" aria-hidden />
         </div>
-      ) : empty && onlyFlagged ? (
-        <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
-          <Flag className="mx-auto size-8 text-text-muted" aria-hidden />
-          <p className="mt-3 text-base font-medium text-text-heading">No flagged cards match these filters</p>
-          <p className="mt-1 text-sm text-text-body">
-            Either flag some cards during a regular review session, or adjust your other filters.
-          </p>
-        </div>
       ) : empty ? (
-        <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
-          <Inbox className="mx-auto size-8 text-text-muted" aria-hidden />
-          <p className="mt-3 text-base font-medium text-text-heading">No flashcards match these filters</p>
-          <p className="mt-1 text-sm text-text-body">Try adjusting or clearing your filters.</p>
-        </div>
+        (emptyReason ?? "filters-narrow") === "bank-empty" ? (
+          <EmptyStateCard
+            icon={BookOpenCheck}
+            title="No flashcards published yet"
+            description="Once flashcards are added to the platform, you&apos;ll be able to review them here. Check back soon."
+          />
+        ) : (emptyReason ?? "filters-narrow") === "no-flags-at-all" ? (
+          <EmptyStateCard
+            icon={Flag}
+            title="You haven&apos;t flagged any cards yet"
+            description="During a review session, use the flag on any card to save it for focused practice here."
+            primaryAction={{
+              label: "Start a regular review",
+              onClick: () => {
+                setOnlyFlagged(false);
+                setAvailableCount(null);
+                setIsCounting(false);
+              },
+            }}
+          />
+        ) : (emptyReason ?? "filters-narrow") === "no-flags-matching-filters" ? (
+          <EmptyStateCard
+            icon={Flag}
+            title="No flagged cards match these filters"
+            description="You have flagged cards, but none match your current category, audience, or difficulty filters."
+            primaryAction={{
+              label: "Clear other filters",
+              onClick: () => {
+                setSelectedCategoryIds([]);
+                setSelectedAudiences([]);
+                setSelectedDifficulties([]);
+              },
+            }}
+          />
+        ) : (
+          <EmptyStateCard
+            icon={Inbox}
+            title="No flashcards match these filters — try adjusting"
+            description="Try removing a category, audience, or difficulty filter to widen the pool."
+            primaryAction={{
+              label: "Clear all filters",
+              onClick: () => {
+                setSelectedCategoryIds([]);
+                setSelectedAudiences([]);
+                setSelectedDifficulties([]);
+                setOnlyFlagged(false);
+                setAvailableCount(null);
+                setIsCounting(false);
+              },
+            }}
+          />
+        )
       ) : currentEntry ? (
         <div className="w-full space-y-0">
           <FlashcardReviewCard

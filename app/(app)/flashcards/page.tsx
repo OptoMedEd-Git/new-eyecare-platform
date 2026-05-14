@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, ChevronRight, Home } from "lucide-react";
+import { ArrowRight, BookOpenCheck, ChevronRight, Home } from "lucide-react";
 
 import { FlaggedFlashcardsSummaryCard } from "@/components/flashcards/FlaggedFlashcardsSummaryCard";
 import {
@@ -19,8 +19,44 @@ export default async function FlashcardsLandingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [stats, flaggedCount, recentFlagged] = await Promise.all([
-    getFlashcardReviewStats(),
+  const stats = await getFlashcardReviewStats();
+
+  if (stats.totalCardsPublished === 0) {
+    return (
+      <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1 text-text-muted transition-colors hover:text-text-heading"
+          >
+            <Home className="size-4" aria-hidden />
+            Home
+          </Link>
+          <ChevronRight className="size-4 text-text-muted" aria-hidden />
+          <span className="font-medium text-text-heading">Flashcards</span>
+        </nav>
+
+        <header className="mt-4">
+          <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">Flashcards</h1>
+          <p className="mt-2 max-w-2xl text-base text-text-body">
+            Active-recall practice. Flip cards, self-rate, build retention over time.
+          </p>
+        </header>
+
+        <section className="mt-10">
+          <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
+            <BookOpenCheck className="mx-auto size-10 text-text-muted" aria-hidden />
+            <h2 className="mt-4 text-xl font-bold text-text-heading">No flashcards published yet</h2>
+            <p className="mx-auto mt-2 max-w-md text-base text-text-body">
+              Once flashcards are added to the platform, you&apos;ll be able to review them here. Check back soon.
+            </p>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const [flaggedCount, recentFlagged] = await Promise.all([
     getFlaggedFlashcardCount(),
     getRecentFlaggedFlashcards(3),
   ]);

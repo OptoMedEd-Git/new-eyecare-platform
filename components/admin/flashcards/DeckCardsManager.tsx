@@ -59,7 +59,7 @@ export function DeckCardsManager({ deckId, initialItems }: Props) {
   }
 
   return (
-    <section className="rounded-base border border-border-default bg-bg-primary-soft p-6">
+    <section className="mx-auto w-full max-w-5xl rounded-base border border-border-default bg-bg-primary-soft p-6">
       <header className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-text-heading">Cards in deck</h2>

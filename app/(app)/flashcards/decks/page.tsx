@@ -52,8 +52,8 @@ export default async function FlashcardDecksPage() {
 
       {decks.length === 0 ? (
         <div className="mt-10 rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
-          <p className="text-base font-medium text-text-heading">No published decks yet</p>
-          <p className="mt-1 text-sm text-text-body">Check back soon — we&apos;re curating new sets.</p>
+          <p className="text-base font-medium text-text-heading">No curated decks yet</p>
+          <p className="mt-1 text-sm text-text-body">Check back soon.</p>
         </div>
       ) : (
         <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
