@@ -1,7 +1,9 @@
 import Image from "next/image";
-import { Clock, Layers as LayersIcon, Play } from "lucide-react";
+import { createElement } from "react";
+import { Clock, Layers as LayersIcon, Play, Sparkles } from "lucide-react";
 
-import { CATEGORY_ICONS, type SamplePathway } from "@/lib/pathways/sample-data";
+import { CATEGORY_ICONS, type PathwayCategory } from "@/lib/pathways/sample-data";
+import type { PathwayHeroModel } from "@/lib/pathways/types";
 
 const AUDIENCE_LABELS = {
   student: "Student",
@@ -11,21 +13,29 @@ const AUDIENCE_LABELS = {
 } as const;
 
 type Props = {
-  pathway: SamplePathway;
+  pathway: PathwayHeroModel;
 };
 
-export function PathwayHero({ pathway }: Props) {
-  const Icon = CATEGORY_ICONS[pathway.category];
-  const hours = Math.floor(pathway.estimated_minutes / 60);
-  const remainingMinutes = pathway.estimated_minutes % 60;
-  const durationLabel =
-    hours > 0 ? (remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`) : `${remainingMinutes}m`;
+function heroIconComponent(categoryLabel: string) {
+  const key = categoryLabel as PathwayCategory;
+  if (key in CATEGORY_ICONS) return CATEGORY_ICONS[key];
+  return Sparkles;
+}
 
-  const nextModule =
-    pathway.curriculum.find((m) => m.status === "in_progress") ??
-    pathway.curriculum.find((m) => m.status === "not_started");
+export function PathwayHero({ pathway }: Props) {
+  const IconType = heroIconComponent(pathway.categoryLabel);
+  const audienceLabel = pathway.audience ? AUDIENCE_LABELS[pathway.audience] : "—";
 
   const ctaLabel = pathway.progress_percent !== undefined ? "Continue learning" : "Start pathway";
+
+  const iconLg = createElement(IconType, {
+    className: "size-24 text-text-fg-brand-strong/40",
+    "aria-hidden": true,
+  });
+  const iconSm = createElement(IconType, {
+    className: "size-16 text-text-fg-brand-strong/40",
+    "aria-hidden": true,
+  });
 
   return (
     <section className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
@@ -33,9 +43,9 @@ export function PathwayHero({ pathway }: Props) {
         <div className="flex flex-col gap-4 p-6 lg:col-span-2 lg:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
-              {pathway.category}
+              {pathway.categoryLabel}
             </span>
-            <span className="text-xs font-medium text-text-muted">{AUDIENCE_LABELS[pathway.audience]}</span>
+            <span className="text-xs font-medium text-text-muted">{audienceLabel}</span>
           </div>
 
           <h1 className="text-3xl font-bold tracking-tight text-text-heading lg:text-4xl">{pathway.title}</h1>
@@ -45,11 +55,11 @@ export function PathwayHero({ pathway }: Props) {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-text-body">
             <span className="inline-flex items-center gap-1.5">
               <LayersIcon className="size-4 text-text-muted" aria-hidden />
-              {pathway.lessons_count} modules
+              {pathway.moduleCount} modules
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Clock className="size-4 text-text-muted" aria-hidden />
-              {durationLabel} total
+              {pathway.durationLabel}
             </span>
           </div>
 
@@ -57,9 +67,9 @@ export function PathwayHero({ pathway }: Props) {
             <div className="mt-2">
               <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                 <span className="font-medium text-text-fg-brand-strong">{pathway.progress_percent}% complete</span>
-                {nextModule ? (
-                  <span className="max-w-[min(100%,280px)] truncate text-text-muted" title={nextModule.title}>
-                    Up next: {nextModule.title}
+                {pathway.nextModuleTitle ? (
+                  <span className="max-w-[min(100%,280px)] truncate text-text-muted" title={pathway.nextModuleTitle}>
+                    Up next: {pathway.nextModuleTitle}
                   </span>
                 ) : null}
               </div>
@@ -93,14 +103,12 @@ export function PathwayHero({ pathway }: Props) {
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full min-h-[280px] w-full items-center justify-center bg-bg-brand-softer">
-              <Icon className="size-24 text-text-fg-brand-strong/40" aria-hidden />
-            </div>
+            <div className="flex h-full min-h-[280px] w-full items-center justify-center bg-bg-brand-softer">{iconLg}</div>
           )}
         </div>
 
         <div className="flex items-center justify-center border-t border-border-default bg-bg-brand-softer py-8 lg:hidden">
-          <Icon className="size-16 text-text-fg-brand-strong/40" aria-hidden />
+          {iconSm}
         </div>
       </div>
     </section>

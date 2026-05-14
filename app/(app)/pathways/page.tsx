@@ -1,9 +1,12 @@
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { PathwayBrowser } from "@/components/pathways/PathwayBrowser";
-import { PathwayInProgressCard } from "@/components/pathways/PathwayInProgressCard";
-import { SAMPLE_IN_PROGRESS_PATHWAYS, SAMPLE_PATHWAYS } from "@/lib/pathways/sample-data";
+import { BookOpenCheck } from "lucide-react";
 
-export default function PathwaysPage() {
+import { getPublishedPathways } from "@/lib/pathways/queries";
+
+export default async function PathwaysPage() {
+  const pathways = await getPublishedPathways();
+
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
       <Breadcrumb items={[{ label: "Home", href: "/dashboard" }, { label: "Pathways" }]} />
@@ -15,22 +18,21 @@ export default function PathwaysPage() {
         </p>
       </div>
 
-      {/* Continue learning row */}
-      <div className="mt-8">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-text-heading">Continue learning</h2>
+      {pathways.length === 0 ? (
+        <section className="mt-10">
+          <div className="rounded-base border border-dashed border-border-default bg-bg-secondary-soft p-12 text-center">
+            <BookOpenCheck className="mx-auto size-10 text-text-muted" aria-hidden />
+            <h2 className="mt-4 text-xl font-bold text-text-heading">No pathways published yet — check back soon</h2>
+            <p className="mx-auto mt-2 max-w-md text-base text-text-body">
+              Once learning pathways are published, you&apos;ll find them here.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <div className="mt-10">
+          <PathwayBrowser pathways={pathways} />
         </div>
-        <div className="mt-4 flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {SAMPLE_IN_PROGRESS_PATHWAYS.map((p) => (
-            <PathwayInProgressCard key={p.id} pathway={p} />
-          ))}
-        </div>
-      </div>
-
-      {/* Main grid */}
-      <div className="mt-10">
-        <PathwayBrowser pathways={SAMPLE_PATHWAYS} />
-      </div>
+      )}
     </div>
   );
 }

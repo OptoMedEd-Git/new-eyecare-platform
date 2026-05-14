@@ -1,3 +1,9 @@
+/**
+ * @deprecated as of pathways P1 (migration 021).
+ * Public list and detail pages now use real queries from `@/lib/pathways/queries`.
+ * CurriculumStepper and CATEGORY_ICONS still consume this file until P3 wires up real module rendering.
+ * Remove sample pathway arrays after P3 lands; keep shared types/helpers used by CurriculumStepper until then.
+ */
 import type { LucideIcon } from "lucide-react";
 import {
   Baby,

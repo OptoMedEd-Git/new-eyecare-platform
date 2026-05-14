@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { PathwayAudience, PathwayCategory, SamplePathway } from "@/lib/pathways/sample-data";
+
 import { FilterSidebar, type FilterOption } from "@/components/shared/FilterSidebar";
-import { PathwayListCard } from "@/components/pathways/PathwayListCard";
+import { PathwayListCard, pathwayDurationSortMinutes } from "@/components/pathways/PathwayListCard";
+import type { PathwayAudience, PathwayListing } from "@/lib/pathways/types";
 
 type SortOption = "recommended" | "title-asc" | "minutes-asc" | "minutes-desc";
 
 type Props = {
-  pathways: readonly SamplePathway[];
+  pathways: PathwayListing[];
 };
 
 function audienceLabel(aud: PathwayAudience): string {
@@ -19,8 +20,10 @@ function audienceLabel(aud: PathwayAudience): string {
 
 export function PathwayBrowser({ pathways }: Props) {
   const categories = useMemo(() => {
-    const set = new Set<PathwayCategory>();
-    for (const p of pathways) set.add(p.category);
+    const set = new Set<string>();
+    for (const p of pathways) {
+      set.add(p.category?.name ?? "Uncategorized");
+    }
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [pathways]);
 
@@ -30,7 +33,7 @@ export function PathwayBrowser({ pathways }: Props) {
         .map((c) => ({
           value: c,
           label: c,
-          count: pathways.filter((p) => p.category === c).length,
+          count: pathways.filter((p) => (p.category?.name ?? "Uncategorized") === c).length,
         }))
         .filter((o) => (o.count ?? 0) > 0),
     [categories, pathways],
@@ -45,6 +48,7 @@ export function PathwayBrowser({ pathways }: Props) {
     ];
 
     for (const p of pathways) {
+      if (!p.audience) continue;
       const item = auds.find((a) => a.value === p.audience);
       if (item) item.count += 1;
     }
@@ -64,24 +68,29 @@ export function PathwayBrowser({ pathways }: Props) {
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-      list = list.filter((p) => p.title.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(q) ||
+          (p.description ?? "").toLowerCase().includes(q) ||
+          (p.category?.name ?? "").toLowerCase().includes(q),
+      );
     }
 
     if (selectedCategories.length > 0) {
-      list = list.filter((p) => selectedCategories.includes(p.category));
+      list = list.filter((p) => selectedCategories.includes(p.category?.name ?? "Uncategorized"));
     }
 
     if (selectedAudiences.length > 0) {
-      list = list.filter((p) => selectedAudiences.includes(p.audience));
+      list = list.filter((p) => p.audience && selectedAudiences.includes(p.audience));
     }
 
     const sorted = [...list];
     if (sort === "title-asc") {
       sorted.sort((a, b) => a.title.localeCompare(b.title));
     } else if (sort === "minutes-asc") {
-      sorted.sort((a, b) => a.estimated_minutes - b.estimated_minutes);
+      sorted.sort((a, b) => pathwayDurationSortMinutes(a) - pathwayDurationSortMinutes(b));
     } else if (sort === "minutes-desc") {
-      sorted.sort((a, b) => b.estimated_minutes - a.estimated_minutes);
+      sorted.sort((a, b) => pathwayDurationSortMinutes(b) - pathwayDurationSortMinutes(a));
     }
     return sorted;
   }, [pathways, search, selectedCategories, selectedAudiences, sort]);
@@ -165,4 +174,3 @@ export function PathwayBrowser({ pathways }: Props) {
     </div>
   );
 }
-

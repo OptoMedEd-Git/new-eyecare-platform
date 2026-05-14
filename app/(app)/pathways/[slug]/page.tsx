@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 
-import { PathwayDetailLayout } from "@/components/pathways/PathwayDetailLayout";
+import { PathwayCurriculumPlaceholder } from "@/components/pathways/PathwayCurriculumPlaceholder";
 import { PathwayHero } from "@/components/pathways/PathwayHero";
+import { getPublishedPathwayBySlug } from "@/lib/pathways/queries";
+import { pathwayWithModulesToHero } from "@/lib/pathways/types";
 import { createClient } from "@/lib/supabase/server";
-import { SAMPLE_PATHWAYS } from "@/lib/pathways/sample-data";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -22,10 +23,12 @@ export default async function PathwayDetailPage({ params }: Props) {
     redirect("/login");
   }
 
-  const pathway = SAMPLE_PATHWAYS.find((p) => p.slug === slug);
+  const pathway = await getPublishedPathwayBySlug(slug);
   if (!pathway) {
     notFound();
   }
+
+  const hero = pathwayWithModulesToHero(pathway);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-6 py-8 lg:py-10">
@@ -46,11 +49,11 @@ export default async function PathwayDetailPage({ params }: Props) {
       </nav>
 
       <div className="mt-6">
-        <PathwayHero pathway={pathway} />
+        <PathwayHero pathway={hero} />
       </div>
 
       <div className="mt-10">
-        <PathwayDetailLayout pathway={pathway} />
+        <PathwayCurriculumPlaceholder moduleCount={pathway.moduleCount} />
       </div>
     </div>
   );

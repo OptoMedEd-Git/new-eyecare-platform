@@ -11,6 +11,7 @@ import {
   Library,
   LifeBuoy,
   Mail,
+  Map,
   Newspaper,
   Route,
   Shield,
@@ -89,6 +90,13 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
     label: "Flashcard decks",
     icon: Library,
     href: "/admin/flashcards/decks",
+    visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-pathways",
+    label: "Pathways",
+    icon: Map,
+    href: "/admin/pathways",
     visibleIn: ["admin", "contributor"],
   },
   {
