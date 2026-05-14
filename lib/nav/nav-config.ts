@@ -4,6 +4,7 @@ import {
   ClipboardList,
   FileCheck,
   FileText,
+  FolderOpen,
   GraduationCap,
   Hash,
   Layers,
@@ -17,6 +18,7 @@ import {
   Stethoscope,
   Tag,
   Users,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,10 +66,10 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
     visibleIn: ["admin"],
   },
   {
-    id: "admin-posts",
-    label: "Posts",
-    icon: FileText,
-    href: "/admin/blog",
+    id: "admin-pathways",
+    label: "Pathways",
+    icon: Map,
+    href: "/admin/pathways",
     visibleIn: ["admin", "contributor"],
   },
   {
@@ -76,6 +78,13 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
     icon: GraduationCap,
     href: "/admin/courses",
     visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-cases",
+    label: "Cases",
+    icon: Stethoscope,
+    href: "/admin/cases",
+    visibleIn: ["admin"],
   },
   {
     id: "admin-quiz-bank",
@@ -92,11 +101,32 @@ export const ADMIN_NAV_PRIMARY: NavItem[] = [
     visibleIn: ["admin", "contributor"],
   },
   {
-    id: "admin-pathways",
-    label: "Pathways",
-    icon: Map,
-    href: "/admin/pathways",
+    id: "admin-microlearning",
+    label: "Microlearning",
+    icon: Zap,
+    href: "/admin/microlearning",
+    visibleIn: ["admin"],
+  },
+  {
+    id: "admin-posts",
+    label: "Blog",
+    icon: FileText,
+    href: "/admin/blog",
     visibleIn: ["admin", "contributor"],
+  },
+  {
+    id: "admin-encyclopedia",
+    label: "Encyclopedia",
+    icon: BookOpen,
+    href: "/admin/encyclopedia",
+    visibleIn: ["admin"],
+  },
+  {
+    id: "admin-resources",
+    label: "Resources",
+    icon: FolderOpen,
+    href: "/admin/resources",
+    visibleIn: ["admin"],
   },
   {
     id: "admin-categories",
