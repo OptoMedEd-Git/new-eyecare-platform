@@ -2,9 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FileText, Plus } from "lucide-react";
 
-import { PostStatusPill } from "@/components/admin/PostStatusPill";
-import { getAdminPosts, type AdminBlogPost } from "@/lib/blog/admin-queries";
-import { formatRelativeTime } from "@/lib/blog/utils";
+import { BlogPostsAdminTable } from "@/components/admin/blog/BlogPostsAdminTable";
+import { getAdminPosts } from "@/lib/blog/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -49,7 +48,7 @@ export default async function AdminBlogPage() {
         </Link>
       </div>
 
-      {posts.length === 0 ? <EmptyState role={role} /> : <PostsTable posts={posts} role={role} />}
+      {posts.length === 0 ? <EmptyState role={role} /> : <BlogPostsAdminTable posts={posts} role={role} />}
     </div>
   );
 }
@@ -64,76 +63,6 @@ function EmptyState({ role }: { role: "admin" | "contributor" }) {
           ? "No blog posts have been created. Get started by writing your first post."
           : "You haven't written any posts yet. Click 'New post' to get started."}
       </p>
-    </div>
-  );
-}
-
-function PostsTable({ posts, role }: { posts: AdminBlogPost[]; role: "admin" | "contributor" }) {
-  const showAuthor = role === "admin";
-
-  return (
-    <div className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft shadow-xs">
-      <table className="w-full table-fixed">
-        <thead className="bg-bg-secondary-soft">
-          <tr className="border-b border-border-default">
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-              Title
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-              Status
-            </th>
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-              Category
-            </th>
-            {showAuthor ? (
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-                Author
-              </th>
-            ) : null}
-            <th scope="col" className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted">
-              Updated
-            </th>
-            <th scope="col" className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-text-muted">
-              Actions
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {posts.map((post, idx) => {
-            const isLast = idx === posts.length - 1;
-            const rowClassName =
-              "transition-colors hover:bg-bg-secondary-soft" + (isLast ? "" : " border-b border-border-default");
-
-            const authorName = [post.author.first_name, post.author.last_name].filter(Boolean).join(" ").trim() || "—";
-
-            return (
-              <tr key={post.id} className={rowClassName}>
-                <td className="px-6 py-4">
-                  <Link
-                    href={`/admin/blog/${post.id}/edit`}
-                    className="block truncate text-sm font-medium text-text-heading hover:underline"
-                    title={post.title}
-                  >
-                    {post.title}
-                  </Link>
-                  {post.description ? <p className="mt-1 truncate text-sm text-text-body">{post.description}</p> : null}
-                </td>
-                <td className="px-6 py-4">
-                  <PostStatusPill status={post.status} />
-                </td>
-                <td className="px-6 py-4 text-sm text-text-body">{post.category.name}</td>
-                {showAuthor ? <td className="px-6 py-4 text-sm text-text-body">{authorName}</td> : null}
-                <td className="px-6 py-4 text-sm text-text-body">{formatRelativeTime(post.updated_at)}</td>
-                <td className="px-6 py-4 text-right text-sm">
-                  <Link href={`/admin/blog/${post.id}/edit`} className="font-medium text-text-fg-brand hover:underline">
-                    Edit
-                  </Link>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
     </div>
   );
 }
