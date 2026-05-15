@@ -1,26 +1,20 @@
 "use client";
 
 import { submitQuestionResponse } from "@/app/(app)/quiz-bank/actions";
-import type { PracticeQuestionResult, SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
+import type { PracticeQuestionResult, QuizQuestion, SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
 import {
   isMcSingleCorrectQuestion,
   isMultiSelectQuestion,
   isTrueFalseQuestion,
 } from "@/lib/quiz-bank/types";
-import { ArrowRight, Check, History, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { FlagButton } from "./FlagButton";
 import { QuestionStimulusImage } from "./QuestionStimulusImage";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 
-type Props = {
-  result: PracticeQuestionResult;
-  onNext: () => void;
-  onAnswered: (wasCorrect: boolean) => void;
-};
-
-type SubmissionState =
+export type SubmissionState =
   | {
       isCorrect: boolean;
       explanation: string;
@@ -41,20 +35,75 @@ type SubmissionState =
       userSelectedChoiceIds: string[];
     };
 
-export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
-  const { question, previouslyAnswered, previousResult, isFlagged } = result;
+export type PracticeReviewSnapshot = {
+  submission: SubmissionState;
+  selections: {
+    selectedMcId: string | null;
+    selectedTf: boolean | null;
+    selectedMultiIds: string[];
+  };
+};
 
-  const [selectedMcId, setSelectedMcId] = useState<string | null>(null);
-  const [selectedTf, setSelectedTf] = useState<boolean | null>(null);
-  const [selectedMultiIds, setSelectedMultiIds] = useState<string[]>([]);
-  const [submission, setSubmission] = useState<SubmissionState | null>(null);
+type Props = {
+  result: PracticeQuestionResult;
+  onAnswered: (wasCorrect: boolean) => void;
+  /** 1-based session ordinal for this view */
+  questionOrdinal: number;
+  /** Read-only review of a past submission */
+  reviewSnapshot?: PracticeReviewSnapshot | null;
+  onAnswerRecorded?: (payload: PracticeReviewSnapshot) => void;
+  /** Parent supplies outer border/radius (e.g. action bar below) */
+  omitOuterFrame?: boolean;
+};
+
+function QuestionMetadataPills({ question }: { question: QuizQuestion }) {
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="Question metadata">
+      {question.category ? (
+        <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
+          {question.category.name}
+        </span>
+      ) : null}
+      <span className="inline-flex items-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-0.5 text-xs font-medium capitalize text-text-muted">
+        {question.difficulty}
+      </span>
+      {question.audience ? (
+        <span className="inline-flex items-center rounded-sm border border-border-default bg-bg-primary-soft px-2 py-0.5 text-xs font-medium capitalize text-text-muted">
+          {question.audience === "all" ? "All clinicians" : question.audience}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+export function PracticeQuestionCard({
+  result,
+  onAnswered,
+  questionOrdinal,
+  reviewSnapshot = null,
+  onAnswerRecorded,
+  omitOuterFrame = false,
+}: Props) {
+  const { question, previouslyAnswered, previousResult, isFlagged } = result;
+  const isReview = reviewSnapshot != null;
+
+  const [selectedMcId, setSelectedMcId] = useState<string | null>(
+    () => reviewSnapshot?.selections.selectedMcId ?? null,
+  );
+  const [selectedTf, setSelectedTf] = useState<boolean | null>(
+    () => reviewSnapshot?.selections.selectedTf ?? null,
+  );
+  const [selectedMultiIds, setSelectedMultiIds] = useState<string[]>(
+    () => reviewSnapshot?.selections.selectedMultiIds ?? [],
+  );
+  const [submission, setSubmission] = useState<SubmissionState | null>(() => reviewSnapshot?.submission ?? null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const submitted = Boolean(submission);
 
   function toggleMultiChoice(id: string) {
-    if (submitted) return;
+    if (isReview || submitted) return;
     setSelectedMultiIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
@@ -76,6 +125,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
   }
 
   function handleSubmit() {
+    if (isReview) return;
     const pending = buildPendingAnswer();
     if (pending == null || submitted) return;
     setError(null);
@@ -85,30 +135,38 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
         setError(r.error);
         return;
       }
-      if (r.questionType === "single_best_answer" || r.questionType === "image_stimulus") {
-        setSubmission({
-          isCorrect: r.isCorrect,
-          correctChoiceId: r.correctChoiceId,
-          explanation: r.explanation,
-          questionType: r.questionType,
-        });
-      } else if (r.questionType === "true_false") {
-        setSubmission({
-          isCorrect: r.isCorrect,
-          correctAnswer: r.correctAnswer,
-          explanation: r.explanation,
-          questionType: "true_false",
-        });
-      } else {
-        setSubmission({
-          isCorrect: r.isCorrect,
-          explanation: r.explanation,
-          questionType: "multi_select",
-          correctSelectedChoiceIds: r.correctSelectedChoiceIds,
-          userSelectedChoiceIds:
-            pending.type === "multi_select" ? [...pending.selectedChoiceIds] : [],
-        });
-      }
+      const submissionAfter: SubmissionState =
+        r.questionType === "single_best_answer" || r.questionType === "image_stimulus"
+          ? {
+              isCorrect: r.isCorrect,
+              correctChoiceId: r.correctChoiceId,
+              explanation: r.explanation,
+              questionType: r.questionType,
+            }
+          : r.questionType === "true_false"
+            ? {
+                isCorrect: r.isCorrect,
+                correctAnswer: r.correctAnswer,
+                explanation: r.explanation,
+                questionType: "true_false",
+              }
+            : {
+                isCorrect: r.isCorrect,
+                explanation: r.explanation,
+                questionType: "multi_select",
+                correctSelectedChoiceIds: r.correctSelectedChoiceIds,
+                userSelectedChoiceIds:
+                  pending.type === "multi_select" ? [...pending.selectedChoiceIds] : [],
+              };
+      setSubmission(submissionAfter);
+      onAnswerRecorded?.({
+        submission: submissionAfter,
+        selections: {
+          selectedMcId,
+          selectedTf,
+          selectedMultiIds: [...selectedMultiIds],
+        },
+      });
       onAnswered(r.isCorrect);
     });
   }
@@ -119,36 +177,16 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
     : true;
 
   return (
-    <article className="rounded-base border border-border-default bg-bg-primary-soft">
+    <article
+      className={
+        omitOuterFrame
+          ? "bg-bg-primary-soft"
+          : "rounded-base border border-border-default bg-bg-primary-soft"
+      }
+    >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-default p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          {question.category ? (
-            <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 text-xs font-medium text-text-fg-brand-strong">
-              {question.category.name}
-            </span>
-          ) : null}
-          <span className="text-xs font-medium capitalize text-text-muted">{question.difficulty}</span>
-          {question.audience ? (
-            <>
-              <span className="text-text-muted" aria-hidden>
-                ·
-              </span>
-              <span className="text-xs font-medium text-text-muted capitalize">
-                {question.audience === "all" ? "All clinicians" : question.audience}
-              </span>
-            </>
-          ) : null}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {previouslyAnswered ? (
-            <span className="inline-flex items-center gap-1 rounded-sm bg-bg-secondary-soft px-2 py-0.5 text-xs font-medium text-text-muted">
-              <History className="size-3" aria-hidden />
-              Previously {previousResult?.wasCorrect ? "correct" : "incorrect"}
-            </span>
-          ) : null}
-          <FlagButton questionId={question.id} initialFlagged={isFlagged} variant="icon" />
-        </div>
+        <p className="text-sm font-medium text-text-muted">Question {questionOrdinal}</p>
+        <FlagButton questionId={question.id} initialFlagged={isFlagged} variant="icon" />
       </header>
 
       <div className="space-y-5 p-5">
@@ -217,8 +255,8 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
                 <li key={choice.id}>
                   <button
                     type="button"
-                    onClick={() => !submitted && setSelectedMcId(choice.id)}
-                    disabled={submitted}
+                    onClick={() => !submitted && !isReview && setSelectedMcId(choice.id)}
+                    disabled={submitted || isReview}
                     className={classes}
                   >
                     <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-secondary-soft text-xs font-bold text-text-muted">
@@ -283,7 +321,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
                   <button
                     type="button"
                     onClick={() => toggleMultiChoice(choice.id)}
-                    disabled={submitted}
+                    disabled={submitted || isReview}
                     className={classes}
                   >
                     <span
@@ -350,8 +388,8 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => !submitted && setSelectedTf(value)}
-                  disabled={submitted}
+                  onClick={() => !submitted && !isReview && setSelectedTf(value)}
+                  disabled={submitted || isReview}
                   className={classes}
                 >
                   {submitted && showCorrect ? (
@@ -375,7 +413,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
 
         {error ? <p className="text-sm text-text-fg-danger-strong">{error}</p> : null}
 
-        {!submitted ? (
+        {!submitted && !isReview ? (
           <div className="flex justify-end">
             <button
               type="button"
@@ -412,18 +450,17 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
                 {submission.isCorrect ? "Correct" : "Incorrect"}
               </h3>
               <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-text-body">{submission.explanation}</div>
+              {previouslyAnswered ? (
+                <p className="mt-2 text-xs text-text-muted">
+                  You had answered this item before — last outcome:{" "}
+                  <span className="font-medium text-text-heading">
+                    {previousResult?.wasCorrect ? "correct" : "incorrect"}
+                  </span>
+                  .
+                </p>
+              ) : null}
+              <QuestionMetadataPills question={question} />
             </div>
-          </div>
-
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={onNext}
-              className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-5 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium"
-            >
-              Next question
-              <ArrowRight className="size-4" aria-hidden />
-            </button>
           </div>
         </div>
       ) : null}

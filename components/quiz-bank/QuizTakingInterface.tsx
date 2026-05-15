@@ -13,6 +13,12 @@ import { QuizQuestionCard } from "./QuizQuestionCard";
 import { QuizTimer } from "./QuizTimer";
 import { SubmitConfirmDialog } from "./SubmitConfirmDialog";
 
+const secondaryBarBtn =
+  "inline-flex items-center justify-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-40";
+
+const submitBarBtn =
+  "inline-flex items-center justify-center gap-2 rounded-base bg-bg-brand px-5 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50";
+
 function savedResponseToSubmitted(r: QuizAttemptSavedResponse): SubmittedQuestionAnswer {
   if (r.kind === "single_best_answer") {
     return { type: "single_best_answer", selectedChoiceId: r.choiceId };
@@ -146,12 +152,9 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
     <>
       <header className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
         <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <div className="flex flex-col gap-0.5">
-            <h1 className="line-clamp-1 text-base font-bold text-text-heading">{quiz.title}</h1>
-            <p className="text-xs text-text-muted">
-              Question {currentIndex + 1} of {totalQuestions} · {answeredCount} answered
-            </p>
-          </div>
+          <p className="text-sm text-text-body">
+            <span className="font-medium text-text-heading">{answeredCount}</span> of {totalQuestions} answered
+          </p>
 
           {timerMinutes ? (
             <QuizTimer startedAt={attempt.startedAt} timeLimitMinutes={timerMinutes} onTimeout={handleTimeout} />
@@ -180,7 +183,7 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
         </div>
       ) : null}
 
-      <div className="mt-4">
+      <div className="mt-4 overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
         <QuizQuestionCard
           key={currentQuestion.id}
           question={currentQuestion}
@@ -191,48 +194,48 @@ export function QuizTakingInterface({ quiz, attempt, initialResponses, initialFl
           locked={timedOut}
           initialFlagged={flaggedIds.has(currentQuestion.id)}
           onFlagToggle={(nowFlagged) => handleFlagToggle(currentQuestion.id, nowFlagged)}
+          omitOuterFrame
         />
-      </div>
 
-      <nav className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={handlePrev}
-          disabled={currentIndex === 0}
-          className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-40"
+        <nav
+          className="grid grid-cols-1 gap-3 border-t border-border-default bg-bg-secondary-soft p-4 sm:grid-cols-3 sm:items-center"
+          aria-label="Quiz navigation"
         >
-          <ArrowLeft className="size-4" aria-hidden />
-          Previous
-        </button>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void handleSubmitClick()}
-            disabled={isSubmitPending}
-            className={[
-              "inline-flex items-center gap-2 rounded-base px-5 py-2 text-sm font-medium shadow-xs transition-colors",
-              allAnswered
-                ? "bg-bg-brand text-text-on-brand hover:bg-bg-brand-medium"
-                : "border border-border-default bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft",
-              "disabled:opacity-50",
-            ].join(" ")}
-          >
-            <Send className="size-4" aria-hidden />
-            {isSubmitPending ? "Submitting..." : "Submit quiz"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={currentIndex === totalQuestions - 1}
-            className="inline-flex items-center gap-2 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Next
-            <ArrowRight className="size-4" aria-hidden />
-          </button>
-        </div>
-      </nav>
+          <div className="flex justify-stretch sm:justify-start">
+            <button
+              type="button"
+              onClick={handlePrev}
+              disabled={currentIndex === 0}
+              className={`${secondaryBarBtn} w-full sm:w-auto`}
+            >
+              <ArrowLeft className="size-4 shrink-0" aria-hidden />
+              Previous
+            </button>
+          </div>
+          <div className="flex justify-stretch sm:justify-center">
+            <button
+              type="button"
+              onClick={() => void handleSubmitClick()}
+              disabled={isSubmitPending}
+              className={`${submitBarBtn} w-full sm:w-auto`}
+            >
+              <Send className="size-4 shrink-0" aria-hidden />
+              {isSubmitPending ? "Submitting..." : "Submit quiz"}
+            </button>
+          </div>
+          <div className="flex justify-stretch sm:justify-end">
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={currentIndex === totalQuestions - 1}
+              className={`${secondaryBarBtn} w-full sm:w-auto`}
+            >
+              Next
+              <ArrowRight className="size-4 shrink-0" aria-hidden />
+            </button>
+          </div>
+        </nav>
+      </div>
 
       {showSubmitDialog ? (
         <SubmitConfirmDialog

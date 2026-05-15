@@ -20,6 +20,8 @@ type Props = {
   locked: boolean;
   initialFlagged: boolean;
   onFlagToggle?: (nowFlagged: boolean) => void;
+  /** When wrapped with a parent border + bottom action bar */
+  omitOuterFrame?: boolean;
 };
 
 export function QuizQuestionCard({
@@ -31,6 +33,7 @@ export function QuizQuestionCard({
   locked,
   initialFlagged,
   onFlagToggle,
+  omitOuterFrame = false,
 }: Props) {
   const multiSelected =
     selectedAnswer?.type === "multi_select" ? new Set(selectedAnswer.selectedChoiceIds) : new Set<string>();
@@ -44,28 +47,24 @@ export function QuizQuestionCard({
   }
 
   return (
-    <article className="rounded-base border border-border-default bg-bg-primary-soft">
+    <article
+      className={
+        omitOuterFrame
+          ? "bg-bg-primary-soft"
+          : "rounded-base border border-border-default bg-bg-primary-soft"
+      }
+    >
       <header className="border-b border-border-default p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm font-medium text-text-muted">
             Question {questionNumber} of {totalQuestions}
           </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
-              {question.category ? (
-                <span className="inline-flex items-center rounded-sm border border-border-brand-subtle bg-bg-brand-softer px-2 py-0.5 font-medium text-text-fg-brand-strong">
-                  {question.category.name}
-                </span>
-              ) : null}
-              <span className="capitalize">{question.difficulty}</span>
-            </div>
-            <FlagButton
-              questionId={question.id}
-              initialFlagged={initialFlagged}
-              variant="icon"
-              onToggle={onFlagToggle}
-            />
-          </div>
+          <FlagButton
+            questionId={question.id}
+            initialFlagged={initialFlagged}
+            variant="icon"
+            onToggle={onFlagToggle}
+          />
         </div>
       </header>
 
