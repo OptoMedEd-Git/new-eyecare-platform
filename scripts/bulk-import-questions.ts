@@ -10,6 +10,7 @@
  *   - Multiple choice (default): { question_text, explanation, choices[4], category, audience, difficulty, ... }
  *   - Multi-select: { "question_type": "multi_select", question_text, explanation, choices[4] with one or more is_correct: true, ... }
  *   - True/False: { "question_type": "true_false", question_text, explanation, correct_answer: boolean, category, ... }
+ *   - Image stimulus: { "question_type": "image_stimulus", image_url, question_text, explanation, choices[4] with exactly one is_correct: true, ... }
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -91,7 +92,23 @@ type InputQuestionTf = {
   image_suggestion?: string | null;
 };
 
-type InputQuestion = InputQuestionMc | InputQuestionMulti | InputQuestionTf;
+type InputQuestionImageStimulus = {
+  question_type: "image_stimulus";
+  vignette?: string | null;
+  question_text: string;
+  choices: InputChoice[];
+  explanation: string;
+  /** Pre-existing public URL for the stimulus image (no upload in bulk import). */
+  image_url: string;
+  /** Optional; recommended for attribution when publishing from Studio. */
+  image_attribution?: string | null;
+  category: string;
+  audience: string;
+  difficulty: string;
+  image_suggestion?: string | null;
+};
+
+type InputQuestion = InputQuestionMc | InputQuestionMulti | InputQuestionTf | InputQuestionImageStimulus;
 
 const VALID_AUDIENCES = ["student", "resident", "practicing", "all"] as const;
 const VALID_DIFFICULTIES = ["foundational", "intermediate", "advanced"] as const;
@@ -102,6 +119,10 @@ function isTrueFalseShape(o: Record<string, unknown>): boolean {
 
 function isMultiSelectShape(o: Record<string, unknown>): boolean {
   return o.question_type === "multi_select";
+}
+
+function isImageStimulusShape(o: Record<string, unknown>): boolean {
+  return o.question_type === "image_stimulus";
 }
 
 function validateCommon(o: Record<string, unknown>, index: number): string | null {
@@ -139,6 +160,35 @@ function validateQuestion(q: unknown, index: number): string | null {
     }
     if (o.choices != null) {
       return `Question ${index + 1}: true_false entries must not include choices`;
+    }
+    return null;
+  }
+
+  if (isImageStimulusShape(o)) {
+    if (typeof o.image_url !== "string" || !o.image_url.trim()) {
+      return `Question ${index + 1}: image_stimulus requires non-empty image_url`;
+    }
+    if (!Array.isArray(o.choices) || o.choices.length !== 4) {
+      return `Question ${index + 1}: image_stimulus choices must be an array of exactly 4`;
+    }
+    const correctCount = o.choices.filter((c: unknown) => {
+      return typeof c === "object" && c !== null && (c as { is_correct?: boolean }).is_correct === true;
+    }).length;
+    if (correctCount !== 1) {
+      return `Question ${index + 1}: image_stimulus must have exactly one correct choice`;
+    }
+    for (let i = 0; i < o.choices.length; i++) {
+      const c = o.choices[i];
+      if (typeof c !== "object" || c === null) {
+        return `Question ${index + 1}: choice ${i} invalid`;
+      }
+      const ch = c as Record<string, unknown>;
+      if (typeof ch.text !== "string" || !ch.text.trim()) {
+        return `Question ${index + 1}: choice ${i} missing text`;
+      }
+      if (typeof ch.is_correct !== "boolean") {
+        return `Question ${index + 1}: choice ${i} is_correct must be boolean`;
+      }
     }
     return null;
   }
@@ -278,6 +328,9 @@ async function main() {
 
     const isTf = "question_type" in q && q.question_type === "true_false";
     const isMulti = "question_type" in q && q.question_type === "multi_select";
+    const isImg = "question_type" in q && q.question_type === "image_stimulus";
+
+    const imgStim = isImg ? (q as InputQuestionImageStimulus) : null;
 
     const { data: questionRow, error: qErr } = await supabase
       .from("quiz_questions")
@@ -285,9 +338,14 @@ async function main() {
         vignette: q.vignette != null && q.vignette !== "" ? q.vignette : null,
         question_text: q.question_text.trim(),
         explanation: q.explanation.trim(),
-        image_url: null,
-        image_attribution: null,
-        question_type: isTf ? "true_false" : isMulti ? "multi_select" : "single_best_answer",
+        image_url: isImg && imgStim ? imgStim.image_url.trim() : null,
+        image_attribution:
+          isImg && imgStim
+            ? (typeof imgStim.image_attribution === "string" && imgStim.image_attribution.trim()
+                ? imgStim.image_attribution.trim()
+                : null)
+            : null,
+        question_type: isTf ? "true_false" : isMulti ? "multi_select" : isImg ? "image_stimulus" : "single_best_answer",
         category_id: categoryId,
         target_audience: q.audience,
         difficulty: q.difficulty,
@@ -318,7 +376,7 @@ async function main() {
         continue;
       }
     } else {
-      const mc = q as InputQuestionMc | InputQuestionMulti;
+      const mc = q as InputQuestionMc | InputQuestionMulti | InputQuestionImageStimulus;
       const choicesToInsert = mc.choices.map((c, idx) => ({
         question_id: questionRow.id,
         position: idx,

@@ -1,7 +1,7 @@
 export type QuizDifficulty = "foundational" | "intermediate" | "advanced";
 
 /** Matches DB enum `quiz_question_type`; extend when new types ship. */
-export type QuizQuestionType = "single_best_answer" | "true_false" | "multi_select";
+export type QuizQuestionType = "single_best_answer" | "true_false" | "multi_select" | "image_stimulus";
 
 export type QuestionAudience = "student" | "resident" | "practicing" | "all";
 export type QuestionStatus = "draft" | "published";
@@ -33,7 +33,7 @@ export type QuizQuestionBase = {
   updatedAt: string;
 };
 
-/** Satellite: quiz_question_choices (single_best_answer and multi_select). */
+/** Satellite: quiz_question_choices (single_best_answer, multi_select, image_stimulus). */
 export type ChoiceListSatellite = {
   choices: QuizChoice[];
 };
@@ -51,9 +51,12 @@ export type SingleBestAnswerQuestion = QuizQuestionBase & SingleBestAnswerSatell
 
 export type MultiSelectQuestion = QuizQuestionBase & ChoiceListSatellite & { questionType: "multi_select" };
 
+/** Same choice rules as single_best_answer; `image_url` on base is the required stimulus. */
+export type ImageStimulusQuestion = QuizQuestionBase & ChoiceListSatellite & { questionType: "image_stimulus" };
+
 export type TrueFalseQuestion = QuizQuestionBase & TrueFalseSatellite & { questionType: "true_false" };
 
-export type QuizQuestion = SingleBestAnswerQuestion | MultiSelectQuestion | TrueFalseQuestion;
+export type QuizQuestion = SingleBestAnswerQuestion | MultiSelectQuestion | ImageStimulusQuestion | TrueFalseQuestion;
 
 export function isSingleBestAnswerQuestion(q: QuizQuestion): q is SingleBestAnswerQuestion {
   return q.questionType === "single_best_answer";
@@ -67,9 +70,19 @@ export function isMultiSelectQuestion(q: QuizQuestion): q is MultiSelectQuestion
   return q.questionType === "multi_select";
 }
 
+export function isImageStimulusQuestion(q: QuizQuestion): q is ImageStimulusQuestion {
+  return q.questionType === "image_stimulus";
+}
+
+/** Single-best-answer style MC (one correct choice) — shared UI/scoring path for SBA + image stimulus. */
+export function isMcSingleCorrectQuestion(q: QuizQuestion): q is SingleBestAnswerQuestion | ImageStimulusQuestion {
+  return q.questionType === "single_best_answer" || q.questionType === "image_stimulus";
+}
+
 /** What the learner submitted, used by scoring and results (generalizes beyond choice id). */
 export type SubmittedQuestionAnswer =
   | { type: "single_best_answer"; selectedChoiceId: string }
+  | { type: "image_stimulus"; selectedChoiceId: string }
   | { type: "true_false"; value: boolean }
   | { type: "multi_select"; selectedChoiceIds: string[] };
 
@@ -92,6 +105,13 @@ export type SingleBestAnswerPayload = {
   partialCredit?: { earned: number; max: number };
 };
 
+export type ImageStimulusPayload = {
+  type: "image_stimulus";
+  version?: number;
+  selectedChoiceId: string;
+  partialCredit?: { earned: number; max: number };
+};
+
 export type TrueFalsePayload = {
   type: "true_false";
   version?: number;
@@ -106,13 +126,13 @@ export type MultiSelectPayload = {
   partialCredit?: { earned: number; max: number };
 };
 
-export type QuestionAnswerPayload = SingleBestAnswerPayload | TrueFalsePayload | MultiSelectPayload;
+export type QuestionAnswerPayload = SingleBestAnswerPayload | ImageStimulusPayload | TrueFalsePayload | MultiSelectPayload;
 
 export type QuestionResponse = {
   id: string;
   userId: string;
   questionId: string;
-  /** Denormalized FK for single_best_answer; null for true_false and multi_select. */
+  /** Denormalized FK for single_best_answer and image_stimulus; null for true_false and multi_select. */
   choiceId: string | null;
   answerPayload: QuestionAnswerPayload;
   isCorrect: boolean;
@@ -254,5 +274,6 @@ export type QuizBankDashboardData = {
 /** One saved answer when resuming a quiz attempt (curated or user-generated). */
 export type QuizAttemptSavedResponse =
   | { questionId: string; kind: "single_best_answer"; choiceId: string }
+  | { questionId: string; kind: "image_stimulus"; choiceId: string }
   | { questionId: string; kind: "true_false"; value: boolean }
   | { questionId: string; kind: "multi_select"; selectedChoiceIds: string[] };

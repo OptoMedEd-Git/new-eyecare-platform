@@ -3,13 +3,14 @@
 import { submitQuestionResponse } from "@/app/(app)/quiz-bank/actions";
 import type { PracticeQuestionResult, SubmittedQuestionAnswer } from "@/lib/quiz-bank/types";
 import {
+  isMcSingleCorrectQuestion,
   isMultiSelectQuestion,
-  isSingleBestAnswerQuestion,
   isTrueFalseQuestion,
 } from "@/lib/quiz-bank/types";
 import { ArrowRight, Check, History, X } from "lucide-react";
 
 import { FlagButton } from "./FlagButton";
+import { QuestionStimulusImage } from "./QuestionStimulusImage";
 import Image from "next/image";
 import { useState, useTransition } from "react";
 
@@ -23,7 +24,7 @@ type SubmissionState =
   | {
       isCorrect: boolean;
       explanation: string;
-      questionType: "single_best_answer";
+      questionType: "single_best_answer" | "image_stimulus";
       correctChoiceId: string;
     }
   | {
@@ -58,9 +59,11 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
   }
 
   function buildPendingAnswer(): SubmittedQuestionAnswer | null {
-    if (isSingleBestAnswerQuestion(question)) {
+    if (isMcSingleCorrectQuestion(question)) {
       if (!selectedMcId) return null;
-      return { type: "single_best_answer", selectedChoiceId: selectedMcId };
+      return question.questionType === "image_stimulus"
+        ? { type: "image_stimulus", selectedChoiceId: selectedMcId }
+        : { type: "single_best_answer", selectedChoiceId: selectedMcId };
     }
     if (isTrueFalseQuestion(question)) {
       if (selectedTf === null) return null;
@@ -82,12 +85,12 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
         setError(r.error);
         return;
       }
-      if (r.questionType === "single_best_answer") {
+      if (r.questionType === "single_best_answer" || r.questionType === "image_stimulus") {
         setSubmission({
           isCorrect: r.isCorrect,
           correctChoiceId: r.correctChoiceId,
           explanation: r.explanation,
-          questionType: "single_best_answer",
+          questionType: r.questionType,
         });
       } else if (r.questionType === "true_false") {
         setSubmission({
@@ -111,7 +114,7 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
   }
 
   const canSubmit =
-    isSingleBestAnswerQuestion(question) ? Boolean(selectedMcId)
+    isMcSingleCorrectQuestion(question) ? Boolean(selectedMcId)
     : isTrueFalseQuestion(question) ? selectedTf !== null
     : true;
 
@@ -153,7 +156,12 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
           <div className="whitespace-pre-wrap text-base leading-relaxed text-text-body">{question.vignette}</div>
         ) : null}
 
-        {question.imageUrl ? (
+        {question.questionType === "image_stimulus" ? (
+          <QuestionStimulusImage
+            src={question.imageUrl}
+            alt={question.imageAttribution?.trim() ? question.imageAttribution : "Clinical image"}
+          />
+        ) : question.imageUrl ? (
           <figure>
             <Image
               src={question.imageUrl}
@@ -171,17 +179,18 @@ export function PracticeQuestionCard({ result, onNext, onAnswered }: Props) {
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        {isSingleBestAnswerQuestion(question) ? (
+        {isMcSingleCorrectQuestion(question) ? (
           <ol className="space-y-2">
             {question.choices.map((choice, i) => {
               const letter = String.fromCharCode(65 + i);
               const isSelected = selectedMcId === choice.id;
               const showCorrect =
-                submission?.questionType === "single_best_answer" && choice.id === submission.correctChoiceId;
+                (submission?.questionType === "single_best_answer" || submission?.questionType === "image_stimulus") &&
+                choice.id === submission.correctChoiceId;
               const showIncorrectPick =
                 submission &&
                 !submission.isCorrect &&
-                submission.questionType === "single_best_answer" &&
+                (submission.questionType === "single_best_answer" || submission.questionType === "image_stimulus") &&
                 selectedMcId === choice.id;
 
               let classes =

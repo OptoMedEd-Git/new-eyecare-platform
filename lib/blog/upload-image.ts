@@ -108,6 +108,54 @@ export async function uploadBlogImage(file: File): Promise<UploadResult> {
   return { path, publicUrl: data.publicUrl };
 }
 
+/**
+ * Stimulus images for quiz bank `image_stimulus` questions — same public `blog-images` bucket as
+ * blog covers, under `{userId}/question-stimuli/` (existing RLS: first path segment = auth uid).
+ */
+export async function uploadQuizQuestionStimulusImage(file: File): Promise<UploadResult> {
+  const validationError = validateImageFile(file);
+  if (validationError) {
+    throwUploadError(validationError);
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    throwUploadError({
+      code: "not_authenticated",
+      message: "You must be signed in to upload images.",
+    });
+  }
+
+  const ext = extFromMime(file.type);
+  const path = `${user.id}/question-stimuli/${crypto.randomUUID()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("blog-images")
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) {
+    throwUploadError({
+      code: "upload_failed",
+      message: "Upload failed. Try again.",
+    });
+  }
+
+  const { data } = supabase.storage.from("blog-images").getPublicUrl(path);
+  if (!data?.publicUrl) {
+    throwUploadError({
+      code: "upload_failed",
+      message: "Upload failed. Try again.",
+    });
+  }
+
+  return { path, publicUrl: data.publicUrl };
+}
+
 export async function deleteBlogImage(path: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.storage.from("blog-images").remove([path]);

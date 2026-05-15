@@ -4,13 +4,20 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert, ImagePlus, Loader2 } from "lucide-react";
 
-import { uploadBlogImage, validateImageFile, type UploadError } from "@/lib/blog/upload-image";
+import {
+  uploadBlogImage,
+  uploadQuizQuestionStimulusImage,
+  validateImageFile,
+  type UploadError,
+} from "@/lib/blog/upload-image";
 
 type ImageUploadProps = {
   currentImageUrl?: string | null;
   currentImagePath?: string | null;
   onChange: (result: { url: string | null; path: string | null }) => void;
   disabled?: boolean;
+  /** Default: blog post cover flow. `quiz_stimulus` uses question-stimuli path in the same bucket. */
+  uploadTarget?: "blog" | "quiz_stimulus";
 };
 
 type Mode = "empty" | "drag_over" | "validation_error" | "uploading" | "uploaded" | "upload_error";
@@ -51,6 +58,7 @@ export function ImageUpload({
   currentImagePath,
   onChange,
   disabled = false,
+  uploadTarget = "blog",
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -102,7 +110,8 @@ export function ImageUpload({
     setIsDragging(false);
     setIsUploading(true);
     try {
-      const result = await uploadBlogImage(file);
+      const result =
+        uploadTarget === "quiz_stimulus" ? await uploadQuizQuestionStimulusImage(file) : await uploadBlogImage(file);
       onChange({ url: result.publicUrl, path: result.path });
     } catch (e) {
       setError(toUploadError(e));

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import {
+  buildImageStimulusPayload,
   buildMultiSelectPayload,
   buildSingleBestAnswerPayload,
   buildTrueFalsePayload,
@@ -11,6 +12,7 @@ import {
 import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
 import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
 import {
+  isImageStimulusQuestion,
   isMultiSelectQuestion,
   isSingleBestAnswerQuestion,
   isTrueFalseQuestion,
@@ -24,6 +26,13 @@ type SubmitResult =
       isCorrect: boolean;
       explanation: string;
       questionType: "single_best_answer";
+      correctChoiceId: string;
+    }
+  | {
+      success: true;
+      isCorrect: boolean;
+      explanation: string;
+      questionType: "image_stimulus";
       correctChoiceId: string;
     }
   | {
@@ -110,6 +119,42 @@ export async function submitQuestionResponse(
       correctChoiceId: correctChoice.id,
       explanation,
       questionType: "single_best_answer",
+    };
+  }
+
+  if (isImageStimulusQuestion(quizQuestion)) {
+    if (answer.type !== "image_stimulus") {
+      return { success: false, error: "This question expects an image-stimulus multiple-choice answer" };
+    }
+    const selected = quizQuestion.choices.find((c) => c.id === answer.selectedChoiceId);
+    if (!selected) return { success: false, error: "Invalid choice" };
+
+    const correctChoice = quizQuestion.choices.find((c) => c.isCorrect);
+    if (!correctChoice) return { success: false, error: "Question has no correct answer set" };
+
+    const { isCorrect } = evaluateQuestionAnswer(quizQuestion, answer);
+
+    const { error: insErr } = await supabase.from("question_responses").insert({
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: answer.selectedChoiceId,
+      is_correct: isCorrect,
+      answer_payload: buildImageStimulusPayload(answer.selectedChoiceId),
+    });
+
+    if (insErr) {
+      console.error("Failed to save response:", insErr);
+    }
+
+    revalidatePath("/quiz-bank");
+    revalidatePath("/quiz-bank/practice");
+
+    return {
+      success: true,
+      isCorrect,
+      correctChoiceId: correctChoice.id,
+      explanation,
+      questionType: "image_stimulus",
     };
   }
 

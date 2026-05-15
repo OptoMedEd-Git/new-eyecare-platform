@@ -88,10 +88,11 @@ function parseDifficulty(formData: FormData): (typeof DIFFICULTIES)[number] {
     : "intermediate";
 }
 
-function parseQuestionTypeForCreate(formData: FormData): "single_best_answer" | "true_false" | "multi_select" {
+function parseQuestionTypeForCreate(formData: FormData): "single_best_answer" | "true_false" | "multi_select" | "image_stimulus" {
   const raw = String(formData.get("question_type") ?? "single_best_answer").trim();
   if (raw === "true_false") return "true_false";
   if (raw === "multi_select") return "multi_select";
+  if (raw === "image_stimulus") return "image_stimulus";
   return "single_best_answer";
 }
 
@@ -99,6 +100,17 @@ function parseCorrectTrueFalse(formData: FormData): boolean | null {
   const raw = String(formData.get("correct_true_false") ?? "").trim();
   if (raw === "true") return true;
   if (raw === "false") return false;
+  return null;
+}
+
+function validateImageStimulusFields(
+  formData: FormData,
+  choices: Array<{ text: string; isCorrect: boolean }>,
+): string | null {
+  const base = validateQuestionFields(formData, choices);
+  if (base) return base;
+  const imageUrl = String(formData.get("image_url") ?? "").trim();
+  if (!imageUrl) return "A clinical stimulus image is required for image-stimulus questions";
   return null;
 }
 
@@ -228,6 +240,54 @@ export async function createQuestion(formData: FormData): Promise<ActionResult<{
     return { success: true, data: { id: question.id } };
   }
 
+  if (questionType === "image_stimulus") {
+    const choices = parseChoices(formData);
+    const validationError = validateImageStimulusFields(formData, choices);
+    if (validationError) return { success: false, error: validationError };
+
+    const { data: question, error: qErr } = await supabase
+      .from("quiz_questions")
+      .insert({
+        vignette,
+        question_text: questionText,
+        explanation,
+        image_url: imageUrl,
+        image_attribution: imageAttribution,
+        question_type: "image_stimulus",
+        category_id: categoryId,
+        target_audience: targetAudience,
+        difficulty,
+        status: "draft",
+        author_id: user.id,
+        published_at: null,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (qErr || !question) {
+      console.error("createQuestion (image_stimulus) error:", qErr);
+      return { success: false, error: "Could not create question" };
+    }
+
+    const { error: cErr } = await supabase.from("quiz_question_choices").insert(
+      choices.map((c) => ({
+        question_id: question.id,
+        position: c.position,
+        text: c.text,
+        is_correct: c.isCorrect,
+      })),
+    );
+
+    if (cErr) {
+      console.error("Failed to insert choices (image_stimulus):", cErr);
+      await supabase.from("quiz_questions").delete().eq("id", question.id);
+      return { success: false, error: "Could not save choices" };
+    }
+
+    revalidatePath("/admin/quiz-bank");
+    return { success: true, data: { id: question.id } };
+  }
+
   const tfErr = validateTrueFalseCore(formData);
   if (tfErr) return { success: false, error: tfErr };
   const correctAnswer = parseCorrectTrueFalse(formData);
@@ -288,7 +348,11 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
 
   if (exErr || !existing) return { success: false, error: "Question not found" };
 
-  const existingType = existing.question_type as "single_best_answer" | "true_false" | "multi_select";
+  const existingType = existing.question_type as
+    | "single_best_answer"
+    | "true_false"
+    | "multi_select"
+    | "image_stimulus";
 
   const vignetteRaw = String(formData.get("vignette") ?? "").trim();
   const vignette = vignetteRaw.length > 0 ? vignetteRaw : null;
@@ -305,6 +369,10 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
   if (existingType === "single_best_answer") {
     const choices = parseChoices(formData);
     const validationError = validateQuestionFields(formData, choices);
+    if (validationError) return { success: false, error: validationError };
+  } else if (existingType === "image_stimulus") {
+    const choices = parseChoices(formData);
+    const validationError = validateImageStimulusFields(formData, choices);
     if (validationError) return { success: false, error: validationError };
   } else if (existingType === "multi_select") {
     const choices = parseMultiSelectChoices(formData);
@@ -335,7 +403,7 @@ export async function updateQuestion(id: string, formData: FormData): Promise<Ac
     return { success: false, error: "Could not update question" };
   }
 
-  if (existingType === "single_best_answer") {
+  if (existingType === "single_best_answer" || existingType === "image_stimulus") {
     const choices = parseChoices(formData);
 
     const { error: delErr } = await supabase.from("quiz_question_choices").delete().eq("question_id", id);
@@ -442,6 +510,19 @@ export async function publishQuestion(id: string): Promise<ActionResult> {
     const nCorrect = ch.filter((c: { is_correct?: boolean }) => c.is_correct === true).length;
     if (nCorrect !== 1) {
       return { success: false, error: "Mark exactly one choice as correct before publishing" };
+    }
+  } else if (qType === "image_stimulus") {
+    const rawCh = q.choices as unknown;
+    const ch = Array.isArray(rawCh) ? rawCh : [];
+    if (ch.length !== 4) {
+      return { success: false, error: "Image-stimulus questions need exactly four text choices before publishing" };
+    }
+    const nCorrect = ch.filter((c: { is_correct?: boolean }) => c.is_correct === true).length;
+    if (nCorrect !== 1) {
+      return { success: false, error: "Mark exactly one choice as correct before publishing" };
+    }
+    if (!hasImage) {
+      return { success: false, error: "Image-stimulus questions need a clinical stimulus image before publishing" };
     }
   } else if (qType === "multi_select") {
     const rawCh = q.choices as unknown;

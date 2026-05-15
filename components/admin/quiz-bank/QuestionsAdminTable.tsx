@@ -74,7 +74,9 @@ export function QuestionsAdminTable({ questions }: { questions: AdminQuestionRow
           ? "True / False"
           : q.questionType === "multi_select"
             ? "Multi-select"
-            : "Multiple choice",
+            : q.questionType === "image_stimulus"
+              ? "Image stimulus"
+              : "Multiple choice",
     },
     {
       id: "status",

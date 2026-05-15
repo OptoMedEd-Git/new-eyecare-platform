@@ -17,6 +17,9 @@ function savedResponseToSubmitted(r: QuizAttemptSavedResponse): SubmittedQuestio
   if (r.kind === "single_best_answer") {
     return { type: "single_best_answer", selectedChoiceId: r.choiceId };
   }
+  if (r.kind === "image_stimulus") {
+    return { type: "image_stimulus", selectedChoiceId: r.choiceId };
+  }
   if (r.kind === "true_false") {
     return { type: "true_false", value: r.value };
   }

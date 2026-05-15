@@ -1,14 +1,15 @@
 "use client";
 
 import {
+  isMcSingleCorrectQuestion,
   isMultiSelectQuestion,
-  isSingleBestAnswerQuestion,
   isTrueFalseQuestion,
   type QuizQuestion,
   type SubmittedQuestionAnswer,
 } from "@/lib/quiz-bank/types";
 
 import { FlagButton } from "./FlagButton";
+import { QuestionStimulusImage } from "./QuestionStimulusImage";
 
 type Props = {
   question: QuizQuestion;
@@ -73,7 +74,12 @@ export function QuizQuestionCard({
           <div className="whitespace-pre-wrap text-base leading-relaxed text-text-body">{question.vignette}</div>
         ) : null}
 
-        {question.imageUrl ? (
+        {question.questionType === "image_stimulus" ? (
+          <QuestionStimulusImage
+            src={question.imageUrl}
+            alt={question.imageAttribution?.trim() ? question.imageAttribution : "Clinical image"}
+          />
+        ) : question.imageUrl ? (
           <figure>
             {/* eslint-disable-next-line @next/next/no-img-element -- remote URLs may not match next/image patterns */}
             <img
@@ -89,12 +95,13 @@ export function QuizQuestionCard({
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        {isSingleBestAnswerQuestion(question) ? (
+        {isMcSingleCorrectQuestion(question) ? (
           <ol className="space-y-2">
             {question.choices.map((choice, i) => {
               const letter = String.fromCharCode(65 + i);
               const isSelected =
-                selectedAnswer?.type === "single_best_answer" && selectedAnswer.selectedChoiceId === choice.id;
+                (selectedAnswer?.type === "single_best_answer" || selectedAnswer?.type === "image_stimulus") &&
+                selectedAnswer.selectedChoiceId === choice.id;
 
               let classes =
                 "flex w-full items-start gap-3 rounded-base border px-4 py-3 text-left text-sm transition-colors";
@@ -112,7 +119,12 @@ export function QuizQuestionCard({
                   <button
                     type="button"
                     onClick={() =>
-                      !locked && onSelectAnswer({ type: "single_best_answer", selectedChoiceId: choice.id })
+                      !locked &&
+                      onSelectAnswer(
+                        question.questionType === "image_stimulus"
+                          ? { type: "image_stimulus", selectedChoiceId: choice.id }
+                          : { type: "single_best_answer", selectedChoiceId: choice.id },
+                      )
                     }
                     disabled={locked}
                     className={classes}

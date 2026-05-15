@@ -27,6 +27,12 @@ export function evaluateQuestionAnswer(
       const ok = choice?.isCorrect ?? false;
       return evaluation(ok);
     }
+    case "image_stimulus": {
+      if (answer.type !== "image_stimulus") return { isCorrect: false, scoreRatio: 0 };
+      const choice = question.choices.find((c) => c.id === answer.selectedChoiceId);
+      const ok = choice?.isCorrect ?? false;
+      return evaluation(ok);
+    }
     case "true_false": {
       if (answer.type !== "true_false") return { isCorrect: false, scoreRatio: 0 };
       const ok = answer.value === question.correctAnswer;

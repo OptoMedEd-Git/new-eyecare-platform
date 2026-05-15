@@ -56,7 +56,9 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
   });
 
   const initialChoices =
-    initialQuestion?.questionType === "single_best_answer" || initialQuestion?.questionType === "multi_select"
+    initialQuestion?.questionType === "single_best_answer" ||
+    initialQuestion?.questionType === "multi_select" ||
+    initialQuestion?.questionType === "image_stimulus"
       ? initialQuestion.choices
       : [];
   const [choices, setChoices] = useState<string[]>([
@@ -100,7 +102,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
     fd.set("difficulty", difficulty);
     fd.set("question_type", isEditing ? lockedQuestionType : questionType);
     const effectiveType = isEditing ? lockedQuestionType : questionType;
-    if (effectiveType === "single_best_answer") {
+    if (effectiveType === "single_best_answer" || effectiveType === "image_stimulus") {
       fd.set("correct_choice", String(correctIndex));
       choices.forEach((c, i) => fd.set(`choice_${i}`, c));
     } else if (effectiveType === "multi_select") {
@@ -334,8 +336,9 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                   Question type
                 </label>
                 <p className="mt-1 mb-2 text-xs text-text-muted">
-                  Multiple choice uses four answer options. Multi-select allows more than one correct answer. True/False
-                  uses a single boolean correct answer.
+                  Multiple choice uses four answer options. Image stimulus shows one clinical image plus four text
+                  choices. Multi-select allows more than one correct answer. True/False uses a single boolean correct
+                  answer.
                 </p>
                 <select
                   id="question_type"
@@ -343,12 +346,12 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                   value={questionType}
                   onChange={(e) => {
                     const next = e.target.value as QuizQuestionType;
-                    if (next === "multi_select" && questionType === "single_best_answer") {
+                    if (next === "multi_select" && (questionType === "single_best_answer" || questionType === "image_stimulus")) {
                       const flags = [false, false, false, false];
                       if (correctIndex >= 0) flags[correctIndex] = true;
                       setCorrectMulti(flags);
                     }
-                    if (next === "single_best_answer" && questionType === "multi_select") {
+                    if ((next === "single_best_answer" || next === "image_stimulus") && questionType === "multi_select") {
                       const ix = correctMulti.findIndex(Boolean);
                       setCorrectIndex(ix >= 0 ? ix : 0);
                     }
@@ -358,6 +361,7 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                   className="w-full rounded-base border border-border-default bg-bg-primary-soft px-3 py-2 text-sm text-text-heading shadow-xs outline-none transition-colors focus:border-border-brand focus:ring-4 focus:ring-ring-brand"
                 >
                   <option value="single_best_answer">Multiple choice (single best answer)</option>
+                  <option value="image_stimulus">Image stimulus (clinical image + text choices)</option>
                   <option value="multi_select">Multi-select (select all that apply)</option>
                   <option value="true_false">True / False</option>
                 </select>
@@ -369,19 +373,47 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                   ? "True / False"
                   : lockedQuestionType === "multi_select"
                     ? "Multi-select (select all that apply)"
-                    : "Multiple choice (single best answer)"}
+                    : lockedQuestionType === "image_stimulus"
+                      ? "Image stimulus (clinical image + text choices)"
+                      : "Multiple choice (single best answer)"}
               </div>
             )}
 
             {(isEditing
-              ? lockedQuestionType === "single_best_answer" || lockedQuestionType === "multi_select"
-              : questionType === "single_best_answer" || questionType === "multi_select") ? (
+              ? lockedQuestionType === "single_best_answer" ||
+                lockedQuestionType === "multi_select" ||
+                lockedQuestionType === "image_stimulus"
+              : questionType === "single_best_answer" ||
+                questionType === "multi_select" ||
+                questionType === "image_stimulus") ? (
             <div>
+              {(isEditing ? lockedQuestionType : questionType) === "image_stimulus" ? (
+                <div className="mb-6">
+                  <span className="text-sm font-medium text-text-heading">
+                    Clinical stimulus image <span className="text-text-fg-danger">*</span>
+                  </span>
+                  <p className="mt-1 mb-2 text-xs text-text-muted">
+                    Upload one image (OCT, fundus, visual field, etc.). Learners see it above the question stem and
+                    text choices.
+                  </p>
+                  <ImageUpload
+                    uploadTarget="quiz_stimulus"
+                    currentImageUrl={imageUrl || null}
+                    currentImagePath={null}
+                    disabled={isSaving}
+                    onChange={(result) => {
+                      setImageUrl(result.url ?? "");
+                      markDirty();
+                    }}
+                  />
+                </div>
+              ) : null}
               <span className="text-sm font-medium text-text-heading">
                 Answer choices <span className="text-text-fg-danger">*</span>
               </span>
               <p className="mt-1 mb-3 text-xs text-text-muted">
-                {(isEditing ? lockedQuestionType : questionType) === "single_best_answer"
+                {(isEditing ? lockedQuestionType : questionType) === "single_best_answer" ||
+                (isEditing ? lockedQuestionType : questionType) === "image_stimulus"
                   ? "Provide all 4 choices and select the one correct answer with the radio button."
                   : "Provide all 4 choices and mark every correct answer with the checkboxes (more than one allowed)."}
               </p>
@@ -389,7 +421,8 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
                 {choices.map((text, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <label className="mt-2.5 flex shrink-0 items-center gap-2">
-                      {(isEditing ? lockedQuestionType : questionType) === "single_best_answer" ? (
+                      {(isEditing ? lockedQuestionType : questionType) === "single_best_answer" ||
+                      (isEditing ? lockedQuestionType : questionType) === "image_stimulus" ? (
                         <input
                           type="radio"
                           name="correct_choice"
@@ -581,21 +614,23 @@ export function QuestionForm({ initialQuestion, categories, authorName }: Props)
               </select>
             </div>
 
-            <div>
-              <span className="text-sm font-medium text-text-heading">Question image (optional)</span>
-              <p className="mt-1 mb-2 text-xs text-text-muted">
-                Slit lamp photo, OCT, fundus image, or diagram referenced by the vignette.
-              </p>
-              <ImageUpload
-                currentImageUrl={imageUrl || null}
-                currentImagePath={null}
-                disabled={isSaving}
-                onChange={(result) => {
-                  setImageUrl(result.url ?? "");
-                  markDirty();
-                }}
-              />
-            </div>
+            {(isEditing ? lockedQuestionType !== "image_stimulus" : questionType !== "image_stimulus") ? (
+              <div>
+                <span className="text-sm font-medium text-text-heading">Question image (optional)</span>
+                <p className="mt-1 mb-2 text-xs text-text-muted">
+                  Slit lamp photo, OCT, fundus image, or diagram referenced by the vignette.
+                </p>
+                <ImageUpload
+                  currentImageUrl={imageUrl || null}
+                  currentImagePath={null}
+                  disabled={isSaving}
+                  onChange={(result) => {
+                    setImageUrl(result.url ?? "");
+                    markDirty();
+                  }}
+                />
+              </div>
+            ) : null}
 
             {imageUrl ? (
               <div>

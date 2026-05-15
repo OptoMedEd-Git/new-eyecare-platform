@@ -1,9 +1,10 @@
 import { Check, X, AlertCircle } from "lucide-react";
 
 import type { QuizAttemptResult } from "@/lib/quiz-bank/queries";
-import { isMultiSelectQuestion, isSingleBestAnswerQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
+import { isMcSingleCorrectQuestion, isMultiSelectQuestion, isTrueFalseQuestion } from "@/lib/quiz-bank/types";
 
 import { FlagButton } from "./FlagButton";
+import { QuestionStimulusImage } from "./QuestionStimulusImage";
 
 type Props = {
   entry: QuizAttemptResult["questions"][number];
@@ -22,7 +23,10 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
       : "border-border-danger"
     : "border-border-default";
 
-  const userChoiceId = userAnswer?.type === "single_best_answer" ? userAnswer.selectedChoiceId : null;
+  const userChoiceId =
+    userAnswer?.type === "single_best_answer" || userAnswer?.type === "image_stimulus"
+      ? userAnswer.selectedChoiceId
+      : null;
   const userTf = userAnswer?.type === "true_false" ? userAnswer.value : null;
   const userMultiSet =
     userAnswer?.type === "multi_select" ? new Set(userAnswer.selectedChoiceIds) : new Set<string>();
@@ -59,7 +63,12 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
           <div className="whitespace-pre-wrap text-sm leading-relaxed text-text-body">{question.vignette}</div>
         ) : null}
 
-        {question.imageUrl ? (
+        {question.questionType === "image_stimulus" ? (
+          <QuestionStimulusImage
+            src={question.imageUrl}
+            alt={question.imageAttribution?.trim() ? question.imageAttribution : "Clinical image"}
+          />
+        ) : question.imageUrl ? (
           <figure>
             {/* eslint-disable-next-line @next/next/no-img-element -- remote URLs may not match next/image patterns */}
             <img
@@ -75,7 +84,7 @@ export function QuizResultQuestionCard({ entry, questionNumber, initialFlagged, 
 
         <p className="text-base font-medium leading-relaxed text-text-heading">{question.questionText}</p>
 
-        {isSingleBestAnswerQuestion(question) ? (
+        {isMcSingleCorrectQuestion(question) ? (
           <ol className="space-y-2">
             {question.choices.map((choice, i) => {
               const letter = String.fromCharCode(65 + i);

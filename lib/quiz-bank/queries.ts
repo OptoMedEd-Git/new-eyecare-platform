@@ -104,6 +104,12 @@ export function rowToQuizQuestion(
         questionType: "multi_select",
         choices: mapChoiceRows(choiceRows),
       };
+    case "image_stimulus":
+      return {
+        ...base,
+        questionType: "image_stimulus",
+        choices: mapChoiceRows(choiceRows),
+      };
     case "true_false": {
       const correctAnswer = trueFalseCorrectFromRow(row) ?? false;
       return {
@@ -360,6 +366,12 @@ export async function getQuizAttemptWithResponses(attemptId: string): Promise<{
       responses.push({
         questionId: row.question_id,
         kind: "single_best_answer",
+        choiceId: sub.selectedChoiceId,
+      });
+    } else if (sub.type === "image_stimulus") {
+      responses.push({
+        questionId: row.question_id,
+        kind: "image_stimulus",
         choiceId: sub.selectedChoiceId,
       });
     } else if (sub.type === "true_false") {

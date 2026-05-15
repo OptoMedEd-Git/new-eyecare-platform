@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import {
+  buildImageStimulusPayload,
   buildMultiSelectPayload,
   buildSingleBestAnswerPayload,
   buildTrueFalsePayload,
@@ -11,6 +12,7 @@ import {
 import { rowToQuizQuestion } from "@/lib/quiz-bank/queries";
 import { evaluateQuestionAnswer } from "@/lib/quiz-bank/scoring";
 import {
+  isImageStimulusQuestion,
   isMultiSelectQuestion,
   isSingleBestAnswerQuestion,
   isTrueFalseQuestion,
@@ -127,6 +129,7 @@ export async function saveAnswerToAttempt(
     quiz_attempt_id: string;
     answer_payload:
       | ReturnType<typeof buildSingleBestAnswerPayload>
+      | ReturnType<typeof buildImageStimulusPayload>
       | ReturnType<typeof buildTrueFalsePayload>
       | ReturnType<typeof buildMultiSelectPayload>;
   };
@@ -145,6 +148,21 @@ export async function saveAnswerToAttempt(
       is_correct: isCorrect,
       quiz_attempt_id: attemptId,
       answer_payload: buildSingleBestAnswerPayload(answer.selectedChoiceId),
+    };
+  } else if (isImageStimulusQuestion(quizQuestion)) {
+    if (answer.type !== "image_stimulus") {
+      return { success: false, error: "This question expects an image-stimulus multiple-choice answer" };
+    }
+    const selected = quizQuestion.choices.find((c) => c.id === answer.selectedChoiceId);
+    if (!selected) return { success: false, error: "Invalid choice" };
+    isCorrect = evaluateQuestionAnswer(quizQuestion, answer).isCorrect;
+    insertRow = {
+      user_id: user.id,
+      question_id: questionId,
+      choice_id: answer.selectedChoiceId,
+      is_correct: isCorrect,
+      quiz_attempt_id: attemptId,
+      answer_payload: buildImageStimulusPayload(answer.selectedChoiceId),
     };
   } else if (isTrueFalseQuestion(quizQuestion)) {
     if (answer.type !== "true_false") {
