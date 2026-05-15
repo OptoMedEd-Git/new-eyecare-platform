@@ -6,7 +6,48 @@ import {
   getCaseQuestionsWithQuizQuestions,
   rowToCase,
 } from "./queries";
+import type { FindingRowCatalogEntry } from "./types";
 import type { CaseWithDetails, ClinicalCase } from "./types";
+
+export type BlogCategoryOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export async function getBlogCategoriesForCaseForms(): Promise<BlogCategoryOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("blog_categories").select("id, name, slug").order("name");
+  if (error) {
+    console.error("[cases admin] categories", error.message);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function getFindingRowCatalog(): Promise<FindingRowCatalogEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("finding_row_catalog")
+    .select("*")
+    .order("finding_type")
+    .order("position");
+
+  if (error) {
+    console.error("[cases admin] finding_row_catalog", error.message);
+    return [];
+  }
+
+  return (data as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    findingType: row.finding_type as FindingRowCatalogEntry["findingType"],
+    rowKey: String(row.row_key),
+    rowLabel: String(row.row_label),
+    defaultNormalOd: row.default_normal_od == null ? null : String(row.default_normal_od),
+    defaultNormalOs: row.default_normal_os == null ? null : String(row.default_normal_os),
+    position: Number(row.position),
+  }));
+}
 
 function single<T>(value: T | T[] | null | undefined): T | null {
   if (value == null) return null;
@@ -103,11 +144,12 @@ export async function getAdminCaseWithDetailsBySlug(
  */
 export async function getAdminCaseWithDetailsById(
   caseId: string,
-  authorId: string,
+  userId: string,
+  role: "admin" | "contributor",
 ): Promise<CaseWithDetails | null> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let q = supabase
     .from("cases")
     .select(
       `
@@ -115,9 +157,13 @@ export async function getAdminCaseWithDetailsById(
       category:blog_categories(id, name)
     `,
     )
-    .eq("id", caseId)
-    .eq("author_id", authorId)
-    .maybeSingle();
+    .eq("id", caseId);
+
+  if (role === "contributor") {
+    q = q.eq("author_id", userId);
+  }
+
+  const { data, error } = await q.maybeSingle();
 
   if (error || !data) return null;
 
