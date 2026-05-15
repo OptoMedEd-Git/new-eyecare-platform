@@ -3,8 +3,10 @@
 import { fetchNextQuestion } from "@/app/(app)/quiz-bank/practice/actions";
 import type { PracticeQuestionResult, PracticeStats, QuestionAudience, QuizDifficulty } from "@/lib/quiz-bank/types";
 import { Inbox, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { PracticeEndButton } from "./PracticeEndButton";
 import { PracticeFilters, type PracticeCategoryOption } from "./PracticeFilters";
 import { PracticeQuestionCard } from "./PracticeQuestionCard";
 
@@ -14,6 +16,8 @@ type Props = {
 };
 
 export function PracticeOrchestrator({ categoryOptions, initialLifetimeStats }: Props) {
+  const router = useRouter();
+
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [selectedAudiences, setSelectedAudiences] = useState<QuestionAudience[]>([]);
   const [selectedDifficulties, setSelectedDifficulties] = useState<QuizDifficulty[]>([]);
@@ -71,6 +75,12 @@ export function PracticeOrchestrator({ categoryOptions, initialLifetimeStats }: 
   const sessionAccuracy =
     sessionAnswered > 0 ? Math.round((sessionCorrect / sessionAnswered) * 100) : 0;
 
+  function handleEndPractice() {
+    // Unsaved in-flight selections live only in PracticeQuestionCard local state; navigation
+    // unmounts the tree and discards them. Answers already submitted are persisted server-side.
+    router.push("/quiz-bank");
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-base border border-border-default bg-bg-primary-soft px-4 py-3 text-sm">
@@ -112,12 +122,20 @@ export function PracticeOrchestrator({ categoryOptions, initialLifetimeStats }: 
           <p className="mt-1 text-sm text-text-body">Try adjusting or clearing your filters.</p>
         </div>
       ) : currentQuestion ? (
-        <PracticeQuestionCard
-          key={currentQuestion.question.id}
-          result={currentQuestion}
-          onAnswered={handleAnswered}
-          onNext={loadNext}
-        />
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <PracticeEndButton onClick={handleEndPractice} />
+          </div>
+          <PracticeQuestionCard
+            key={currentQuestion.question.id}
+            result={currentQuestion}
+            onAnswered={handleAnswered}
+            onNext={loadNext}
+          />
+          <div className="flex justify-end">
+            <PracticeEndButton onClick={handleEndPractice} />
+          </div>
+        </div>
       ) : null}
     </div>
   );
