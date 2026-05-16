@@ -39,34 +39,30 @@ export function HistoryConditionsSection(props: Props) {
   const historyType: CaseHistoryType = props.variant;
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-      <div className="min-w-0">
-        {props.variant === "ocular" ? (
-          <HistoryConditionsField
-            variant="ocular"
-            catalog={props.catalog}
-            rows={props.rows}
-            disabled={props.disabled}
-            onChange={props.onCatalogChange}
-          />
-        ) : (
-          <HistoryConditionsField
-            variant="medical"
-            catalog={props.catalog}
-            rows={props.rows}
-            disabled={props.disabled}
-            onChange={props.onCatalogChange}
-          />
-        )}
-      </div>
-      <div className="min-w-0">
-        <CustomHistoryConditionsList
-          historyType={historyType}
-          entries={props.customEntries}
-          onChange={props.onCustomChange}
+    <div className="flex min-w-0 flex-col gap-4">
+      {props.variant === "ocular" ? (
+        <HistoryConditionsField
+          variant="ocular"
+          catalog={props.catalog}
+          rows={props.rows}
           disabled={props.disabled}
+          onChange={props.onCatalogChange}
         />
-      </div>
+      ) : (
+        <HistoryConditionsField
+          variant="medical"
+          catalog={props.catalog}
+          rows={props.rows}
+          disabled={props.disabled}
+          onChange={props.onCatalogChange}
+        />
+      )}
+      <CustomHistoryConditionsList
+        historyType={historyType}
+        entries={props.customEntries}
+        onChange={props.onCustomChange}
+        disabled={props.disabled}
+      />
     </div>
   );
 }

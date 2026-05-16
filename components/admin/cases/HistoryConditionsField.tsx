@@ -128,7 +128,7 @@ function OcularConditionRow({
   return (
     <li className="px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+        <label className="flex min-w-0 cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             className={checkboxClass}
@@ -145,21 +145,23 @@ function OcularConditionRow({
               );
             }}
           />
-          <span className={`min-w-0 flex-1 ${labelClass}`}>{condition.name}</span>
+          <span className={`min-w-0 ${labelClass}`}>{condition.name}</span>
         </label>
         {condition.hasLaterality ? (
-          <CaseLateralitySegmented
-            value={resolved.laterality}
-            disabled={lateralityDisabled}
-            required
-            onLateralityChange={(laterality) => {
-              onChange(
-                rows.map((r) =>
-                  r.conditionId === condition.id ? { ...r, laterality } : r,
-                ),
-              );
-            }}
-          />
+          <div className="shrink-0">
+            <CaseLateralitySegmented
+              value={resolved.laterality}
+              disabled={lateralityDisabled}
+              required
+              onLateralityChange={(laterality) => {
+                onChange(
+                  rows.map((r) =>
+                    r.conditionId === condition.id ? { ...r, laterality } : r,
+                  ),
+                );
+              }}
+            />
+          </div>
         ) : null}
       </div>
     </li>

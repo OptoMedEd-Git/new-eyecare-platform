@@ -593,45 +593,47 @@ export function CaseForm({
             <div>
               <h3 className="text-lg font-semibold text-text-heading">Clinical history</h3>
               <p className="mt-1 text-sm text-text-body">
-                Select catalog conditions on the left, or add unlisted conditions on the right.
+                Select catalog conditions, then add any unlisted conditions below each list.
               </p>
             </div>
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-text-heading">Past ocular history</h3>
-              <HistoryConditionsSection
-                variant="ocular"
-                catalog={ocularCatalog}
-                rows={ocularRows}
-                disabled={saving}
-                onCatalogChange={(rows) => {
-                  setOcularRows(rows);
-                  markDirty();
-                }}
-                customEntries={customOcularEntries}
-                onCustomChange={(entries) => {
-                  setCustomOcularEntries(entries);
-                  markDirty();
-                }}
-              />
-            </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+              <div className="min-w-0 space-y-3">
+                <h3 className="text-sm font-semibold text-text-heading">Past ocular history</h3>
+                <HistoryConditionsSection
+                  variant="ocular"
+                  catalog={ocularCatalog}
+                  rows={ocularRows}
+                  disabled={saving}
+                  onCatalogChange={(rows) => {
+                    setOcularRows(rows);
+                    markDirty();
+                  }}
+                  customEntries={customOcularEntries}
+                  onCustomChange={(entries) => {
+                    setCustomOcularEntries(entries);
+                    markDirty();
+                  }}
+                />
+              </div>
 
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-text-heading">Past medical history</h3>
-              <HistoryConditionsSection
-                variant="medical"
-                catalog={medicalCatalog}
-                rows={medicalRows}
-                disabled={saving}
-                onCatalogChange={(rows) => {
-                  setMedicalRows(rows);
-                  markDirty();
-                }}
-                customEntries={customMedicalEntries}
-                onCustomChange={(entries) => {
-                  setCustomMedicalEntries(entries);
-                  markDirty();
-                }}
-              />
+              <div className="min-w-0 space-y-3">
+                <h3 className="text-sm font-semibold text-text-heading">Past medical history</h3>
+                <HistoryConditionsSection
+                  variant="medical"
+                  catalog={medicalCatalog}
+                  rows={medicalRows}
+                  disabled={saving}
+                  onCatalogChange={(rows) => {
+                    setMedicalRows(rows);
+                    markDirty();
+                  }}
+                  customEntries={customMedicalEntries}
+                  onCustomChange={(entries) => {
+                    setCustomMedicalEntries(entries);
+                    markDirty();
+                  }}
+                />
+              </div>
             </div>
 
             <PlainTextarea
