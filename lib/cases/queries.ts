@@ -18,6 +18,8 @@ import type {
   CaseLaterality,
   CaseMedicalHistorySelection,
   CaseOcularHistorySelection,
+  CaseCustomHistoryCondition,
+  CaseCustomHistoryGrouped,
   CaseWithDetails,
   MedicalHistoryCondition,
   OcularHistoryCondition,
@@ -355,6 +357,50 @@ export async function getCaseOcularHistory(caseId: string): Promise<CaseOcularHi
   });
 }
 
+export async function getCaseCustomHistoryConditions(
+  caseId: string,
+): Promise<CaseCustomHistoryGrouped> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("case_custom_history_conditions")
+    .select("*")
+    .eq("case_id", caseId)
+    .order("history_type")
+    .order("position");
+
+  if (error || !data) {
+    return { ocular: [], medical: [] };
+  }
+
+  const grouped: CaseCustomHistoryGrouped = { ocular: [], medical: [] };
+
+  for (const row of data as Array<Record<string, unknown>>) {
+    const historyType = String(row.history_type);
+    const entry: CaseCustomHistoryCondition = {
+      id: String(row.id),
+      caseId: String(row.case_id),
+      historyType: historyType === "medical" ? "medical" : "ocular",
+      conditionText: String(row.condition_text),
+      laterality: (() => {
+        if (row.laterality == null) return null;
+        const lat = String(row.laterality) as CaseLaterality;
+        return lat === "OD" || lat === "OS" || lat === "OU" || lat === "none" ? lat : null;
+      })(),
+      position: Number(row.position),
+    };
+    if (entry.historyType === "medical") {
+      grouped.medical.push(entry);
+    } else {
+      grouped.ocular.push(entry);
+    }
+  }
+
+  grouped.ocular.sort((a, b) => a.position - b.position);
+  grouped.medical.sort((a, b) => a.position - b.position);
+
+  return grouped;
+}
+
 export async function getCaseMedicalHistory(caseId: string): Promise<CaseMedicalHistorySelection[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -387,13 +433,14 @@ export async function getPublishedCaseWithDetails(slug: string): Promise<CaseWit
   const clinicalCase = await getPublishedCaseBySlug(slug);
   if (!clinicalCase) return null;
 
-  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory, customHistory] =
     await Promise.all([
       getCaseFindingsGrouped(clinicalCase.id),
       getCaseAncillaryTestsWithMedia(clinicalCase.id),
       getCaseQuestionsWithQuizQuestions(clinicalCase.id),
       getCaseOcularHistory(clinicalCase.id),
       getCaseMedicalHistory(clinicalCase.id),
+      getCaseCustomHistoryConditions(clinicalCase.id),
     ]);
 
   return {
@@ -403,5 +450,6 @@ export async function getPublishedCaseWithDetails(slug: string): Promise<CaseWit
     questions,
     ocularHistory,
     medicalHistory,
+    customHistory,
   };
 }

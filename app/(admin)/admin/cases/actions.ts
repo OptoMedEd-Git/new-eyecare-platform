@@ -84,9 +84,19 @@ function parseFindingsState(raw: string): FindingsFormState | null {
   }
 }
 
+type CustomHistoryPayloadEntry = {
+  conditionText: string;
+  laterality?: CaseLaterality | null;
+  position?: number;
+};
+
 type HistorySelectionsPayload = {
   ocular: OcularConditionFormRow[];
   medical: MedicalConditionFormRow[];
+  custom?: {
+    ocular?: CustomHistoryPayloadEntry[];
+    medical?: CustomHistoryPayloadEntry[];
+  };
 };
 
 function parseLaterality(value: unknown): CaseLaterality {
@@ -96,11 +106,23 @@ function parseLaterality(value: unknown): CaseLaterality {
   return "OU";
 }
 
+function parseOptionalLaterality(value: unknown): CaseLaterality | null {
+  if (value == null || value === "") return null;
+  if (typeof value === "string" && LATERALITY_VALUES.includes(value as CaseLaterality)) {
+    return value as CaseLaterality;
+  }
+  return null;
+}
+
 function parseHistorySelections(raw: string): HistorySelectionsPayload | null {
   try {
     const parsed = JSON.parse(raw) as HistorySelectionsPayload;
     if (!parsed || typeof parsed !== "object") return null;
     if (!Array.isArray(parsed.ocular) || !Array.isArray(parsed.medical)) return null;
+
+    const customOcular = parsed.custom?.ocular ?? [];
+    const customMedical = parsed.custom?.medical ?? [];
+
     return {
       ocular: parsed.ocular.map((row) => ({
         conditionId: String(row.conditionId),
@@ -111,6 +133,17 @@ function parseHistorySelections(raw: string): HistorySelectionsPayload | null {
         conditionId: String(row.conditionId),
         checked: Boolean(row.checked),
       })),
+      custom: {
+        ocular: customOcular.map((row, index) => ({
+          conditionText: String(row.conditionText ?? "").trim(),
+          laterality: parseOptionalLaterality(row.laterality),
+          position: typeof row.position === "number" ? row.position : index,
+        })),
+        medical: customMedical.map((row, index) => ({
+          conditionText: String(row.conditionText ?? "").trim(),
+          position: typeof row.position === "number" ? row.position : index,
+        })),
+      },
     };
   } catch {
     return null;
@@ -176,8 +209,6 @@ function casePayloadFromForm(formData: FormData) {
     patientAge: parsePatientAge(formData),
     patientSex: parsePatientSex(formData),
     patientEthnicity: getNullableString(formData, "patient_ethnicity"),
-    pastOcularHistory: getNullableString(formData, "past_ocular_history"),
-    pastMedicalHistory: getNullableString(formData, "past_medical_history"),
     medications: getNullableString(formData, "medications"),
     allergies: getNullableString(formData, "allergies"),
     learningObjectives: getRichText(formData, "learning_objectives"),
@@ -226,8 +257,6 @@ export async function createCase(formData: FormData): Promise<ActionResult<{ cas
         patient_age: payload.patientAge,
         patient_sex: payload.patientSex,
         patient_ethnicity: payload.patientEthnicity,
-        past_ocular_history: payload.pastOcularHistory,
-        past_medical_history: payload.pastMedicalHistory,
         medications: payload.medications,
         allergies: payload.allergies,
         category_id: payload.categoryId,
@@ -298,8 +327,6 @@ export async function updateCase(caseId: string, formData: FormData): Promise<Ac
         patient_age: payload.patientAge,
         patient_sex: payload.patientSex,
         patient_ethnicity: payload.patientEthnicity,
-        past_ocular_history: payload.pastOcularHistory,
-        past_medical_history: payload.pastMedicalHistory,
         medications: payload.medications,
         allergies: payload.allergies,
         category_id: payload.categoryId,
@@ -484,6 +511,47 @@ export async function updateCaseHistorySelections(
       if (insertMedicalError) {
         console.error("[cases] insert medical history", insertMedicalError);
         return { ok: false, error: "Could not save medical history" };
+      }
+    }
+
+    const { error: delCustomError } = await ctx.supabase
+      .from("case_custom_history_conditions")
+      .delete()
+      .eq("case_id", caseId);
+
+    if (delCustomError) {
+      console.error("[cases] delete custom history", delCustomError);
+      return { ok: false, error: "Could not update custom history" };
+    }
+
+    const customOcular = (state.custom?.ocular ?? []).filter((row) => row.conditionText.length > 0);
+    const customMedical = (state.custom?.medical ?? []).filter((row) => row.conditionText.length > 0);
+
+    const customInsertRows = [
+      ...customOcular.map((row, index) => ({
+        case_id: caseId,
+        history_type: "ocular" as const,
+        condition_text: row.conditionText,
+        laterality: row.laterality,
+        position: row.position ?? index,
+      })),
+      ...customMedical.map((row, index) => ({
+        case_id: caseId,
+        history_type: "medical" as const,
+        condition_text: row.conditionText,
+        laterality: null,
+        position: row.position ?? index,
+      })),
+    ];
+
+    if (customInsertRows.length > 0) {
+      const { error: insertCustomError } = await ctx.supabase
+        .from("case_custom_history_conditions")
+        .insert(customInsertRows);
+
+      if (insertCustomError) {
+        console.error("[cases] insert custom history", insertCustomError);
+        return { ok: false, error: "Could not save custom history" };
       }
     }
 

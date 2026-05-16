@@ -4,6 +4,7 @@ import {
   getCaseAncillaryTestsWithMedia,
   getCaseFindingsGrouped,
   getCaseMedicalHistory,
+  getCaseCustomHistoryConditions,
   getCaseOcularHistory,
   getCaseQuestionsWithQuizQuestions,
   getMedicalHistoryConditions,
@@ -132,13 +133,14 @@ export async function getAdminCaseWithDetailsBySlug(
 
   const clinicalCase = rowToCase(data as Record<string, unknown>);
 
-  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory, customHistory] =
     await Promise.all([
       getCaseFindingsGrouped(clinicalCase.id),
       getCaseAncillaryTestsWithMedia(clinicalCase.id),
       getCaseQuestionsWithQuizQuestions(clinicalCase.id),
       getCaseOcularHistory(clinicalCase.id),
       getCaseMedicalHistory(clinicalCase.id),
+      getCaseCustomHistoryConditions(clinicalCase.id),
     ]);
 
   return {
@@ -148,6 +150,7 @@ export async function getAdminCaseWithDetailsBySlug(
     questions,
     ocularHistory,
     medicalHistory,
+    customHistory,
   };
 }
 
@@ -181,13 +184,14 @@ export async function getAdminCaseWithDetailsById(
 
   const clinicalCase = rowToCase(data as Record<string, unknown>);
 
-  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory, customHistory] =
     await Promise.all([
       getCaseFindingsGrouped(clinicalCase.id),
       getCaseAncillaryTestsWithMedia(clinicalCase.id),
       getCaseQuestionsWithQuizQuestions(clinicalCase.id),
       getCaseOcularHistory(clinicalCase.id),
       getCaseMedicalHistory(clinicalCase.id),
+      getCaseCustomHistoryConditions(clinicalCase.id),
     ]);
 
   return {
@@ -197,5 +201,6 @@ export async function getAdminCaseWithDetailsById(
     questions,
     ocularHistory,
     medicalHistory,
+    customHistory,
   };
 }

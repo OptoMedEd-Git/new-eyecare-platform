@@ -25,6 +25,17 @@ export type CasePatientSex = "M" | "F" | "Other" | "Unspecified";
 
 export type CaseLaterality = "OD" | "OS" | "OU" | "none";
 
+export type CaseHistoryType = "ocular" | "medical";
+
+export type CaseCustomHistoryCondition = {
+  id: string;
+  caseId: string;
+  historyType: CaseHistoryType;
+  conditionText: string;
+  laterality: CaseLaterality | null;
+  position: number;
+};
+
 export type CaseAttemptStatus = "in_progress" | "submitted" | "abandoned";
 
 export type OcularHistoryCondition = {
@@ -152,6 +163,11 @@ export type CaseAttempt = {
   updatedAt: string;
 };
 
+export type CaseCustomHistoryGrouped = {
+  ocular: CaseCustomHistoryCondition[];
+  medical: CaseCustomHistoryCondition[];
+};
+
 /** Published case with nested content for case-taking UI (downstream sessions). */
 export type CaseWithDetails = ClinicalCase & {
   findingsByType: CaseFindingsByType;
@@ -159,4 +175,5 @@ export type CaseWithDetails = ClinicalCase & {
   questions: CaseQuestionEntry[];
   ocularHistory: CaseOcularHistorySelection[];
   medicalHistory: CaseMedicalHistorySelection[];
+  customHistory: CaseCustomHistoryGrouped;
 };

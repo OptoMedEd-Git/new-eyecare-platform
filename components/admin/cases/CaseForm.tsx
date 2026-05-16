@@ -10,7 +10,7 @@ import { CaseFormCard } from "@/components/admin/cases/CaseFormCard";
 import { CaseFormComingSoonPanel } from "@/components/admin/cases/CaseFormComingSoonPanel";
 import { CaseMarkdownField } from "@/components/admin/cases/CaseMarkdownField";
 import { FindingsTable } from "@/components/admin/cases/FindingsTable";
-import { HistoryConditionsField } from "@/components/admin/cases/HistoryConditionsField";
+import { HistoryConditionsSection } from "@/components/admin/cases/HistoryConditionsSection";
 import { HelpTooltip } from "@/components/admin/HelpTooltip";
 import { PostStatusPill } from "@/components/admin/PostStatusPill";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
@@ -24,6 +24,11 @@ import {
   findingsByTypeToFormState,
   type FindingsFormState,
 } from "@/lib/cases/findings-form";
+import {
+  customHistoryGroupedToFormState,
+  emptyCustomHistoryFormState,
+  type CustomHistoryFormEntry,
+} from "@/lib/cases/custom-history-form";
 import {
   emptyMedicalFormRows,
   emptyOcularFormRows,
@@ -172,11 +177,15 @@ export function CaseForm({
   const [patientSex, setPatientSex] = useState<CasePatientSex | "">(initialCase?.patientSex ?? "");
   const [patientEthnicity, setPatientEthnicity] = useState(initialCase?.patientEthnicity ?? "");
 
-  const [pastOcularOther, setPastOcularOther] = useState(() =>
-    historyFieldToPlainText(initialCase?.pastOcularHistory),
+  const [customOcularEntries, setCustomOcularEntries] = useState<CustomHistoryFormEntry[]>(() =>
+    initialCase
+      ? customHistoryGroupedToFormState(initialCase.customHistory).ocular
+      : emptyCustomHistoryFormState().ocular,
   );
-  const [pastMedicalOther, setPastMedicalOther] = useState(() =>
-    historyFieldToPlainText(initialCase?.pastMedicalHistory),
+  const [customMedicalEntries, setCustomMedicalEntries] = useState<CustomHistoryFormEntry[]>(() =>
+    initialCase
+      ? customHistoryGroupedToFormState(initialCase.customHistory).medical
+      : emptyCustomHistoryFormState().medical,
   );
   const [medications, setMedications] = useState(() =>
     historyFieldToPlainText(initialCase?.medications),
@@ -280,13 +289,44 @@ export function CaseForm({
 
   function appendChildTableFields(fd: FormData) {
     fd.set("findings_json", JSON.stringify(findings));
-    fd.set("history_selections", JSON.stringify({ ocular: ocularRows, medical: medicalRows }));
+    fd.set(
+      "history_selections",
+      JSON.stringify({
+        ocular: ocularRows,
+        medical: medicalRows,
+        custom: {
+          ocular: customOcularEntries.map((entry, position) => ({
+            conditionText: entry.conditionText,
+            laterality: entry.laterality,
+            position,
+          })),
+          medical: customMedicalEntries.map((entry, position) => ({
+            conditionText: entry.conditionText,
+            position,
+          })),
+        },
+      }),
+    );
   }
 
   async function saveChildTablesAfterCreate(caseId: string): Promise<string | null> {
     const historyResult = await updateCaseHistorySelections(
       caseId,
-      JSON.stringify({ ocular: ocularRows, medical: medicalRows }),
+      JSON.stringify({
+        ocular: ocularRows,
+        medical: medicalRows,
+        custom: {
+          ocular: customOcularEntries.map((entry, position) => ({
+            conditionText: entry.conditionText,
+            laterality: entry.laterality,
+            position,
+          })),
+          medical: customMedicalEntries.map((entry, position) => ({
+            conditionText: entry.conditionText,
+            position,
+          })),
+        },
+      }),
     );
     if (!historyResult.ok) return historyResult.error;
 
@@ -553,62 +593,44 @@ export function CaseForm({
             <div>
               <h3 className="text-lg font-semibold text-text-heading">Clinical history</h3>
               <p className="mt-1 text-sm text-text-body">
-                Select common conditions or enter free text under Other when needed.
+                Select catalog conditions on the left, or add unlisted conditions on the right.
               </p>
             </div>
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-text-heading">Past ocular history</h3>
-              <HistoryConditionsField
+              <HistoryConditionsSection
                 variant="ocular"
                 catalog={ocularCatalog}
                 rows={ocularRows}
                 disabled={saving}
-                onChange={(rows) => {
+                onCatalogChange={(rows) => {
                   setOcularRows(rows);
                   markDirty();
                 }}
-                otherSlot={
-                  <PlainTextarea
-                    label="Other"
-                    name="past_ocular_history"
-                    id="case-poh-other"
-                    value={pastOcularOther}
-                    disabled={saving}
-                    placeholder="Unlisted ocular history"
-                    onChange={(v) => {
-                      setPastOcularOther(v);
-                      markDirty();
-                    }}
-                  />
-                }
+                customEntries={customOcularEntries}
+                onCustomChange={(entries) => {
+                  setCustomOcularEntries(entries);
+                  markDirty();
+                }}
               />
             </div>
 
             <div className="space-y-3">
               <h3 className="text-sm font-semibold text-text-heading">Past medical history</h3>
-              <HistoryConditionsField
+              <HistoryConditionsSection
                 variant="medical"
                 catalog={medicalCatalog}
                 rows={medicalRows}
                 disabled={saving}
-                onChange={(rows) => {
+                onCatalogChange={(rows) => {
                   setMedicalRows(rows);
                   markDirty();
                 }}
-                otherSlot={
-                  <PlainTextarea
-                    label="Other"
-                    name="past_medical_history"
-                    id="case-pmh-other"
-                    value={pastMedicalOther}
-                    disabled={saving}
-                    placeholder="Unlisted medical history"
-                    onChange={(v) => {
-                      setPastMedicalOther(v);
-                      markDirty();
-                    }}
-                  />
-                }
+                customEntries={customMedicalEntries}
+                onCustomChange={(entries) => {
+                  setCustomMedicalEntries(entries);
+                  markDirty();
+                }}
               />
             </div>
 

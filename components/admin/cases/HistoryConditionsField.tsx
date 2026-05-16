@@ -1,13 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
-
-import { CASE_LATERALITY_OPTIONS } from "@/lib/cases/constants";
+import { CaseLateralitySegmented } from "@/components/admin/cases/CaseLateralitySegmented";
 import type {
   MedicalConditionFormRow,
   OcularConditionFormRow,
 } from "@/lib/cases/history-form";
-import type { CaseLaterality, MedicalHistoryCondition, OcularHistoryCondition } from "@/lib/cases/types";
+import type { MedicalHistoryCondition, OcularHistoryCondition } from "@/lib/cases/types";
 
 /** Mirrors quiz-bank choice checkboxes (`QuestionForm` multi-select). */
 const checkboxClass =
@@ -21,7 +19,6 @@ type OcularProps = {
   rows: OcularConditionFormRow[];
   onChange: (rows: OcularConditionFormRow[]) => void;
   disabled?: boolean;
-  otherSlot?: ReactNode;
 };
 
 type MedicalProps = {
@@ -30,15 +27,9 @@ type MedicalProps = {
   rows: MedicalConditionFormRow[];
   onChange: (rows: MedicalConditionFormRow[]) => void;
   disabled?: boolean;
-  otherSlot?: ReactNode;
 };
 
 type Props = OcularProps | MedicalProps;
-
-function splitIntoColumns<T>(items: T[]): [T[], T[]] {
-  const midpoint = Math.ceil(items.length / 2);
-  return [items.slice(0, midpoint), items.slice(midpoint)];
-}
 
 export function HistoryConditionsField(props: Props) {
   if (props.variant === "ocular") {
@@ -52,10 +43,8 @@ function OcularHistoryConditionsList({
   rows,
   onChange,
   disabled = false,
-  otherSlot,
 }: OcularProps) {
   const sortedCatalog = [...catalog].sort((a, b) => a.position - b.position);
-  const [leftColumn, rightColumn] = splitIntoColumns(sortedCatalog);
 
   if (sortedCatalog.length === 0) {
     return (
@@ -65,39 +54,18 @@ function OcularHistoryConditionsList({
 
   return (
     <div className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
-      <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-border-default">
-        <ConditionColumn>
-          {leftColumn.map((condition) => (
-            <OcularConditionRow
-              key={condition.id}
-              condition={condition}
-              row={rows.find((r) => r.conditionId === condition.id)}
-              rows={rows}
-              disabled={disabled}
-              onChange={onChange}
-            />
-          ))}
-        </ConditionColumn>
-        <div className="flex min-w-0 flex-col">
-          <ConditionColumn className="flex-1">
-            {rightColumn.map((condition) => (
-              <OcularConditionRow
-                key={condition.id}
-                condition={condition}
-                row={rows.find((r) => r.conditionId === condition.id)}
-                rows={rows}
-                disabled={disabled}
-                onChange={onChange}
-              />
-            ))}
-          </ConditionColumn>
-          {otherSlot ? (
-            <div className="border-t border-border-default px-4 py-4 md:border-t-0 md:border-l-0">
-              {otherSlot}
-            </div>
-          ) : null}
-        </div>
-      </div>
+      <ul className="divide-y divide-border-default">
+        {sortedCatalog.map((condition) => (
+          <OcularConditionRow
+            key={condition.id}
+            condition={condition}
+            row={rows.find((r) => r.conditionId === condition.id)}
+            rows={rows}
+            disabled={disabled}
+            onChange={onChange}
+          />
+        ))}
+      </ul>
     </div>
   );
 }
@@ -107,10 +75,8 @@ function MedicalHistoryConditionsList({
   rows,
   onChange,
   disabled = false,
-  otherSlot,
 }: MedicalProps) {
   const sortedCatalog = [...catalog].sort((a, b) => a.position - b.position);
-  const [leftColumn, rightColumn] = splitIntoColumns(sortedCatalog);
 
   if (sortedCatalog.length === 0) {
     return (
@@ -120,49 +86,20 @@ function MedicalHistoryConditionsList({
 
   return (
     <div className="overflow-hidden rounded-base border border-border-default bg-bg-primary-soft">
-      <div className="grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-border-default">
-        <ConditionColumn>
-          {leftColumn.map((condition) => (
-            <MedicalConditionRow
-              key={condition.id}
-              condition={condition}
-              row={rows.find((r) => r.conditionId === condition.id)}
-              rows={rows}
-              disabled={disabled}
-              onChange={onChange}
-            />
-          ))}
-        </ConditionColumn>
-        <div className="flex min-w-0 flex-col">
-          <ConditionColumn className="flex-1">
-            {rightColumn.map((condition) => (
-              <MedicalConditionRow
-                key={condition.id}
-                condition={condition}
-                row={rows.find((r) => r.conditionId === condition.id)}
-                rows={rows}
-                disabled={disabled}
-                onChange={onChange}
-              />
-            ))}
-          </ConditionColumn>
-          {otherSlot ? (
-            <div className="border-t border-border-default px-4 py-4">{otherSlot}</div>
-          ) : null}
-        </div>
-      </div>
+      <ul className="divide-y divide-border-default">
+        {sortedCatalog.map((condition) => (
+          <MedicalConditionRow
+            key={condition.id}
+            condition={condition}
+            row={rows.find((r) => r.conditionId === condition.id)}
+            rows={rows}
+            disabled={disabled}
+            onChange={onChange}
+          />
+        ))}
+      </ul>
     </div>
   );
-}
-
-function ConditionColumn({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <ul className={`divide-y divide-border-default ${className}`.trim()}>{children}</ul>;
 }
 
 function OcularConditionRow({
@@ -190,7 +127,7 @@ function OcularConditionRow({
 
   return (
     <li className="px-4 py-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
         <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
           <input
             type="checkbox"
@@ -211,9 +148,10 @@ function OcularConditionRow({
           <span className={`min-w-0 flex-1 ${labelClass}`}>{condition.name}</span>
         </label>
         {condition.hasLaterality ? (
-          <LateralitySegmentedControl
+          <CaseLateralitySegmented
             value={resolved.laterality}
             disabled={lateralityDisabled}
+            required
             onLateralityChange={(laterality) => {
               onChange(
                 rows.map((r) =>
@@ -268,60 +206,5 @@ function MedicalConditionRow({
         <span className={labelClass}>{condition.name}</span>
       </label>
     </li>
-  );
-}
-
-/**
- * Segmented laterality control — same values as the prior `<select>` (`CASE_LATERALITY_OPTIONS`).
- */
-function LateralitySegmentedControl({
-  value,
-  disabled,
-  onLateralityChange,
-}: {
-  value: CaseLaterality;
-  disabled: boolean;
-  onLateralityChange: (laterality: CaseLaterality) => void;
-}) {
-  const options = CASE_LATERALITY_OPTIONS;
-  const lastIndex = options.length - 1;
-
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Laterality"
-      className={[
-        "inline-flex shrink-0",
-        disabled ? "pointer-events-none opacity-50" : "",
-      ].join(" ")}
-    >
-      {options.map((opt, index) => {
-        const isSelected = value === opt.value;
-        const isFirst = index === 0;
-        const isLast = index === lastIndex;
-
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={isSelected}
-            disabled={disabled}
-            onClick={() => onLateralityChange(opt.value)}
-            className={[
-              "border border-border-default px-3 py-2 text-sm font-medium transition-colors",
-              !isLast ? "-mr-px" : "",
-              isFirst ? "rounded-l-base" : "",
-              isLast ? "rounded-r-base" : "",
-              isSelected
-                ? "relative z-10 bg-bg-secondary-medium text-text-fg-brand-strong"
-                : "bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft",
-            ].join(" ")}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
   );
 }
