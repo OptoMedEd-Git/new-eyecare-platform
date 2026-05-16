@@ -25,6 +25,9 @@ const AUDIENCES = ["student", "resident", "practicing", "all"] as const;
 const SEX_VALUES = ["M", "F", "Other", "Unspecified"] as const;
 const LATERALITY_VALUES = ["OD", "OS", "OU", "none"] as const;
 
+const CASE_PUBLISH_REQUIRES_QUESTIONS_ERROR =
+  "A case must have at least one question before it can be published. Add questions in the Learning content section.";
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
@@ -194,8 +197,6 @@ function casePayloadFromForm(formData: FormData) {
   const categoryId = String(formData.get("category_id") ?? "").trim();
   const difficulty = parseDifficulty(formData);
   const audience = parseAudience(formData);
-  const statusRaw = String(formData.get("status") ?? "draft").trim();
-  const status = statusRaw === "published" ? "published" : "draft";
 
   return {
     title,
@@ -203,7 +204,6 @@ function casePayloadFromForm(formData: FormData) {
     categoryId,
     difficulty,
     audience,
-    status,
     chiefComplaint: getNullableString(formData, "chief_complaint"),
     hpi: getRichText(formData, "hpi"),
     patientAge: parsePatientAge(formData),
@@ -244,8 +244,6 @@ export async function createCase(formData: FormData): Promise<ActionResult<{ cas
       return Boolean(data);
     });
 
-    const publishedAt = payload.status === "published" ? new Date().toISOString() : null;
-
     const { data, error } = await ctx.supabase
       .from("cases")
       .insert({
@@ -261,9 +259,9 @@ export async function createCase(formData: FormData): Promise<ActionResult<{ cas
         category_id: payload.categoryId,
         difficulty: payload.difficulty,
         target_audience: payload.audience,
-        status: payload.status,
+        status: "draft",
         author_id: ctx.user.id,
-        published_at: publishedAt,
+        published_at: null,
       })
       .select("id, slug")
       .maybeSingle();
@@ -303,17 +301,9 @@ export async function updateCase(caseId: string, formData: FormData): Promise<Ac
 
     const { data: prev } = await ctx.supabase
       .from("cases")
-      .select("status, published_at, slug")
+      .select("slug")
       .eq("id", caseId)
-      .maybeSingle<{ status: string; published_at: string | null; slug: string }>();
-
-    let publishedAt = prev?.published_at ?? null;
-    if (payload.status === "published" && !publishedAt) {
-      publishedAt = new Date().toISOString();
-    }
-    if (payload.status === "draft") {
-      publishedAt = null;
-    }
+      .maybeSingle<{ slug: string }>();
 
     const { error } = await ctx.supabase
       .from("cases")
@@ -330,8 +320,6 @@ export async function updateCase(caseId: string, formData: FormData): Promise<Ac
         category_id: payload.categoryId,
         difficulty: payload.difficulty,
         target_audience: payload.audience,
-        status: payload.status,
-        published_at: publishedAt,
       })
       .eq("id", caseId);
 
@@ -559,5 +547,103 @@ export async function updateCaseHistorySelections(
       ok: false,
       error: e instanceof Error ? e.message : "Could not update history selections",
     };
+  }
+}
+
+async function assertCaseHasQuestionsForPublish(
+  ctx: Awaited<ReturnType<typeof getAuthedContext>>,
+  caseId: string,
+): Promise<ActionResult | null> {
+  const { count, error } = await ctx.supabase
+    .from("case_questions")
+    .select("*", { count: "exact", head: true })
+    .eq("case_id", caseId);
+
+  if (error) {
+    console.error("[cases] count case_questions", error);
+    return { ok: false, error: "Could not verify case questions" };
+  }
+
+  if ((count ?? 0) < 1) {
+    return { ok: false, error: CASE_PUBLISH_REQUIRES_QUESTIONS_ERROR };
+  }
+
+  return null;
+}
+
+export async function publishCase(caseId: string): Promise<ActionResult> {
+  try {
+    const ctx = await getAuthedContext();
+    const row = await authorizeCaseWrite(ctx, caseId);
+
+    const guardError = await assertCaseHasQuestionsForPublish(ctx, caseId);
+    if (guardError) return guardError;
+
+    const { error } = await ctx.supabase
+      .from("cases")
+      .update({ status: "published", published_at: new Date().toISOString() })
+      .eq("id", caseId);
+
+    if (error) {
+      console.error("[cases] publishCase", error);
+      return { ok: false, error: "Could not publish" };
+    }
+
+    revalidateCasePaths(row.slug);
+    revalidatePath(`/admin/cases/${caseId}/edit`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Could not publish" };
+  }
+}
+
+export async function publishCaseWithChanges(
+  caseId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  const updateResult = await updateCase(caseId, formData);
+  if (!updateResult.ok) return updateResult;
+  return publishCase(caseId);
+}
+
+export async function unpublishCase(caseId: string): Promise<ActionResult> {
+  try {
+    const ctx = await getAuthedContext();
+    const row = await authorizeCaseWrite(ctx, caseId);
+
+    const { error } = await ctx.supabase
+      .from("cases")
+      .update({ status: "draft", published_at: null })
+      .eq("id", caseId);
+
+    if (error) {
+      console.error("[cases] unpublishCase", error);
+      return { ok: false, error: "Could not unpublish" };
+    }
+
+    revalidateCasePaths(row.slug);
+    revalidatePath(`/admin/cases/${caseId}/edit`);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Could not unpublish" };
+  }
+}
+
+export async function deleteCase(caseId: string): Promise<ActionResult> {
+  try {
+    const ctx = await getAuthedContext();
+    await authorizeCaseWrite(ctx, caseId);
+
+    const { error } = await ctx.supabase.from("cases").delete().eq("id", caseId);
+
+    if (error) {
+      console.error("[cases] deleteCase", error);
+      return { ok: false, error: "Could not delete" };
+    }
+
+    revalidatePath("/admin/cases");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Could not delete" };
   }
 }

@@ -2,6 +2,10 @@
 
 import {
   createCase,
+  deleteCase,
+  publishCase,
+  publishCaseWithChanges,
+  unpublishCase,
   updateCase,
   updateCaseFindings,
   updateCaseHistorySelections,
@@ -12,7 +16,6 @@ import { CaseMarkdownField } from "@/components/admin/cases/CaseMarkdownField";
 import { FindingsTable } from "@/components/admin/cases/FindingsTable";
 import { HistoryConditionsSection } from "@/components/admin/cases/HistoryConditionsSection";
 import { HelpTooltip } from "@/components/admin/HelpTooltip";
-import { PostStatusPill } from "@/components/admin/PostStatusPill";
 import { UnsavedChangesGuard } from "@/components/admin/UnsavedChangesGuard";
 import { Alert } from "@/components/forms/Alert";
 import { FormInput } from "@/components/forms/FormInput";
@@ -49,8 +52,7 @@ import type {
 import { CASE_FINDING_TYPES } from "@/lib/cases/types";
 import { slugifyShort } from "@/lib/blog/slugify";
 import type { RichContentEditorHandle } from "@/components/shared/RichContentEditor";
-import { Loader2, RefreshCw, Save } from "lucide-react";
-import Link from "next/link";
+import { Loader2, RefreshCw, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
@@ -85,11 +87,6 @@ const DIFFICULTY_OPTIONS = [
   { value: "foundational", label: "Foundational" },
   { value: "intermediate", label: "Intermediate" },
   { value: "advanced", label: "Advanced" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "draft", label: "Draft" },
-  { value: "published", label: "Published" },
 ];
 
 const SEX_OPTIONS = [
@@ -209,8 +206,12 @@ export function CaseForm({
   );
 
   const [dirty, setDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const questionCount = initialCase?.questions.length ?? 0;
+  const canPublish = questionCount >= 1;
+  const isPublished = initialCase?.status === "published";
 
   const categoryOptions = useMemo(
     () => [
@@ -331,24 +332,27 @@ export function CaseForm({
     return null;
   }
 
-  async function handleSave() {
+  function buildFormData(): FormData {
     const form = formRef.current;
-    if (!form) return;
+    if (!form) throw new Error("Form not ready");
+    const fd = new FormData(form);
+    appendRichFields(fd);
+    appendChildTableFields(fd);
+    return fd;
+  }
 
+  async function performSave(): Promise<void> {
     setError(null);
-    setSaving(true);
+    setIsSaving(true);
     try {
-      const fd = new FormData(form);
-      appendRichFields(fd);
-      appendChildTableFields(fd);
+      const fd = buildFormData();
 
       if (isEdit && initialCase) {
         const caseResult = await updateCase(initialCase.id, fd);
         if (!caseResult.ok) {
           setError(caseResult.error);
-          return;
+          throw new Error(caseResult.error);
         }
-
         setDirty(false);
         router.refresh();
         return;
@@ -357,54 +361,177 @@ export function CaseForm({
       const createResult = await createCase(fd);
       if (!createResult.ok) {
         setError(createResult.error);
-        return;
+        throw new Error(createResult.error);
       }
 
       const caseId = createResult.data?.caseId;
       if (!caseId) {
-        setError("Case was created but no id was returned");
-        return;
+        const msg = "Case was created but no id was returned";
+        setError(msg);
+        throw new Error(msg);
       }
 
       const nestedError = await saveChildTablesAfterCreate(caseId);
       if (nestedError) {
         setError(nestedError);
-        return;
+        throw new Error(nestedError);
       }
 
       setDirty(false);
       router.push(`/admin/cases/${caseId}/edit`);
       router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
-      setSaving(false);
+      setIsSaving(false);
+    }
+  }
+
+  async function handlePublish(): Promise<void> {
+    if (!initialCase) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      const result = dirty
+        ? await publishCaseWithChanges(initialCase.id, buildFormData())
+        : await publishCase(initialCase.id);
+      if (!result.ok) {
+        setError(result.error);
+        throw new Error(result.error);
+      }
+      setDirty(false);
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleUnpublish(): Promise<void> {
+    if (!initialCase) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      const result = await unpublishCase(initialCase.id);
+      if (!result.ok) {
+        setError(result.error);
+        throw new Error(result.error);
+      }
+      router.refresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDelete(): Promise<void> {
+    if (!initialCase) return;
+    if (!window.confirm("Delete this case? This cannot be undone.")) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      const result = await deleteCase(initialCase.id);
+      if (!result.ok) {
+        setError(result.error);
+        throw new Error(result.error);
+      }
+      router.push("/admin/cases");
+    } finally {
+      setIsSaving(false);
     }
   }
 
   return (
     <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="w-full">
-      <UnsavedChangesGuard dirty={dirty && !saving} onSave={handleSave} />
+      <UnsavedChangesGuard dirty={dirty && !isSaving} onSave={performSave} />
 
-      <div>
-        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">
-          {isEdit ? "Edit case" : "New case"}
-        </h1>
-        {isEdit && initialCase ? (
-          <div className="mt-2">
-            <PostStatusPill status={initialCase.status} />
-          </div>
-        ) : null}
-        {!isEdit ? (
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-body">
-            Enter case metadata, patient context, and clinical findings. Ancillary tests and questions
-            can be added after saving.
-          </p>
-        ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-text-heading">
+            {isEdit ? "Edit case" : "New case"}
+          </h1>
+          {isEdit ? (
+            <span
+              className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium ${
+                isPublished
+                  ? "bg-bg-success-softer text-text-fg-success-strong"
+                  : "bg-bg-secondary-soft text-text-muted"
+              }`}
+            >
+              {isPublished ? "Published" : "Draft"}
+            </span>
+          ) : null}
+          {dirty ? (
+            <span className="inline-flex items-center rounded-sm bg-bg-warning-softer px-2 py-0.5 text-xs font-medium text-text-fg-warning-strong">
+              Unsaved changes
+            </span>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {isEdit && isPublished ? (
+            <button
+              type="button"
+              onClick={() => void handleUnpublish()}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-primary-soft px-4 py-2 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Undo2 className="size-4" aria-hidden />
+              Unpublish
+            </button>
+          ) : null}
+          {isEdit ? (
+            <button
+              type="button"
+              onClick={() => void handleDelete()}
+              disabled={isSaving}
+              className="inline-flex items-center gap-1.5 rounded-base bg-bg-danger-softer px-4 py-2 text-sm font-medium text-text-fg-danger transition-colors hover:bg-bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 className="size-4" aria-hidden />
+              Delete
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => void performSave()}
+            disabled={isSaving}
+            className="inline-flex items-center gap-1.5 rounded-base border border-border-default bg-bg-secondary-soft px-4 py-2 text-sm font-medium text-text-heading transition-colors hover:bg-bg-primary-soft disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
+            {isEdit ? (isPublished && dirty ? "Save changes" : "Save draft") : "Save draft"}
+          </button>
+          {isEdit && !isPublished ? (
+            <button
+              type="button"
+              onClick={() => void handlePublish()}
+              disabled={isSaving || !canPublish}
+              title={canPublish ? undefined : "Add at least one question to publish"}
+              className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send className="size-4" aria-hidden />
+              Publish
+            </button>
+          ) : null}
+          {isEdit && isPublished && dirty ? (
+            <button
+              type="button"
+              onClick={() => void handlePublish()}
+              disabled={isSaving || !canPublish}
+              title={canPublish ? undefined : "Add at least one question to publish"}
+              className="inline-flex items-center gap-1.5 rounded-base bg-bg-brand px-4 py-2 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send className="size-4" aria-hidden />
+              Publish changes
+            </button>
+          ) : null}
+        </div>
       </div>
 
+      {!isEdit ? (
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-body">
+          Enter case metadata, patient context, and clinical findings. Ancillary tests and questions
+          can be added after saving.
+        </p>
+      ) : null}
+
       <div className="mt-8 flex flex-col gap-10">
-        {error ? <Alert variant="error" title="Could not save" message={error} /> : null}
+        {error ? <Alert variant="error" title="Something went wrong" message={error} /> : null}
 
         <CaseFormCard title="Case metadata">
           <div className="grid gap-6 lg:grid-cols-3">
@@ -426,7 +553,7 @@ export function CaseForm({
                     title="Regenerate title from patient context"
                     aria-label="Regenerate title from patient context"
                     onClick={regenerateTitle}
-                    disabled={saving}
+                    disabled={isSaving}
                     className="inline-flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-border-default bg-bg-secondary-soft text-text-muted transition-colors hover:border-border-default-medium hover:text-text-heading disabled:opacity-50"
                   >
                     <RefreshCw className="size-4" aria-hidden />
@@ -454,7 +581,7 @@ export function CaseForm({
                     title="Regenerate slug from title"
                     aria-label="Regenerate slug from title"
                     onClick={regenerateSlug}
-                    disabled={saving}
+                    disabled={isSaving}
                     className="inline-flex size-[42px] shrink-0 items-center justify-center rounded-lg border border-border-default bg-bg-secondary-soft text-text-muted transition-colors hover:border-border-default-medium hover:text-text-heading disabled:opacity-50"
                   >
                     <RefreshCw className="size-4" aria-hidden />
@@ -507,14 +634,6 @@ export function CaseForm({
                 required
                 options={AUDIENCE_OPTIONS}
                 defaultValue={initialCase?.audience ?? ""}
-                onChange={() => markDirty()}
-              />
-              <FormSelect
-                label="Status"
-                name="status"
-                id="case-status"
-                options={STATUS_OPTIONS}
-                defaultValue={initialCase?.status ?? "draft"}
                 onChange={() => markDirty()}
               />
             </div>
@@ -580,7 +699,7 @@ export function CaseForm({
             label="History of present illness"
             initialContent={richInitial(initialCase?.hpi)}
             onUpdate={markDirty}
-            disabled={saving}
+            disabled={isSaving}
             matchInputSurface
           />
 
@@ -598,7 +717,7 @@ export function CaseForm({
                   variant="ocular"
                   catalog={ocularCatalog}
                   rows={ocularRows}
-                  disabled={saving}
+                  disabled={isSaving}
                   onCatalogChange={(rows) => {
                     setOcularRows(rows);
                     markDirty();
@@ -617,7 +736,7 @@ export function CaseForm({
                   variant="medical"
                   catalog={medicalCatalog}
                   rows={medicalRows}
-                  disabled={saving}
+                  disabled={isSaving}
                   onCatalogChange={(rows) => {
                     setMedicalRows(rows);
                     markDirty();
@@ -636,7 +755,7 @@ export function CaseForm({
               name="medications"
               id="case-medications"
               value={medications}
-              disabled={saving}
+              disabled={isSaving}
               rows={2}
               onChange={(v) => {
                 setMedications(v);
@@ -648,7 +767,7 @@ export function CaseForm({
               name="allergies"
               id="case-allergies"
               value={allergies}
-              disabled={saving}
+              disabled={isSaving}
               rows={2}
               onChange={(v) => {
                 setAllergies(v);
@@ -674,7 +793,7 @@ export function CaseForm({
                   subtitle={config.subtitle}
                   catalogRows={catalog}
                   value={findings[findingType]}
-                  disabled={saving}
+                  disabled={isSaving}
                   onChange={(next) => {
                     setFindings((prev) => ({ ...prev, [findingType]: next }));
                     markDirty();
@@ -703,32 +822,7 @@ export function CaseForm({
           />
         </CaseFormCard>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-border-default pt-6">
-          <button
-            type="button"
-            onClick={() => void handleSave()}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-base bg-bg-brand px-4 py-2.5 text-sm font-medium text-text-on-brand shadow-xs transition-colors hover:bg-bg-brand-medium disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="size-4" aria-hidden />
-                {isEdit ? "Save changes" : "Save draft"}
-              </>
-            )}
-          </button>
-          <Link
-            href="/admin/cases"
-            className="inline-flex items-center rounded-base border border-border-default bg-bg-primary-soft px-4 py-2.5 text-sm font-medium text-text-body transition-colors hover:bg-bg-secondary-soft"
-          >
-            Cancel
-          </Link>
-        </div>
+
       </div>
     </form>
   );
