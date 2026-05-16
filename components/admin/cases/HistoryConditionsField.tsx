@@ -7,13 +7,13 @@ import type {
   MedicalConditionFormRow,
   OcularConditionFormRow,
 } from "@/lib/cases/history-form";
-import type { MedicalHistoryCondition, OcularHistoryCondition } from "@/lib/cases/types";
+import type { CaseLaterality, MedicalHistoryCondition, OcularHistoryCondition } from "@/lib/cases/types";
 
+/** Mirrors quiz-bank choice checkboxes (`QuestionForm` multi-select). */
 const checkboxClass =
-  "mt-0.5 size-4 shrink-0 rounded border-border-default text-bg-brand focus:ring-4 focus:ring-ring-brand disabled:cursor-not-allowed disabled:opacity-50";
+  "size-4 shrink-0 rounded border-border-default text-text-fg-brand-strong focus:ring-2 focus:ring-ring-brand disabled:cursor-not-allowed disabled:opacity-50";
 
-const selectClass =
-  "w-full max-w-[7.5rem] rounded-base border border-border-default bg-bg-primary-soft px-2 py-1.5 text-sm text-text-body shadow-xs outline-none transition-colors focus:border-border-brand focus:ring-4 focus:ring-ring-brand disabled:cursor-not-allowed disabled:opacity-50";
+const labelClass = "text-sm font-medium leading-5 text-text-body";
 
 type OcularProps = {
   variant: "ocular";
@@ -186,32 +186,34 @@ function OcularConditionRow({
       laterality: "OU",
     } satisfies OcularConditionFormRow);
 
+  const lateralityDisabled = disabled || !resolved.checked;
+
   return (
     <li className="px-4 py-3">
-      <label className="flex cursor-pointer items-start gap-2.5">
-        <input
-          type="checkbox"
-          className={checkboxClass}
-          checked={resolved.checked}
-          disabled={disabled}
-          onChange={(e) => {
-            const checked = e.target.checked;
-            onChange(
-              rows.map((r) =>
-                r.conditionId === condition.id
-                  ? { ...r, checked, laterality: checked ? r.laterality || "OU" : r.laterality }
-                  : r,
-              ),
-            );
-          }}
-        />
-        <span className="min-w-0 flex-1 text-sm leading-snug text-text-body">{condition.name}</span>
-      </label>
-      {condition.hasLaterality ? (
-        <div className="mt-2 pl-7">
-          <LateralitySelect
-            row={resolved}
-            disabled={disabled || !resolved.checked}
+      <div className="flex items-center gap-2">
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            className={checkboxClass}
+            checked={resolved.checked}
+            disabled={disabled}
+            onChange={(e) => {
+              const checked = e.target.checked;
+              onChange(
+                rows.map((r) =>
+                  r.conditionId === condition.id
+                    ? { ...r, checked, laterality: checked ? r.laterality || "OU" : r.laterality }
+                    : r,
+                ),
+              );
+            }}
+          />
+          <span className={`min-w-0 flex-1 ${labelClass}`}>{condition.name}</span>
+        </label>
+        {condition.hasLaterality ? (
+          <LateralitySegmentedControl
+            value={resolved.laterality}
+            disabled={lateralityDisabled}
             onLateralityChange={(laterality) => {
               onChange(
                 rows.map((r) =>
@@ -220,8 +222,8 @@ function OcularConditionRow({
               );
             }}
           />
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -248,7 +250,7 @@ function MedicalConditionRow({
 
   return (
     <li className="px-4 py-3">
-      <label className="flex cursor-pointer items-start gap-2.5">
+      <label className="flex cursor-pointer items-center gap-2">
         <input
           type="checkbox"
           className={checkboxClass}
@@ -263,39 +265,63 @@ function MedicalConditionRow({
             );
           }}
         />
-        <span className="min-w-0 flex-1 text-sm leading-snug text-text-body">{condition.name}</span>
+        <span className={labelClass}>{condition.name}</span>
       </label>
     </li>
   );
 }
 
-function LateralitySelect({
-  row,
+/**
+ * Segmented laterality control — same values as the prior `<select>` (`CASE_LATERALITY_OPTIONS`).
+ */
+function LateralitySegmentedControl({
+  value,
   disabled,
   onLateralityChange,
 }: {
-  row: OcularConditionFormRow;
+  value: CaseLaterality;
   disabled: boolean;
-  onLateralityChange: (laterality: OcularConditionFormRow["laterality"]) => void;
+  onLateralityChange: (laterality: CaseLaterality) => void;
 }) {
+  const options = CASE_LATERALITY_OPTIONS;
+  const lastIndex = options.length - 1;
+
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-      <span className="text-xs font-medium text-text-muted">Laterality</span>
-      <select
-        className={selectClass}
-        value={row.laterality}
-        disabled={disabled}
-        aria-label="Laterality for selected condition"
-        onChange={(e) =>
-          onLateralityChange(e.target.value as OcularConditionFormRow["laterality"])
-        }
-      >
-        {CASE_LATERALITY_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+    <div
+      role="radiogroup"
+      aria-label="Laterality"
+      className={[
+        "inline-flex shrink-0",
+        disabled ? "pointer-events-none opacity-50" : "",
+      ].join(" ")}
+    >
+      {options.map((opt, index) => {
+        const isSelected = value === opt.value;
+        const isFirst = index === 0;
+        const isLast = index === lastIndex;
+
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            disabled={disabled}
+            onClick={() => onLateralityChange(opt.value)}
+            className={[
+              "border border-border-default px-3 py-2 text-sm font-medium transition-colors",
+              !isLast ? "-mr-px" : "",
+              isFirst ? "rounded-l-base" : "",
+              isLast ? "rounded-r-base" : "",
+              isSelected
+                ? "relative z-10 bg-bg-secondary-medium text-text-fg-brand-strong"
+                : "bg-bg-primary-soft text-text-body hover:bg-bg-secondary-soft",
+            ].join(" ")}
+          >
             {opt.label}
-          </option>
-        ))}
-      </select>
+          </button>
+        );
+      })}
     </div>
   );
 }
