@@ -49,7 +49,7 @@ export function CaseLateralitySegmented({
             disabled={disabled}
             onClick={() => onLateralityChange(opt.value)}
             className={[
-              "border border-border-default px-3 py-2 text-sm font-medium transition-colors",
+              "border border-border-default px-2 py-1 text-xs font-medium transition-colors",
               !isLast ? "-mr-px" : "",
               isFirst ? "rounded-l-base" : "",
               isLast ? "rounded-r-base" : "",

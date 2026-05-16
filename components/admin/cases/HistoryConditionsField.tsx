@@ -13,6 +13,9 @@ const checkboxClass =
 
 const labelClass = "text-sm font-medium leading-5 text-text-body";
 
+/** Shared fixed row height so ocular + medical columns align when side-by-side. */
+const conditionRowClass = "flex h-16 items-center px-4";
+
 type OcularProps = {
   variant: "ocular";
   catalog: OcularHistoryCondition[];
@@ -126,8 +129,8 @@ function OcularConditionRow({
   const lateralityDisabled = disabled || !resolved.checked;
 
   return (
-    <li className="px-4 py-3">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
+    <li className={conditionRowClass}>
+      <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1">
         <label className="flex min-w-0 cursor-pointer items-center gap-2">
           <input
             type="checkbox"
@@ -189,8 +192,8 @@ function MedicalConditionRow({
     } satisfies MedicalConditionFormRow);
 
   return (
-    <li className="px-4 py-3">
-      <label className="flex cursor-pointer items-center gap-2">
+    <li className={conditionRowClass}>
+      <label className="flex w-full cursor-pointer items-center gap-2">
         <input
           type="checkbox"
           className={checkboxClass}
