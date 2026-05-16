@@ -358,9 +358,15 @@ export function CaseForm({
         {isEdit && initialCase ? (
           <div className="mt-2">
             <PostStatusPill status={initialCase.status} />
-          </div>
+          </motionPlainTextarea>
         ) : null}
-      </div>
+        {!isEdit ? (
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-body">
+            Enter case metadata, patient context, and clinical findings. Ancillary tests and questions
+            can be added after saving.
+          </p>
+        ) : null}
+      </motionPlainTextarea>
 
       <div className="mt-8 flex flex-col gap-10">
         {error ? <Alert variant="error" title="Could not save" message={error} /> : null}

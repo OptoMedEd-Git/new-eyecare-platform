@@ -59,11 +59,6 @@ export default async function NewCasePage() {
         Back to cases
       </Link>
 
-      <p className="mt-6 text-sm text-text-body">
-        Enter case metadata, patient context, and clinical findings. Ancillary tests and questions can
-        be added after saving.
-      </p>
-
       <div className="mt-8">
         <CaseForm
           categories={categories}
