@@ -160,7 +160,6 @@ export function CaseForm({
   const isEdit = Boolean(initialCase);
 
   const hpiRef = useRef<RichContentEditorHandle>(null);
-  const objectivesRef = useRef<RichContentEditorHandle>(null);
 
   const [title, setTitle] = useState(initialCase?.title ?? "");
   const [titleManuallyEdited, setTitleManuallyEdited] = useState(() =>
@@ -281,10 +280,6 @@ export function CaseForm({
 
   function appendRichFields(fd: FormData) {
     fd.set("hpi", JSON.stringify(hpiRef.current?.getJSON() ?? { type: "doc", content: [] }));
-    fd.set(
-      "learning_objectives",
-      JSON.stringify(objectivesRef.current?.getJSON() ?? { type: "doc", content: [] }),
-    );
   }
 
   function appendChildTableFields(fd: FormData) {
@@ -659,13 +654,6 @@ export function CaseForm({
                 setAllergies(v);
                 markDirty();
               }}
-            />
-            <CaseMarkdownField
-              ref={objectivesRef}
-              label="Learning objectives"
-              initialContent={richInitial(initialCase?.learningObjectives)}
-              onUpdate={markDirty}
-              disabled={saving}
             />
           </div>
           </div>

@@ -211,7 +211,6 @@ function casePayloadFromForm(formData: FormData) {
     patientEthnicity: getNullableString(formData, "patient_ethnicity"),
     medications: getNullableString(formData, "medications"),
     allergies: getNullableString(formData, "allergies"),
-    learningObjectives: getRichText(formData, "learning_objectives"),
   };
 }
 
@@ -264,7 +263,6 @@ export async function createCase(formData: FormData): Promise<ActionResult<{ cas
         target_audience: payload.audience,
         status: payload.status,
         author_id: ctx.user.id,
-        learning_objectives: payload.learningObjectives,
         published_at: publishedAt,
       })
       .select("id, slug")
@@ -333,7 +331,6 @@ export async function updateCase(caseId: string, formData: FormData): Promise<Ac
         difficulty: payload.difficulty,
         target_audience: payload.audience,
         status: payload.status,
-        learning_objectives: payload.learningObjectives,
         published_at: publishedAt,
       })
       .eq("id", caseId);
