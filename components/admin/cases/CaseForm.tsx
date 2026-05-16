@@ -358,7 +358,7 @@ export function CaseForm({
         {isEdit && initialCase ? (
           <div className="mt-2">
             <PostStatusPill status={initialCase.status} />
-          </motionPlainTextarea>
+          </div>
         ) : null}
         {!isEdit ? (
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-text-body">
@@ -366,7 +366,7 @@ export function CaseForm({
             can be added after saving.
           </p>
         ) : null}
-      </motionPlainTextarea>
+      </div>
 
       <div className="mt-8 flex flex-col gap-10">
         {error ? <Alert variant="error" title="Could not save" message={error} /> : null}
@@ -490,6 +490,7 @@ export function CaseForm({
           title="Patient context"
           description="Demographics, presenting complaint, and clinical history for this case."
         >
+          <div className="space-y-6">
           <div className="grid gap-6 sm:grid-cols-3">
             <FormInput
               label="Patient age"
@@ -545,9 +546,10 @@ export function CaseForm({
             initialContent={richInitial(initialCase?.hpi)}
             onUpdate={markDirty}
             disabled={saving}
+            matchInputSurface
           />
 
-          <div className="mt-8 space-y-8 border-t border-border-default pt-8">
+          <div className="space-y-8 border-t border-border-default pt-8">
             <div>
               <h3 className="text-lg font-semibold text-text-heading">Clinical history</h3>
               <p className="mt-1 text-sm text-text-body">
@@ -565,18 +567,20 @@ export function CaseForm({
                   setOcularRows(rows);
                   markDirty();
                 }}
-              />
-              <PlainTextarea
-                label="Other"
-                name="past_ocular_history"
-                id="case-poh-other"
-                value={pastOcularOther}
-                disabled={saving}
-                placeholder="Unlisted ocular history"
-                onChange={(v) => {
-                  setPastOcularOther(v);
-                  markDirty();
-                }}
+                otherSlot={
+                  <PlainTextarea
+                    label="Other"
+                    name="past_ocular_history"
+                    id="case-poh-other"
+                    value={pastOcularOther}
+                    disabled={saving}
+                    placeholder="Unlisted ocular history"
+                    onChange={(v) => {
+                      setPastOcularOther(v);
+                      markDirty();
+                    }}
+                  />
+                }
               />
             </div>
 
@@ -591,18 +595,20 @@ export function CaseForm({
                   setMedicalRows(rows);
                   markDirty();
                 }}
-              />
-              <PlainTextarea
-                label="Other"
-                name="past_medical_history"
-                id="case-pmh-other"
-                value={pastMedicalOther}
-                disabled={saving}
-                placeholder="Unlisted medical history"
-                onChange={(v) => {
-                  setPastMedicalOther(v);
-                  markDirty();
-                }}
+                otherSlot={
+                  <PlainTextarea
+                    label="Other"
+                    name="past_medical_history"
+                    id="case-pmh-other"
+                    value={pastMedicalOther}
+                    disabled={saving}
+                    placeholder="Unlisted medical history"
+                    onChange={(v) => {
+                      setPastMedicalOther(v);
+                      markDirty();
+                    }}
+                  />
+                }
               />
             </div>
 
@@ -637,6 +643,7 @@ export function CaseForm({
               onUpdate={markDirty}
               disabled={saving}
             />
+          </div>
           </div>
         </CaseFormCard>
 
