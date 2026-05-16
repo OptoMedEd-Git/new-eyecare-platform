@@ -8,6 +8,8 @@ import {
   getAdminCaseWithDetailsById,
   getBlogCategoriesForCaseForms,
   getFindingRowCatalog,
+  getMedicalHistoryConditions,
+  getOcularHistoryConditions,
 } from "@/lib/cases/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,10 +55,12 @@ export default async function EditCasePage({ params }: { params: Promise<{ id: s
     .maybeSingle<ProfileRow>();
   if (!profile || profile.role === "member") redirect("/dashboard");
 
-  const [clinicalCase, categories, catalog] = await Promise.all([
+  const [clinicalCase, categories, catalog, ocularCatalog, medicalCatalog] = await Promise.all([
     getAdminCaseWithDetailsById(id, user.id, profile.role),
     getBlogCategoriesForCaseForms(),
     getFindingRowCatalog(),
+    getOcularHistoryConditions(),
+    getMedicalHistoryConditions(),
   ]);
 
   if (!clinicalCase) {
@@ -89,6 +93,8 @@ export default async function EditCasePage({ params }: { params: Promise<{ id: s
         <CaseForm
           categories={categories}
           catalog={catalog}
+          ocularCatalog={ocularCatalog}
+          medicalCatalog={medicalCatalog}
           authorName={authorName}
           initialCase={clinicalCase}
         />

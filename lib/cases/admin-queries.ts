@@ -3,11 +3,18 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getCaseAncillaryTestsWithMedia,
   getCaseFindingsGrouped,
+  getCaseMedicalHistory,
+  getCaseOcularHistory,
   getCaseQuestionsWithQuizQuestions,
+  getMedicalHistoryConditions,
+  getOcularHistoryConditions,
   rowToCase,
 } from "./queries";
-import type { FindingRowCatalogEntry } from "./types";
+import type { FindingRowCatalogEntry, MedicalHistoryCondition, OcularHistoryCondition } from "./types";
 import type { CaseWithDetails, ClinicalCase } from "./types";
+
+export { getOcularHistoryConditions, getMedicalHistoryConditions };
+export type { OcularHistoryCondition, MedicalHistoryCondition };
 
 export type BlogCategoryOption = {
   id: string;
@@ -125,17 +132,22 @@ export async function getAdminCaseWithDetailsBySlug(
 
   const clinicalCase = rowToCase(data as Record<string, unknown>);
 
-  const [findingsByType, ancillaryTests, questions] = await Promise.all([
-    getCaseFindingsGrouped(clinicalCase.id),
-    getCaseAncillaryTestsWithMedia(clinicalCase.id),
-    getCaseQuestionsWithQuizQuestions(clinicalCase.id),
-  ]);
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+    await Promise.all([
+      getCaseFindingsGrouped(clinicalCase.id),
+      getCaseAncillaryTestsWithMedia(clinicalCase.id),
+      getCaseQuestionsWithQuizQuestions(clinicalCase.id),
+      getCaseOcularHistory(clinicalCase.id),
+      getCaseMedicalHistory(clinicalCase.id),
+    ]);
 
   return {
     ...clinicalCase,
     findingsByType,
     ancillaryTests,
     questions,
+    ocularHistory,
+    medicalHistory,
   };
 }
 
@@ -169,16 +181,21 @@ export async function getAdminCaseWithDetailsById(
 
   const clinicalCase = rowToCase(data as Record<string, unknown>);
 
-  const [findingsByType, ancillaryTests, questions] = await Promise.all([
-    getCaseFindingsGrouped(clinicalCase.id),
-    getCaseAncillaryTestsWithMedia(clinicalCase.id),
-    getCaseQuestionsWithQuizQuestions(clinicalCase.id),
-  ]);
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+    await Promise.all([
+      getCaseFindingsGrouped(clinicalCase.id),
+      getCaseAncillaryTestsWithMedia(clinicalCase.id),
+      getCaseQuestionsWithQuizQuestions(clinicalCase.id),
+      getCaseOcularHistory(clinicalCase.id),
+      getCaseMedicalHistory(clinicalCase.id),
+    ]);
 
   return {
     ...clinicalCase,
     findingsByType,
     ancillaryTests,
     questions,
+    ocularHistory,
+    medicalHistory,
   };
 }

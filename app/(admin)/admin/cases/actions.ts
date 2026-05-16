@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import type { FindingsFormState } from "@/lib/cases/findings-form";
-import type { CaseFindingType } from "@/lib/cases/types";
+import {
+  medicalFormRowsToPayload,
+  ocularFormRowsToPayload,
+  type MedicalConditionFormRow,
+  type OcularConditionFormRow,
+} from "@/lib/cases/history-form";
+import type { CaseFindingType, CaseLaterality } from "@/lib/cases/types";
 import { CASE_FINDING_TYPES } from "@/lib/cases/types";
 import { ensureUniqueSlug, slugifyShort } from "@/lib/blog/slugify";
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +23,7 @@ type AuthoringRole = "admin" | "contributor";
 const DIFFICULTIES = ["foundational", "intermediate", "advanced"] as const;
 const AUDIENCES = ["student", "resident", "practicing", "all"] as const;
 const SEX_VALUES = ["M", "F", "Other", "Unspecified"] as const;
+const LATERALITY_VALUES = ["OD", "OS", "OU", "none"] as const;
 
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -72,6 +79,39 @@ function parseFindingsState(raw: string): FindingsFormState | null {
     const parsed = JSON.parse(raw) as FindingsFormState;
     if (!parsed || typeof parsed !== "object") return null;
     return parsed;
+  } catch {
+    return null;
+  }
+}
+
+type HistorySelectionsPayload = {
+  ocular: OcularConditionFormRow[];
+  medical: MedicalConditionFormRow[];
+};
+
+function parseLaterality(value: unknown): CaseLaterality {
+  if (typeof value === "string" && LATERALITY_VALUES.includes(value as CaseLaterality)) {
+    return value as CaseLaterality;
+  }
+  return "OU";
+}
+
+function parseHistorySelections(raw: string): HistorySelectionsPayload | null {
+  try {
+    const parsed = JSON.parse(raw) as HistorySelectionsPayload;
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!Array.isArray(parsed.ocular) || !Array.isArray(parsed.medical)) return null;
+    return {
+      ocular: parsed.ocular.map((row) => ({
+        conditionId: String(row.conditionId),
+        checked: Boolean(row.checked),
+        laterality: parseLaterality(row.laterality),
+      })),
+      medical: parsed.medical.map((row) => ({
+        conditionId: String(row.conditionId),
+        checked: Boolean(row.checked),
+      })),
+    };
   } catch {
     return null;
   }
@@ -136,10 +176,10 @@ function casePayloadFromForm(formData: FormData) {
     patientAge: parsePatientAge(formData),
     patientSex: parsePatientSex(formData),
     patientEthnicity: getNullableString(formData, "patient_ethnicity"),
-    pastOcularHistory: getRichText(formData, "past_ocular_history"),
-    pastMedicalHistory: getRichText(formData, "past_medical_history"),
-    medications: getRichText(formData, "medications"),
-    allergies: getRichText(formData, "allergies"),
+    pastOcularHistory: getNullableString(formData, "past_ocular_history"),
+    pastMedicalHistory: getNullableString(formData, "past_medical_history"),
+    medications: getNullableString(formData, "medications"),
+    allergies: getNullableString(formData, "allergies"),
     learningObjectives: getRichText(formData, "learning_objectives"),
   };
 }
@@ -282,11 +322,26 @@ export async function updateCase(caseId: string, formData: FormData): Promise<Ac
     }
     revalidatePath(`/admin/cases/${caseId}/edit`);
 
+    const findingsJson = formData.get("findings_json");
+    if (typeof findingsJson === "string" && findingsJson.trim()) {
+      const findingsResult = await updateCaseFindings(caseId, findingsJson);
+      if (!findingsResult.ok) return findingsResult;
+    }
+
+    const historyJson = formData.get("history_selections");
+    if (typeof historyJson === "string" && historyJson.trim()) {
+      const historyResult = await updateCaseHistorySelections(caseId, historyJson);
+      if (!historyResult.ok) return historyResult;
+    }
+
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not update case" };
   }
 }
+
+/** Alias for spec naming; persists delete-and-recreate history selections. */
+export const updateCaseHistory = updateCaseHistorySelections;
 
 export async function updateCaseFindings(
   caseId: string,
@@ -367,5 +422,77 @@ export async function updateCaseFindings(
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Could not update findings" };
+  }
+}
+
+export async function updateCaseHistorySelections(
+  caseId: string,
+  historyJson: string,
+): Promise<ActionResult> {
+  try {
+    const ctx = await getAuthedContext();
+    await authorizeCaseWrite(ctx, caseId);
+
+    const state = parseHistorySelections(historyJson);
+    if (!state) return { ok: false, error: "Invalid history selections" };
+
+    const { error: delOcularError } = await ctx.supabase
+      .from("case_ocular_history")
+      .delete()
+      .eq("case_id", caseId);
+
+    if (delOcularError) {
+      console.error("[cases] delete ocular history", delOcularError);
+      return { ok: false, error: "Could not update ocular history" };
+    }
+
+    const ocularPayload = ocularFormRowsToPayload(state.ocular);
+    if (ocularPayload.length > 0) {
+      const { error: insertOcularError } = await ctx.supabase.from("case_ocular_history").insert(
+        ocularPayload.map((row) => ({
+          case_id: caseId,
+          condition_id: row.conditionId,
+          laterality: row.laterality,
+        })),
+      );
+
+      if (insertOcularError) {
+        console.error("[cases] insert ocular history", insertOcularError);
+        return { ok: false, error: "Could not save ocular history" };
+      }
+    }
+
+    const { error: delMedicalError } = await ctx.supabase
+      .from("case_medical_history")
+      .delete()
+      .eq("case_id", caseId);
+
+    if (delMedicalError) {
+      console.error("[cases] delete medical history", delMedicalError);
+      return { ok: false, error: "Could not update medical history" };
+    }
+
+    const medicalPayload = medicalFormRowsToPayload(state.medical);
+    if (medicalPayload.length > 0) {
+      const { error: insertMedicalError } = await ctx.supabase.from("case_medical_history").insert(
+        medicalPayload.map((row) => ({
+          case_id: caseId,
+          condition_id: row.conditionId,
+        })),
+      );
+
+      if (insertMedicalError) {
+        console.error("[cases] insert medical history", insertMedicalError);
+        return { ok: false, error: "Could not save medical history" };
+      }
+    }
+
+    revalidatePath(`/admin/cases/${caseId}/edit`);
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not update history selections",
+    };
   }
 }

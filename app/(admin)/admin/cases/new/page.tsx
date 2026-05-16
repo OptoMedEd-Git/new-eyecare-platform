@@ -7,6 +7,8 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import {
   getBlogCategoriesForCaseForms,
   getFindingRowCatalog,
+  getMedicalHistoryConditions,
+  getOcularHistoryConditions,
 } from "@/lib/cases/admin-queries";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,9 +38,11 @@ export default async function NewCasePage() {
     [profile.first_name, profile.last_name].filter((x): x is string => Boolean(x?.trim())).join(" ").trim() ||
     "—";
 
-  const [categories, catalog] = await Promise.all([
+  const [categories, catalog, ocularCatalog, medicalCatalog] = await Promise.all([
     getBlogCategoriesForCaseForms(),
     getFindingRowCatalog(),
+    getOcularHistoryConditions(),
+    getMedicalHistoryConditions(),
   ]);
 
   return (
@@ -61,7 +65,13 @@ export default async function NewCasePage() {
       </p>
 
       <div className="mt-8">
-        <CaseForm categories={categories} catalog={catalog} authorName={authorName} />
+        <CaseForm
+          categories={categories}
+          catalog={catalog}
+          ocularCatalog={ocularCatalog}
+          medicalCatalog={medicalCatalog}
+          authorName={authorName}
+        />
       </div>
     </div>
   );

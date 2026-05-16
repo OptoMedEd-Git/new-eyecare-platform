@@ -23,7 +23,33 @@ export const CASE_FINDING_TYPES: CaseFindingType[] = [
 
 export type CasePatientSex = "M" | "F" | "Other" | "Unspecified";
 
+export type CaseLaterality = "OD" | "OS" | "OU" | "none";
+
 export type CaseAttemptStatus = "in_progress" | "submitted" | "abandoned";
+
+export type OcularHistoryCondition = {
+  id: string;
+  name: string;
+  hasLaterality: boolean;
+  position: number;
+};
+
+export type MedicalHistoryCondition = {
+  id: string;
+  name: string;
+  position: number;
+};
+
+export type CaseOcularHistorySelection = {
+  conditionId: string;
+  conditionName?: string;
+  laterality: CaseLaterality;
+};
+
+export type CaseMedicalHistorySelection = {
+  conditionId: string;
+  conditionName?: string;
+};
 
 export type ClinicalCase = {
   id: string;
@@ -131,4 +157,6 @@ export type CaseWithDetails = ClinicalCase & {
   findingsByType: CaseFindingsByType;
   ancillaryTests: CaseAncillaryTest[];
   questions: CaseQuestionEntry[];
+  ocularHistory: CaseOcularHistorySelection[];
+  medicalHistory: CaseMedicalHistorySelection[];
 };

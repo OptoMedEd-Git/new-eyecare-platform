@@ -15,7 +15,12 @@ import type {
   CasePatientSex,
   CaseQuestionEntry,
   ClinicalCase,
+  CaseLaterality,
+  CaseMedicalHistorySelection,
+  CaseOcularHistorySelection,
   CaseWithDetails,
+  MedicalHistoryCondition,
+  OcularHistoryCondition,
 } from "./types";
 
 function single<T>(value: T | T[] | null | undefined): T | null {
@@ -288,6 +293,93 @@ export async function getCaseQuestionsWithQuizQuestions(caseId: string): Promise
   return entries;
 }
 
+export async function getOcularHistoryConditions(): Promise<OcularHistoryCondition[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("ocular_history_conditions")
+    .select("*")
+    .eq("is_active", true)
+    .order("position");
+
+  if (error || !data) return [];
+
+  return (data as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    hasLaterality: Boolean(row.has_laterality),
+    position: Number(row.position),
+  }));
+}
+
+export async function getMedicalHistoryConditions(): Promise<MedicalHistoryCondition[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("medical_history_conditions")
+    .select("*")
+    .eq("is_active", true)
+    .order("position");
+
+  if (error || !data) return [];
+
+  return (data as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    position: Number(row.position),
+  }));
+}
+
+export async function getCaseOcularHistory(caseId: string): Promise<CaseOcularHistorySelection[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("case_ocular_history")
+    .select(
+      `
+      condition_id,
+      laterality,
+      condition:ocular_history_conditions(name)
+    `,
+    )
+    .eq("case_id", caseId);
+
+  if (error || !data) return [];
+
+  return (data as Array<Record<string, unknown>>).map((row) => {
+    const cond = single(
+      row.condition as { name: string } | { name: string }[] | null,
+    );
+    return {
+      conditionId: String(row.condition_id),
+      conditionName: cond?.name,
+      laterality: (row.laterality as CaseLaterality | null) ?? "OU",
+    };
+  });
+}
+
+export async function getCaseMedicalHistory(caseId: string): Promise<CaseMedicalHistorySelection[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("case_medical_history")
+    .select(
+      `
+      condition_id,
+      condition:medical_history_conditions(name)
+    `,
+    )
+    .eq("case_id", caseId);
+
+  if (error || !data) return [];
+
+  return (data as Array<Record<string, unknown>>).map((row) => {
+    const cond = single(
+      row.condition as { name: string } | { name: string }[] | null,
+    );
+    return {
+      conditionId: String(row.condition_id),
+      conditionName: cond?.name,
+    };
+  });
+}
+
 /**
  * Full published case payload for downstream case-taking UI.
  */
@@ -295,16 +387,21 @@ export async function getPublishedCaseWithDetails(slug: string): Promise<CaseWit
   const clinicalCase = await getPublishedCaseBySlug(slug);
   if (!clinicalCase) return null;
 
-  const [findingsByType, ancillaryTests, questions] = await Promise.all([
-    getCaseFindingsGrouped(clinicalCase.id),
-    getCaseAncillaryTestsWithMedia(clinicalCase.id),
-    getCaseQuestionsWithQuizQuestions(clinicalCase.id),
-  ]);
+  const [findingsByType, ancillaryTests, questions, ocularHistory, medicalHistory] =
+    await Promise.all([
+      getCaseFindingsGrouped(clinicalCase.id),
+      getCaseAncillaryTestsWithMedia(clinicalCase.id),
+      getCaseQuestionsWithQuizQuestions(clinicalCase.id),
+      getCaseOcularHistory(clinicalCase.id),
+      getCaseMedicalHistory(clinicalCase.id),
+    ]);
 
   return {
     ...clinicalCase,
     findingsByType,
     ancillaryTests,
     questions,
+    ocularHistory,
+    medicalHistory,
   };
 }

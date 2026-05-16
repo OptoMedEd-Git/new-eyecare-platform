@@ -1,4 +1,11 @@
-import type { CaseFindingType } from "./types";
+import type { CaseFindingType, CaseLaterality } from "./types";
+
+export const CASE_LATERALITY_OPTIONS: { value: CaseLaterality; label: string }[] = [
+  { value: "OD", label: "OD" },
+  { value: "OS", label: "OS" },
+  { value: "OU", label: "OU" },
+  { value: "none", label: "None" },
+];
 
 export const FINDINGS_TABLE_CONFIG: Record<
   CaseFindingType,
